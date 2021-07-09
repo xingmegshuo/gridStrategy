@@ -41,7 +41,7 @@ var ConfigMap = map[string]string{
 
 // init 初始化
 func init() {
-	serverDB, _ := sql.Open("mysql", "root:@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
+	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
 	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{})
 	// db, err := gorm.Open(sqlite.Open("config.db"), &gorm.Config{})
 	if err != nil {

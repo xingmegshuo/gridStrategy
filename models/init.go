@@ -47,7 +47,7 @@ func init() {
 		panic("failed to connect database")
 	}
 	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
-	dsn := "ot_ptus209@tcp(172.31.213.84:33060)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "ot_ptus209@tcp(172.31.213.84:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	sqlDB, _ := sql.Open("mysql", dsn)
 	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{})
 	if e != nil {

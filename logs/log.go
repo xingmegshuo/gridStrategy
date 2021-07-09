@@ -60,3 +60,7 @@ func init() {
 		},
 	})
 }
+
+func NoneLog() {
+	Log.Println("                                                       ")
+}

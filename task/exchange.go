@@ -99,8 +99,11 @@ func PrintStrategy(u model.User, symbol []map[string]interface{}) (grid.SymbolCa
 		baseCurrency    string
 		quoteCurrency   string
 	)
+	if u.Category != "火币" || ParseStringFloat(u.MinPrice) <= 0 || ParseStringFloat(u.MaxPrice) <= 0 {
+		return grid.SymbolCategory{}, nil
+	}
 	for _, v := range symbol {
-		if v["symbol"] == "shibusdt" {
+		if v["symbol"] == u.Name {
 			pricePrecision = v["price-precision"].(float64)
 			amountPrecision = v["amount-precision"].(float64)
 			minAmount = v["min-order-amt"].(float64)

@@ -33,7 +33,7 @@ type User struct {
 	ApiKey   string
 	Secret   string
 	Category string
-	ObjectId uint
+	ObjectId int32
 	MinPrice string
 	MaxPrice string
 	Total    string
@@ -69,11 +69,11 @@ func NewUser() {
 		if NewApi[order["category_id"]] != nil && NewApi[order["category_id"]][order["customer_id"]] != nil {
 			var u User
 			// 数据库查找存在与否
-			result := DB.Where(&User{ObjectId: order["id"].(uint)}).First(&u)
+			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 			// 条件 数据库未找到，订单启用，创建新的任务
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) && order["status"].(float64) == 1 {
 				u = User{
-					ObjectId: order["id"].(uint),
+					ObjectId: int32(order["id"].(float64)),
 					ApiKey:   NewApi[order["category_id"]][order["customer_id"]]["apikey"].(string),
 					Secret:   NewApi[order["category_id"]][order["customer_id"]]["secret"].(string),
 					Category: NewApi[order["category_id"]][order["customer_id"]]["category"].(string),

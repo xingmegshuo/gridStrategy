@@ -89,10 +89,10 @@ func NewUser() {
 			}
 			// 启用
 
-			if u.IsRun == -2 {
-				log.Println("检测到策略执行出错.................")
-				Ch <- JobChan{u.ID, 000}
-			}
+			// if u.IsRun == -2 {
+			// 	log.Println("检测到策略执行出错.................")
+			// 	Ch <- JobChan{u.ID, 000}
+			// }
 			// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
 
 			if order["status"].(float64) != u.Status {
@@ -110,8 +110,10 @@ func NewUser() {
 					}
 				case 3:
 					// 发送删除
+					u.Status = 3
 					log.Println("删除任务")
-					Ch <- JobChan{Id: u.ID, Run: 3}
+					// Ch <- JobChan{Id: u.ID, Run: 3}
+					u.Update()
 				default:
 					// 1
 					u.Status = 1

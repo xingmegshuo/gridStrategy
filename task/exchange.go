@@ -112,6 +112,7 @@ func PrintStrategy(u model.User, symbol []map[string]interface{}) (grid.SymbolCa
 	}
 	arg := ParseStrategy(u)
 	if u.Category != "火币" || arg.MinBuy < minToal {
+		l.Println(arg.MinBuy)
 		//  || arg.NeedMoney <= u.Money { 账户余额暂不判断
 		return grid.SymbolCategory{}, arg, nil
 	}

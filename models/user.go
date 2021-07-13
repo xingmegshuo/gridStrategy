@@ -94,49 +94,50 @@ func NewUser() {
 					Base:   1,
 				}
 				DB.Create(&u)
-			}
-			// 启用
-
-			// if u.IsRun == -2 {
-			// 	log.Println("检测到策略执行出错.................")
-			// 	Ch <- JobChan{u.ID, 000}
-			// }
-			// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
-
-			if order["status"].(float64) != u.Status {
-				log.Println("状态改变协程同步之策略协程", order["status"])
-				switch order["status"].(float64) {
-				case 2:
-					// 发送暂停
-					log.Println("发送给暂停")
-					Ch <- JobChan{Id: u.ID, Run: 2}
-				case 0:
-					// 发送禁用
-					log.Println("禁用任务")
-					if u.Status != -1 {
-						Ch <- JobChan{Id: u.ID, Run: -1}
-					}
-				// case 3:
-				// 发送删除
-				// u.Status = float64(3)
-				// log.Println("删除任务")
-				// Ch <- JobChan{Id: u.ID, Run: 3}
-				// u.Update()
-				// UserDB.Delete(&u)
-				default:
-					// 1
-					u.Status = 1
-					if u.IsRun == 2 {
-						u.IsRun = -1
-					}
-					u.Update()
-				}
 			} else {
-				if u.Status == 1 {
-					if u.IsRun == 2 {
-						u.IsRun = -1
+				// 启用
+
+				// if u.IsRun == -2 {
+				// 	log.Println("检测到策略执行出错.................")
+				// 	Ch <- JobChan{u.ID, 000}
+				// }
+				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
+
+				if order["status"].(float64) != u.Status {
+					log.Println("状态改变协程同步之策略协程", order["status"])
+					switch order["status"].(float64) {
+					case 2:
+						// 发送暂停
+						log.Println("发送给暂停")
+						Ch <- JobChan{Id: u.ID, Run: 2}
+					case 0:
+						// 发送禁用
+						log.Println("禁用任务")
+						if u.Status != -1 {
+							Ch <- JobChan{Id: u.ID, Run: -1}
+						}
+					// case 3:
+					// 发送删除
+					// u.Status = float64(3)
+					// log.Println("删除任务")
+					// Ch <- JobChan{Id: u.ID, Run: 3}
+					// u.Update()
+					// UserDB.Delete(&u)
+					default:
+						// 1
+						u.Status = 1
+						if u.IsRun == 2 {
+							u.IsRun = -1
+						}
+						u.Update()
 					}
-					u.Update()
+				} else {
+					if u.Status == 1 {
+						if u.IsRun == 2 {
+							u.IsRun = -1
+						}
+						u.Update()
+					}
 				}
 			}
 		}

@@ -104,7 +104,7 @@ func NewUser() {
 			// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
 
 			if order["status"].(float64) != u.Status {
-				// log.Println("状态改变协程同步之策略协程", order["status"])
+				log.Println("状态改变协程同步之策略协程", order["status"])
 				switch order["status"].(float64) {
 				case 2:
 					// 发送暂停
@@ -116,13 +116,13 @@ func NewUser() {
 					if u.Status != -1 {
 						Ch <- JobChan{Id: u.ID, Run: -1}
 					}
-				case 3:
-					// 发送删除
-					// u.Status = float64(3)
-					// log.Println("删除任务")
-					// Ch <- JobChan{Id: u.ID, Run: 3}
-					// u.Update()
-					UserDB.Delete(&u)
+				// case 3:
+				// 发送删除
+				// u.Status = float64(3)
+				// log.Println("删除任务")
+				// Ch <- JobChan{Id: u.ID, Run: 3}
+				// u.Update()
+				// UserDB.Delete(&u)
 				default:
 					// 1
 					u.Status = 1

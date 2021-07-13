@@ -103,6 +103,8 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 
 // NewGrid 实例化对象，并验证api key的正确性
 func NewGrid(grid *[]hs.Grid, symbol *SymbolCategory) (*Trader, error) {
+
+	log.Println(symbol)
 	var cli *Cli
 	var err error
 	switch symbol.Category {

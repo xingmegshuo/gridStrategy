@@ -42,7 +42,7 @@ func CrawRun() {
 	Hurl := "https://" + h.Url
 	xhttp(Hurl+"/v1/common/symbols", "火币交易对")
 
-	go xhttpCraw(Hurl + "/market/tickers")
+	// go xhttpCraw(Hurl + "/market/tickers")
 }
 
 // xhttp 缓存信息

@@ -49,11 +49,13 @@ func WriteCache(name string, t time.Duration) {
 		case "db_task_category":
 			db.Raw("select `id`,`name` from db_task_category").Scan(&Data)
 		case "db_task_order":
-			db.Raw("select `id`,`customer_id`,`category_id`,`task_coin_name`,`num`,`price_add`,`price_stop`,`hold_num`,`status` from db_task_order").Scan(&Data)
+			db.Raw("select * from db_task_order").Scan(&Data)
 			coin := ""
 			for _, v := range Data {
 				db.Raw("select `name` from db_task_coin where `en_name` = ?", v["task_coin_name"]).Scan(&coin)
 				v["task_coin_name"] = coin
+				// v["now_price"] = 0.0717
+				v["money"] = 300
 			}
 		}
 		byteData, _ := json.Marshal(Data)

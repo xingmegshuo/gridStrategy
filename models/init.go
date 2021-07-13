@@ -56,7 +56,7 @@ func init() {
 	}
 	UserDB = userDB
 	DB = db
-	db.AutoMigrate(&Job{}, &Host{}, User{})
+	db.AutoMigrate(&Job{},&Host{},&User{},&RebotLog{})
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "127.0.0.1:6379",

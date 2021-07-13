@@ -10,7 +10,7 @@ package job
 
 import (
 	"sync"
-	model"zmyjobs/models"
+	model "zmyjobs/models"
 
 	"github.com/robfig/cron"
 )
@@ -22,7 +22,7 @@ var Wg sync.WaitGroup
 func Init() {
 	log.Println("start job")
 	Wg.Add(1)
-	//InitJob(*job,TestRun)
+	// InitJob(*job,TestRun)
 	InitJob(*user, UserJobRun)
 	InitJob(*crawJob, CrawRun)
 }

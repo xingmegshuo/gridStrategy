@@ -26,19 +26,23 @@ var Ch = make(chan JobChan)
 
 type User struct {
 	gorm.Model
-	Status   float64 //
-	Strategy string
-	IsRun    int64  // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败
-	Name     string // 交易对
-	ApiKey   string
-	Secret   string
-	Category string
-	ObjectId int32
-	MinPrice string
-	MaxPrice string
-	Total    string
-	Number   float64
-	Error    string
+	Status    float64 //
+	BasePrice float64
+	Money     float64
+	Base      int
+	Type      float64
+	Strategy  string
+	IsRun     int64  // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败
+	Name      string // 交易对
+	ApiKey    string
+	Secret    string
+	Category  string
+	ObjectId  int32
+	MinPrice  string
+	MaxPrice  string
+	Total     string
+	Number    float64
+	Error     string
 }
 
 // NewUser 从缓存获取如果数据库不存在就添加
@@ -77,13 +81,17 @@ func NewUser() {
 					ApiKey:   NewApi[order["category_id"]][order["customer_id"]]["apikey"].(string),
 					Secret:   NewApi[order["category_id"]][order["customer_id"]]["secret"].(string),
 					Category: NewApi[order["category_id"]][order["customer_id"]]["category"].(string),
-					Name:     parseSymbol(order["task_coin_name"].(string)),
+					Name:     ParseSymbol(order["task_coin_name"].(string)),
 					IsRun:    -1,
-					MinPrice: order["price_stop"].(string),
-					MaxPrice: order["price_add"].(string),
-					Number:   order["num"].(float64),
-					Total:    order["hold_num"].(string),
-					Status:   1,
+					Strategy: parseInput(order),
+					// MinPrice: order["price_stop"].(string),
+					// MaxPrice: order["price_add"].(string),
+					Money:  order["money"].(float64),
+					Number: order["num"].(float64),
+					// Total:    order["hold_num"].(string),
+					Type:   order["frequency"].(float64),
+					Status: 1,
+					Base:   1,
 				}
 				DB.Create(&u)
 			}
@@ -159,7 +167,28 @@ func StopUser() {
 }
 
 // parseSymbol 解析交易对
-func parseSymbol(s string) string {
+func ParseSymbol(s string) string {
 	s = strings.Replace(s, "/", "", 1)
 	return strings.ToLower(s)
+}
+
+// parseInput 策略输入处理
+func parseInput(order map[string]interface{}) string {
+	var strategy = map[string]interface{}{}
+	strategy["FirstBuy"] = order["price"] // 首单数量
+	// strategy["BuyRate"] = order["price"].(float64) * order["price_rate"].(float64) // 补仓数量
+	strategy["rate"] = order["price_rate"]     // 补仓比例
+	strategy["growth"] = order["price_growth"] // 补仓增幅比例
+	// strategy["BuyGrowth"] = order["price"].(float64) * order["price_growth"].(float64) // 补仓增幅数量
+	strategy["callback"] = order["price_callback"] // 回调比例
+	strategy["reduce"] = order["price_reduce"]     // 回降比例
+	strategy["Type"] = order["frequency"]          // 类型，等于1为单次，等于2为循环执行
+	strategy["stop"] = order["price_stop"]         // 止盈比例
+	strategy["Strategy"] = order["strategy_id"]    // 策略分类
+	strategy["NowPrice"] = order["now_price"]      // 当前价格
+	strategy["add"] = order["price_add"]           // 加仓金额
+	strategy["types"] = order["strategy_id"]       // 分类
+	strategy["reset"] = order["price_repair"]      // 补仓复位
+	str, _ := json.Marshal(&strategy)
+	return string(str)
 }

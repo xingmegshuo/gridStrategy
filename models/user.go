@@ -118,10 +118,11 @@ func NewUser() {
 					}
 				case 3:
 					// 发送删除
-					u.Status = float64(3)
+					// u.Status = float64(3)
 					// log.Println("删除任务")
 					// Ch <- JobChan{Id: u.ID, Run: 3}
-					u.Update()
+					// u.Update()
+					UserDB.Delete(&u)
 				default:
 					// 1
 					u.Status = 1

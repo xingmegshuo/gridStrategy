@@ -62,15 +62,17 @@ func NewUser() {
 	var info = make(map[string]interface{})
 	var useApi = make(map[interface{}]map[string]interface{})
 	for _, v := range api {
+		log.Println(v)
 		info["apikey"] = v["apikey"]
 		info["secret"] = v["secretkey"]
 		info["category"] = Category[v["category_id"]]
 		useApi[v["member_id"]] = info
+		log.Println(useApi)
 		NewApi[v["category_id"]] = useApi
 	}
-	log.Println(NewApi)
+	// log.Println(NewApi)
 	for _, order := range orders {
-		log.Println(NewApi[order["category_id"]][order["customer_id"]])
+		// log.Println(NewApi[order["category_id"]][order["customer_id"]])
 		// 符合条件的订单
 		if _, Ok := cacheNone[order["id"]]; !Ok {
 			if NewApi[order["category_id"]] != nil && NewApi[order["category_id"]][order["customer_id"]] != nil {

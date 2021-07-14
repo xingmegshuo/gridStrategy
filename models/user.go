@@ -68,7 +68,7 @@ func NewUser() {
 		useApi[v["member_id"]] = info
 		NewApi[v["category_id"]] = useApi
 	}
-	//log.Println(NewApi)
+	log.Println(NewApi)
 	for _, order := range orders {
 		log.Println(NewApi[order["category_id"]][order["customer_id"]])
 		// 符合条件的订单

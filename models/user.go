@@ -71,7 +71,7 @@ func NewUser() {
 
 	// log.Println(NewApi)
 	for _, order := range orders {
-		// 	// log.Println(NewApi[order["category_id"]][order["customer_id"]])
+		log.Println(NewApi[order["category_id"]], "---------")
 		// 	// 符合条件的订单
 		if _, Ok := cacheNone[order["id"]]; !Ok {
 			if NewApi[order["category_id"]] != nil && NewApi[order["category_id"]][order["customer_id"]] != nil {
@@ -80,7 +80,7 @@ func NewUser() {
 				result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 				// 			// 条件 数据库未找到，订单启用，创建新的任务
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) && order["status"].(float64) == 1 {
-					log.Println(NewApi[order["customer_id"]])
+					// log.Println(NewApi[order["customer_id"]])
 					u = User{
 						ObjectId: int32(order["id"].(float64)),
 						ApiKey:   NewApi[order["customer_id"]][order["category_id"]]["apikey"].(string),

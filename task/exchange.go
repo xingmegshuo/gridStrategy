@@ -249,7 +249,8 @@ func ParseStrategy(u model.User) *grid.Args {
 	l.Println("当前价格", minPrice)
 	for i := 1; i < int(u.Number); i++ {
 		needMoney += arg.FirstBuy * (float64(i-1)*arg.AddRate + arg.Rate) * 0.01
-		minPrice -= arg.Price * (float64(i-1)*arg.AddRate + arg.Rate) * 0.01
+		// 当前需要修改
+		minPrice -= arg.Price * (float64(i-1)*arg.AddRate + arg.Rate*0.1) * 0.01
 	}
 	arg.NeedMoney = needMoney + arg.FirstBuy
 	arg.MinPrice = minPrice

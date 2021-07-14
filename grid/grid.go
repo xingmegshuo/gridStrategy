@@ -67,6 +67,8 @@ type Trader struct {
 	last      decimal.Decimal
 	u         model.User
 	basePrice decimal.Decimal
+	over      bool
+	hold      decimal.Decimal
 }
 
 // Run 跑模型交易
@@ -156,9 +158,16 @@ func (t *Trader) Trade(ctx context.Context, arg *Args) {
 						t.u.Update()
 						// 执行报错就关闭
 						GridDone <- 1
-					} else {
+					} else if t.over == true {
 						// 策略执行完毕
+						t.u.Money, _ = t.cost.Mul(t.amount).Float64()
+						// 盈利ctx
+						t.u.Money = t.u.Money - arg.NeedMoney
 						t.u.IsRun = 1
+						t.u.Update()
+						GridDone <- 1
+					} else {
+						t.u.IsRun = 2
 						t.u.Update()
 						GridDone <- 1
 					}
@@ -169,18 +178,29 @@ func (t *Trader) Trade(ctx context.Context, arg *Args) {
 
 }
 
-func (t *Trader) log(price decimal.Decimal, ty string, num int, hold decimal.Decimal, rate float64, pay float64, money float64) {
+func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
+	hold decimal.Decimal, rate float64, buy string) {
 	p, _ := price.Float64()
 	h, _ := hold.Float64()
+	pay, _ := price.Mul(hold).Float64()
+	money, _ := price.Mul(hold).Float64()
+	t.GetMoeny()
+	account, _ := t.hold.Float64()
 	info := model.RebotLog{
-		Price:     p,
-		UserID:    t.u.ID,
-		Types:     ty,
-		AddNum:    num,
-		HoldNum:   h,
-		HoldMoney: money,
-		PayMoney:  pay,
-		AddRate:   rate,
+		BaseCoin:     t.symbol.BaseCurrency,
+		GetCoin:      t.symbol.QuoteCurrency,
+		OrderId:      orderId,
+		Price:        p,
+		UserID:       t.u.ID,
+		Types:        ty,
+		AddNum:       num,
+		HoldNum:      h,
+		HoldMoney:    money,
+		PayMoney:     pay,
+		AddRate:      rate,
+		BuyOrSell:    buy,
+		Status:       "创建订单",
+		AccountMoney: account,
 	}
 	info.New()
 }
@@ -263,6 +283,15 @@ func (t *Trader) ReBalance(ctx context.Context, arg *Args) error {
 	return nil
 }
 
+func (t *Trader) GetMoeny() {
+	balance, err := t.ex.huobi.GetSpotBalance()
+	if err != nil {
+		t.ErrString = fmt.Sprintf("error when get balance in rebalance: %s", err)
+	}
+	moneyHeld := balance[t.symbol.QuoteCurrency]
+	t.hold = moneyHeld
+}
+
 func (t *Trader) Close(ctx context.Context) {
 	// _ = t.mdb.Client().Disconnect(ctx)
 	log.Println("----------策略退出")
@@ -289,15 +318,17 @@ func (t *Trader) OrderUpdateHandler(response interface{}) {
 			return
 		}
 		o := subOrderResponse.Data
-		//log.Printf("Order update, event: %s, symbol: %s, type: %s, id: %d, clientId: %s, status: %s",
-		//	o.EventType, o.Symbol, o.Type, o.OrderId, o.ClientOrderId, o.OrderStatus)
+		log.Printf("Order update, event: %s, symbol: %s, type: %s, id: %d, clientId: %s, status: %s",
+			o.EventType, o.Symbol, o.Type, o.OrderId, o.ClientOrderId, o.OrderStatus)
 		switch o.EventType {
 		case "creation":
 			log.Printf("order created, orderId: %d, clientOrderId: %s", o.OrderId, o.ClientOrderId)
+
 		case "cancellation":
 			log.Printf("order cancelled, orderId: %d, clientOrderId: %s", o.OrderId, o.ClientOrderId)
 		case "trade":
 			log.Printf("order filled, orderId: %d, clientOrderId: %s, fill type: %s", o.OrderId, o.ClientOrderId, o.OrderStatus)
+			model.RebotUpdateBy(o.TradeId, "成功")
 			go t.processOrderTrade(o.TradeId, uint64(o.OrderId), o.ClientOrderId, o.OrderStatus, o.TradePrice, o.TradeVolume, o.RemainAmt)
 		default:
 			log.Printf("unknown eventType, should never happen, orderId: %d, clientOrderId: %s, eventType: %s",
@@ -371,25 +402,27 @@ func (t *Trader) processOrderTrade(tradeId int64, orderId uint64, clientOrderId,
 			"remainAmount", remainAmount)
 		return
 	}
-	if strings.HasPrefix(clientOrderId, "b-") {
-		// buy order filled
-		if orderId != t.grids[t.base+1].Order {
-			log.Printf("[ERROR] buy order position is NOT the base+1, base: %d", t.base)
-			return
-		}
-		t.grids[t.base+1].Order = 0
-		t.down()
-	} else if strings.HasPrefix(clientOrderId, "s-") {
-		// sell order filled
-		if orderId != t.grids[t.base-1].Order {
-			log.Printf("[ERROR] sell order position is NOT the base+1, base: %d", t.base)
-			return
-		}
-		t.grids[t.base-1].Order = 0
-		t.up()
-	} else {
-		log.Printf("I don't know the clientOrderId: %s, maybe it's a manual order: %d", clientOrderId, orderId)
-	}
+	// if strings.HasPrefix(clientOrderId, "b-") {
+	// 	// buy order filled
+	// 	if orderId != t.grids[t.base+1].Order {
+	// 		log.Printf("[ERROR] buy order position is NOT the base+1, base: %d", t.base)
+	// 		return
+	// 	}
+	// 	// t.grids[t.base+1].Order = 0
+	// 	t.down()
+	// } else {
+	// 	log.Printf("I don't know the clientOrderId: %s, maybe it's a manual order: %d", clientOrderId, orderId)
+	// }
+	// else if strings.HasPrefix(clientOrderId, "s-") {
+	// sell order filled
+	// if orderId != t.grids[t.base-1].Order {
+	// log.Printf("[ERROR] sell order position is NOT the base+1, base: %d", t.base)
+	// return
+	// }
+	// t.grids[t.base-1].Order = 0
+	// t.up()
+	// }
+
 }
 
 func (t *Trader) processClearTrade(trade huobi.Trade) {
@@ -414,18 +447,16 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 	log.Println("Average cost update", "cost", t.cost)
 }
 
-func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
+func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate float64) (uint64, error) {
 	log.Printf("[Order][buy] price: %s, amount: %s", price, amount)
+	t.log(clientOrderId, price, "限价", t.base+1, amount, rate, "买入")
 	return t.ex.huobi.PlaceOrder(huobi.OrderTypeBuyLimit, t.symbol.Symbol, clientOrderId, price, amount)
 }
 
 func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
 	log.Printf("[Order][sell] price: %s, amount: %s", price, amount)
+	t.log(clientOrderId, price, "限价", t.base+1, amount, 0, "卖了")
 	return t.ex.huobi.PlaceOrder(huobi.OrderTypeSellLimit, t.symbol.Symbol, clientOrderId, price, amount)
-}
-
-func (t *Trader) Buy() {
-
 }
 
 // setupGridOrders 测试
@@ -438,6 +469,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 	z := 0
 	t.last = decimal.NewFromFloat(arg.Price)
 	t.basePrice = t.last
+	var pay decimal.Decimal
 	//var now decimal.Decimal
 	var (
 		low  = t.last
@@ -469,7 +501,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 			l.Println("第一次买入:", price, t.grids[t.base].AmountBuy)
 			// t.base++
 			clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-			orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy)
+			orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, 0)
 			if err != nil {
 				log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 				continue
@@ -479,7 +511,8 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 				low = price
 				high = price
 				t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
-				t.log(price, "限价", t.base, t.amount, 0, 0, 0)
+				pay = t.amount.Mul(price).Add(pay)
+				model.AsyncData(t.u.ObjectId, t.amount, pay.Div(t.amount), pay)
 			}
 			t.grids[t.base-1].Order = orderId
 		}
@@ -491,18 +524,19 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 		if count%2 == 0 {
 			// 上涨
 			if z > d {
-				// 现在价值,等待盈利卖出
+				// 现在价值,等待盈利卖出 最高价-当前价的比例
 				s, _ := high.Sub(price).Div(t.basePrice).Float64()
 				if win >= arg.Stop || s > arg.Reduce {
 					l.Println("卖出:", price, t.amount)
-
 					clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
-					orderId, err := t.sell(clientOrderId, price, t.amount)
+					_, err := t.sell(clientOrderId, price, t.amount)
 					if err != nil {
 						log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 						continue
 					} else {
-						t.log(price, "限价/卖出", t.base, t.amount, float64(orderId), 0, 0)
+						t.over = true
+						t.cost = price
+						model.AsyncData(t.u.ObjectId, 0, 0, 0)
 					}
 				}
 				return
@@ -510,13 +544,16 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 		} else {
 			// 下跌
 			if t.base != len(t.grids)-1 {
-				c, _ := low.Sub(t.last).Div(base).Float64()
-				if c >= arg.AddRate*float64(t.base-2)+arg.Rate {
+				// priceRate := arg.AddRate*float64(t.base-1)+arg.Rate
+				priceRate := float64(0.05)
+				// 当前价-上次交易价
+				c, _ := price.Sub(t.last).Div(base).Float64()
+				if c >= priceRate {
 					// 继续跌
 					// l.Println("第次买入:", t.base, price, t.grids[t.base].AmountBuy, c, win)
 					// t.base++
 					clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-					orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy)
+					orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, arg.AddRate*float64(t.base-1)+arg.Rate)
 					if err != nil {
 						log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 						continue
@@ -524,19 +561,21 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 						t.base++
 						t.last = price
 						t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
+						pay = t.amount.Mul(price).Add(pay)
 						low = price
 						high = price
-						t.log(price, "限价/卖出", t.base, t.amount, 0, arg.AddRate*float64(t.base-2)+arg.Rate, 0)
+						model.AsyncData(t.u.ObjectId, t.amount, pay.Div(t.amount), pay)
+
 					}
 					t.grids[t.base].Order = orderId
 				}
 			} else {
-				// 最后一单 回调
+				// 最后一单 回调 当前价-最低价比例
 				c, _ := price.Sub(low).Div(base).Float64()
 				if c >= arg.Callback {
 					l.Println("最后一次买入:", price, t.grids[t.base].AmountBuy, c)
 					clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-					orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy)
+					orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, arg.AddRate*float64(t.base-1)+arg.Rate)
 					if err != nil {
 						log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 						continue
@@ -546,7 +585,8 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 						low = price
 						high = price
 						t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
-						t.log(price, "限价", t.base, t.amount, 0, arg.Callback, 0)
+						pay = t.amount.Mul(price).Add(pay)
+						model.AsyncData(t.u.ObjectId, t.amount, pay.Div(t.amount), pay)
 					}
 					t.grids[t.base].Order = orderId
 				}
@@ -601,93 +641,93 @@ func (t *Trader) cancelAllOrders(ctx context.Context) {
 // -1: sell
 // 2: no enough money
 // -2: no enough coin
-func (t *Trader) assetRebalancing(moneyNeed, coinNeed, moneyHeld, coinHeld, price decimal.Decimal) (direct int, amount decimal.Decimal) {
-	if moneyNeed.GreaterThan(moneyHeld) {
-		// sell coin
-		moneyDelta := moneyNeed.Sub(moneyHeld)
-		sellAmount := moneyDelta.Div(price).Round(t.symbol.AmountPrecision)
-		if coinHeld.Cmp(coinNeed.Add(sellAmount)) == -1 {
-			log.Errorf("no enough coin for rebalance: need hold %s and sell %s (%s in total), only have %s",
-				coinNeed, sellAmount, coinNeed.Add(sellAmount), coinHeld)
-			direct = -2
-			return
-		}
+// func (t *Trader) assetRebalancing(moneyNeed, coinNeed, moneyHeld, coinHeld, price decimal.Decimal) (direct int, amount decimal.Decimal) {
+// 	if moneyNeed.GreaterThan(moneyHeld) {
+// 		// sell coin
+// 		moneyDelta := moneyNeed.Sub(moneyHeld)
+// 		sellAmount := moneyDelta.Div(price).Round(t.symbol.AmountPrecision)
+// 		if coinHeld.Cmp(coinNeed.Add(sellAmount)) == -1 {
+// 			log.Errorf("no enough coin for rebalance: need hold %s and sell %s (%s in total), only have %s",
+// 				coinNeed, sellAmount, coinNeed.Add(sellAmount), coinHeld)
+// 			direct = -2
+// 			return
+// 		}
 
-		if sellAmount.LessThan(t.symbol.MinAmount) {
-			log.Printf("sell amount %s less than minAmount(%s), won't sell", sellAmount, t.symbol.MinAmount)
-			direct = 0
-			return
-		}
-		if t.symbol.MinTotal.GreaterThan(price.Mul(sellAmount)) {
-			log.Printf("sell total %s less than minTotal(%s), won't sell", price.Mul(sellAmount), t.symbol.MinTotal)
-			direct = 0
-			return
-		}
-		direct = -1
-		amount = sellAmount
-	} else {
-		// buy coin
-		if coinNeed.LessThan(coinHeld) {
-			log.Printf("no need to rebalance: need coin %s, has %s, need money %s, has %s",
-				coinNeed, coinHeld, moneyNeed, moneyHeld)
-			direct = 0
-			return
-		}
-		coinDelta := coinNeed.Sub(coinHeld).Round(t.symbol.AmountPrecision)
-		buyTotal := coinDelta.Mul(price)
-		if moneyHeld.LessThan(moneyNeed.Add(buyTotal)) {
-			log.Printf("no enough money for rebalance: need hold %s and spend %s (%s in total)，only have %s",
-				moneyNeed, buyTotal, moneyNeed.Add(buyTotal), moneyHeld)
-			direct = 2
-			return
-		}
-		if coinDelta.LessThan(t.symbol.MinAmount) {
-			log.Printf("buy amount %s less than minAmount(%s), won't sell", coinDelta, t.symbol.MinAmount)
-			direct = 0
-			return
-		}
-		if buyTotal.LessThan(t.symbol.MinTotal) {
-			log.Printf("buy total %s less than minTotal(%s), won't sell", buyTotal, t.symbol.MinTotal)
-			direct = 0
-			return
-		}
-		direct = 1
-		amount = coinDelta
-	}
-	return
-}
+// 		if sellAmount.LessThan(t.symbol.MinAmount) {
+// 			log.Printf("sell amount %s less than minAmount(%s), won't sell", sellAmount, t.symbol.MinAmount)
+// 			direct = 0
+// 			return
+// 		}
+// 		if t.symbol.MinTotal.GreaterThan(price.Mul(sellAmount)) {
+// 			log.Printf("sell total %s less than minTotal(%s), won't sell", price.Mul(sellAmount), t.symbol.MinTotal)
+// 			direct = 0
+// 			return
+// 		}
+// 		direct = -1
+// 		amount = sellAmount
+// 	} else {
+// 		// buy coin
+// 		if coinNeed.LessThan(coinHeld) {
+// 			log.Printf("no need to rebalance: need coin %s, has %s, need money %s, has %s",
+// 				coinNeed, coinHeld, moneyNeed, moneyHeld)
+// 			direct = 0
+// 			return
+// 		}
+// 		coinDelta := coinNeed.Sub(coinHeld).Round(t.symbol.AmountPrecision)
+// 		buyTotal := coinDelta.Mul(price)
+// 		if moneyHeld.LessThan(moneyNeed.Add(buyTotal)) {
+// 			log.Printf("no enough money for rebalance: need hold %s and spend %s (%s in total)，only have %s",
+// 				moneyNeed, buyTotal, moneyNeed.Add(buyTotal), moneyHeld)
+// 			direct = 2
+// 			return
+// 		}
+// 		if coinDelta.LessThan(t.symbol.MinAmount) {
+// 			log.Printf("buy amount %s less than minAmount(%s), won't sell", coinDelta, t.symbol.MinAmount)
+// 			direct = 0
+// 			return
+// 		}
+// 		if buyTotal.LessThan(t.symbol.MinTotal) {
+// 			log.Printf("buy total %s less than minTotal(%s), won't sell", buyTotal, t.symbol.MinTotal)
+// 			direct = 0
+// 			return
+// 		}
+// 		direct = 1
+// 		amount = coinDelta
+// 	}
+// 	return
+// }
 
-func (t *Trader) up() {
-	// make sure base >= 0
-	if t.base == 0 {
-		log.Printf("grid base = 0, up OUT")
-		return
-	}
-	t.base = t.base - 1
-	if t.base < len(t.grids)-2 {
-		// place buy order
-		clientOrderId := fmt.Sprintf("b-%d-%d", t.base+1, time.Now().Unix())
-		if orderId, err := t.buy(clientOrderId, t.grids[t.base+1].Price, t.grids[t.base+1].AmountBuy); err == nil {
-			t.grids[t.base+1].Order = orderId
-		}
-	}
-}
+// func (t *Trader) up() {
+// 	// make sure base >= 0
+// 	if t.base == 0 {
+// 		log.Printf("grid base = 0, up OUT")
+// 		return
+// 	}
+// 	t.base = t.base - 1
+// 	if t.base < len(t.grids)-2 {
+// 		// place buy order
+// 		clientOrderId := fmt.Sprintf("b-%d-%d", t.base+1, time.Now().Unix())
+// 		if orderId, err := t.buy(clientOrderId, t.grids[t.base+1].Price, t.grids[t.base+1].AmountBuy); err == nil {
+// 			t.grids[t.base+1].Order = orderId
+// 		}
+// 	}
+// }
 
-func (t *Trader) down() {
-	// make sure base <= len(grids)
-	if t.base == len(t.grids) {
-		log.Printf("grid base = %d, down OUT", t.base)
-		return
-	}
-	t.base++
-	if t.base > 0 {
-		// place sell order
-		clientOrderId := fmt.Sprintf("s-%d-%d", t.base-1, time.Now().Unix())
-		if orderId, err := t.sell(clientOrderId, t.grids[t.base-1].Price, t.grids[t.base-1].AmountSell); err == nil {
-			t.grids[t.base-1].Order = orderId
-		}
-	}
-}
+// func (t *Trader) down() {
+// 	// make sure base <= len(grids)
+// 	if t.base == len(t.grids) {
+// 		log.Printf("grid base = %d, down OUT", t.base)
+// 		return
+// 	}
+// 	t.base++
+// 	if t.base > 0 {
+// 		// place sell order
+// 		clientOrderId := fmt.Sprintf("s-%d-%d", t.base-1, time.Now().Unix())
+// 		if orderId, err := t.sell(clientOrderId, t.grids[t.base-1].Price, t.grids[t.base-1].AmountSell); err == nil {
+// 			t.grids[t.base-1].Order = orderId
+// 		}
+// 	}
+// }
 
 func (t *Trader) ErrLoad() string {
 	return t.ErrString

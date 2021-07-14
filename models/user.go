@@ -78,6 +78,7 @@ func NewUser() {
 				result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 				// 条件 数据库未找到，订单启用，创建新的任务
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) && order["status"].(float64) == 1 {
+					log.Println(NewApi[order["category_id"]][order["customer_id"]])
 					u = User{
 						ObjectId: int32(order["id"].(float64)),
 						ApiKey:   NewApi[order["category_id"]][order["customer_id"]]["apikey"].(string),
@@ -96,6 +97,8 @@ func NewUser() {
 						Base:   0,
 					}
 					DB.Create(&u)
+				} else {
+					cacheNone[order["id"]] = order["status"]
 				}
 				// 启用
 				// if u.IsRun == -2 {

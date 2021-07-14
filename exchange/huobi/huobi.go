@@ -268,6 +268,8 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 			log.Println("close websocket 1 ----------")
 			hb.UnSubscribe(symbol, clientId)
 			log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+			time.Sleep(time.Second * 5)
+
 			hb.Close()
 			return
 		default:
@@ -366,8 +368,9 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 		case <-ctx.Done():
 			log.Println("close websocket 2 ----------")
 			hb.UnSubscribe(symbol, clientId)
+			time.Sleep(time.Second * 5)
 			hb.Close()
-			log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+			// log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 			return
 		default:
 

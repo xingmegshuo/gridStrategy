@@ -22,7 +22,7 @@ type JobChan struct {
 	Run int
 }
 
-var cacheNone map[interface{}]interface{}
+var cacheNone = map[interface{}]interface{}{}
 
 var Ch = make(chan JobChan)
 

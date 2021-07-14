@@ -38,14 +38,14 @@ func init() {
 		}
 	}
 	//写入文件
-	_, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	src, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		fmt.Println("err", err)
 	}
 	//设置输出
 	Log = logrus.New()
 
-	// Log.Out = src
+	Log.Out = src
 	//设置日志级别
 	// Log.SetLevel(logrus.DebugLevel)
 	//设置日志格式

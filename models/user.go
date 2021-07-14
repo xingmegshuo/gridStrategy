@@ -94,15 +94,15 @@ func NewUser() {
 					Base:   1,
 				}
 				DB.Create(&u)
-			} else {
-				// 启用
-
-				// if u.IsRun == -2 {
-				// 	log.Println("检测到策略执行出错.................")
-				// 	Ch <- JobChan{u.ID, 000}
-				// }
-				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
-
+			}
+			// 启用
+			// if u.IsRun == -2 {
+			// 	log.Println("检测到策略执行出错.................")
+			// 	Ch <- JobChan{u.ID, 000}
+			// }
+			// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
+			res := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
+			if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
 				if order["status"].(float64) != u.Status {
 					log.Println("状态改变协程同步之策略协程", order["status"])
 					switch order["status"].(float64) {

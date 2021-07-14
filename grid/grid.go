@@ -465,11 +465,11 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 		}
 		// 计算盈利
 		win, _ := price.Sub(t.basePrice).Mul(t.amount).Float64()
-		if t.base == 1 {
+		if t.base == 0 {
 			l.Println("第一次买入:", price, t.grids[t.base].AmountBuy)
 			// t.base++
 			clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-			orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy)
+			orderId, err := t.buy(clientOrderId, price, t.grids[t.base-1].AmountBuy)
 			if err != nil {
 				log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 				continue
@@ -481,7 +481,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 				t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
 				t.log(price, "限价", t.base, t.amount, 0, 0, 0)
 			}
-			t.grids[t.base].Order = orderId
+			t.grids[t.base-1].Order = orderId
 		}
 		// if win <= -0.15 {
 		// 	l.Println("卖出:", price, t.amount)
@@ -509,7 +509,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 			}
 		} else {
 			// 下跌
-			if t.base != len(t.grids) {
+			if t.base != len(t.grids)-1 {
 				c, _ := low.Sub(t.last).Div(base).Float64()
 				if c >= arg.AddRate*float64(t.base-2)+arg.Rate {
 					// 继续跌

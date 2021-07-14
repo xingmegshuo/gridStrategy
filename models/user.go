@@ -91,7 +91,7 @@ func NewUser() {
 					// Total:    order["hold_num"].(string),
 					Type:   order["frequency"].(float64),
 					Status: 1,
-					Base:   1,
+					Base:   0,
 				}
 				DB.Create(&u)
 			}

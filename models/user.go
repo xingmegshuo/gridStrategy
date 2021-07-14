@@ -66,8 +66,8 @@ func NewUser() {
 		info["secret"] = v["secretkey"]
 		info["category"] = Category[v["category_id"]]
 		useApi[v["member_id"]] = info
-		NewApi[v["category_id"]] = useApi
-		log.Println(NewApi, "----------------")
+		// NewApi[v["category_id"]] = useApi
+		log.Println(useApi, "----------------")
 	}
 
 	// log.Println(NewApi)

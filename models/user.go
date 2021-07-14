@@ -10,7 +10,6 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"gorm.io/gorm"
@@ -71,87 +70,87 @@ func NewUser() {
 	}
 
 	// log.Println(NewApi)
-	for _, order := range orders {
-		// log.Println(NewApi[order["category_id"]][order["customer_id"]])
-		// 符合条件的订单
-		if _, Ok := cacheNone[order["id"]]; !Ok {
-			if NewApi[order["category_id"]] != nil && NewApi[order["category_id"]][order["customer_id"]] != nil {
-				var u User
-				// 数据库查找存在与否
-				result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
-				// 条件 数据库未找到，订单启用，创建新的任务
-				if errors.Is(result.Error, gorm.ErrRecordNotFound) && order["status"].(float64) == 1 {
-					u = User{
-						ObjectId: int32(order["id"].(float64)),
-						ApiKey:   NewApi[order["category_id"]][order["customer_id"]]["apikey"].(string),
-						Secret:   NewApi[order["category_id"]][order["customer_id"]]["secret"].(string),
-						Category: NewApi[order["category_id"]][order["customer_id"]]["category"].(string),
-						Name:     ParseSymbol(order["task_coin_name"].(string)),
-						IsRun:    -1,
-						Strategy: parseInput(order),
-						// MinPrice: order["price_stop"].(string),
-						// MaxPrice: order["price_add"].(string),
-						Money:  order["money"].(float64),
-						Number: order["num"].(float64),
-						// Total:    order["hold_num"].(string),
-						Type:   order["frequency"].(float64),
-						Status: 1,
-						Base:   0,
-					}
-					DB.Create(&u)
-				} else {
-					cacheNone[order["id"]] = order["status"]
-				}
-				// 启用
-				// if u.IsRun == -2 {
-				// 	log.Println("检测到策略执行出错.................")
-				// 	Ch <- JobChan{u.ID, 000}
-				// }
-				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
-				res := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
-				if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-					if order["status"].(float64) != u.Status {
-						log.Println("状态改变协程同步之策略协程", order["status"])
-						switch order["status"].(float64) {
-						case 2:
-							// 发送暂停
-							log.Println("发送给暂停")
-							Ch <- JobChan{Id: u.ID, Run: 2}
-						case 0:
-							// 发送禁用
-							log.Println("禁用任务")
-							if u.Status != -1 {
-								Ch <- JobChan{Id: u.ID, Run: -1}
-							}
-						// case 3:
-						// 	// 发送删除
-						// 	u.Status = float64(3)
-						// 	log.Println("删除任务")
-						// 	Ch <- JobChan{Id: u.ID, Run: 3}
-						// 	u.Update()
-						// 	UserDB.Delete(&u)
-						default:
-							// 1
-							u.Status = 1
-							if u.IsRun == 2 {
-								u.IsRun = -1
-							}
-							u.Update()
-						}
-					} else {
-						if u.Status == 1 {
-							if u.IsRun == 2 {
-								u.IsRun = -1
-							}
-							u.Update()
-						}
-					}
-				}
-			} else {
-				cacheNone[order["id"]] = order["status"]
-			}
-		}
-	}
+	// for _, order := range orders {
+	// 	// log.Println(NewApi[order["category_id"]][order["customer_id"]])
+	// 	// 符合条件的订单
+	// 	if _, Ok := cacheNone[order["id"]]; !Ok {
+	// 		if NewApi[order["category_id"]] != nil && NewApi[order["category_id"]][order["customer_id"]] != nil {
+	// 			var u User
+	// 			// 数据库查找存在与否
+	// 			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
+	// 			// 条件 数据库未找到，订单启用，创建新的任务
+	// 			if errors.Is(result.Error, gorm.ErrRecordNotFound) && order["status"].(float64) == 1 {
+	// 				u = User{
+	// 					ObjectId: int32(order["id"].(float64)),
+	// 					ApiKey:   NewApi[order["category_id"]][order["customer_id"]]["apikey"].(string),
+	// 					Secret:   NewApi[order["category_id"]][order["customer_id"]]["secret"].(string),
+	// 					Category: NewApi[order["category_id"]][order["customer_id"]]["category"].(string),
+	// 					Name:     ParseSymbol(order["task_coin_name"].(string)),
+	// 					IsRun:    -1,
+	// 					Strategy: parseInput(order),
+	// 					// MinPrice: order["price_stop"].(string),
+	// 					// MaxPrice: order["price_add"].(string),
+	// 					Money:  order["money"].(float64),
+	// 					Number: order["num"].(float64),
+	// 					// Total:    order["hold_num"].(string),
+	// 					Type:   order["frequency"].(float64),
+	// 					Status: 1,
+	// 					Base:   0,
+	// 				}
+	// 				DB.Create(&u)
+	// 			} else {
+	// 				cacheNone[order["id"]] = order["status"]
+	// 			}
+	// 			// 启用
+	// 			// if u.IsRun == -2 {
+	// 			// 	log.Println("检测到策略执行出错.................")
+	// 			// 	Ch <- JobChan{u.ID, 000}
+	// 			// }
+	// 			// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
+	// 			res := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
+	// 			if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
+	// 				if order["status"].(float64) != u.Status {
+	// 					log.Println("状态改变协程同步之策略协程", order["status"])
+	// 					switch order["status"].(float64) {
+	// 					case 2:
+	// 						// 发送暂停
+	// 						log.Println("发送给暂停")
+	// 						Ch <- JobChan{Id: u.ID, Run: 2}
+	// 					case 0:
+	// 						// 发送禁用
+	// 						log.Println("禁用任务")
+	// 						if u.Status != -1 {
+	// 							Ch <- JobChan{Id: u.ID, Run: -1}
+	// 						}
+	// 					// case 3:
+	// 					// 	// 发送删除
+	// 					// 	u.Status = float64(3)
+	// 					// 	log.Println("删除任务")
+	// 					// 	Ch <- JobChan{Id: u.ID, Run: 3}
+	// 					// 	u.Update()
+	// 					// 	UserDB.Delete(&u)
+	// 					default:
+	// 						// 1
+	// 						u.Status = 1
+	// 						if u.IsRun == 2 {
+	// 							u.IsRun = -1
+	// 						}
+	// 						u.Update()
+	// 					}
+	// 				} else {
+	// 					if u.Status == 1 {
+	// 						if u.IsRun == 2 {
+	// 							u.IsRun = -1
+	// 						}
+	// 						u.Update()
+	// 					}
+	// 				}
+	// 			}
+	// 		} else {
+	// 			cacheNone[order["id"]] = order["status"]
+	// 		}
+	// 	}
+	// }
 }
 
 // StringMap 字符串转map

@@ -58,7 +58,6 @@ func NewUser() {
 	for _, value := range category {
 		Category[value["id"]] = value["name"]
 	}
-
 	var NewApi = make(map[interface{}]map[interface{}]map[string]interface{})
 	var info = make(map[string]interface{})
 	var useApi = make(map[interface{}]map[string]interface{})
@@ -97,8 +96,6 @@ func NewUser() {
 						Base:   0,
 					}
 					DB.Create(&u)
-				} else {
-					cacheNone[order["id"]] = order["status"]
 				}
 				// 启用
 				// if u.IsRun == -2 {
@@ -145,6 +142,8 @@ func NewUser() {
 						}
 					}
 				}
+			} else {
+				cacheNone[order["id"]] = order["status"]
 			}
 		}
 	}

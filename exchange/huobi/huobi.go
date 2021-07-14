@@ -268,8 +268,6 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 			log.Println("close websocket 1 ----------")
 			hb.UnSubscribe(symbol, clientId)
 			log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-			time.Sleep(time.Second * 5)
-
 			hb.Close()
 			return
 		default:
@@ -277,7 +275,6 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 		if Connect == 0 {
 			Connect = 1
 			log.Println("开启websocket 1 ----------")
-
 			hb.Connect(true)
 		}
 

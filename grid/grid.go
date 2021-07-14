@@ -469,7 +469,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 			l.Println("第一次买入:", price, t.grids[t.base].AmountBuy)
 			// t.base++
 			clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-			orderId, err := t.buy(clientOrderId, price, t.grids[t.base-1].AmountBuy)
+			orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy)
 			if err != nil {
 				log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 				continue

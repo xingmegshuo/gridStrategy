@@ -58,9 +58,9 @@ func NewUser() {
 	for _, value := range category {
 		Category[value["id"]] = value["name"]
 	}
-	var NewApi = make(map[interface{}]map[interface{}]map[string]interface{})
+	// var NewApi = make(map[interface{}]map[interface{}]map[string]interface{})
 	var info = make(map[string]interface{})
-	var useApi = make(map[interface{}]map[string]interface{})
+	// var useApi = make(map[interface{}]map[string]interface{})
 	for _, v := range api {
 		info["apikey"] = v["apikey"]
 		info["secret"] = v["secretkey"]

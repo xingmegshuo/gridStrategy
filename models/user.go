@@ -50,31 +50,14 @@ type User struct {
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
 	//log.Println("i am working for parse data")
-	category := StringMap(GetCache("db_task_category"))
 	orders := StringMap(GetCache("db_task_order"))
-	api := StringMap(GetCache("db_task_api"))
-
-	var Category = make(map[interface{}]interface{})
-	for _, value := range category {
-		Category[value["id"]] = value["name"]
-	}
-	var NewApi = make(map[interface{}]map[interface{}]map[string]interface{})
-	var info = make(map[string]interface{})
-	var useApi = make(map[interface{}]map[string]interface{})
-	for _, v := range api {
-		info["apikey"] = v["apikey"]
-		info["secret"] = v["secretkey"]
-		info["category"] = Category[v["category_id"]]
-		useApi[v["category_id"]] = info
-		NewApi[v["member_id"]] = useApi
-	}
 
 	// log.Println(NewApi)
 	for _, order := range orders {
-		log.Println(NewApi[order["customer_id"]], "---------")
 		// 	// 符合条件的订单
 		if _, Ok := cacheNone[order["id"]]; !Ok {
-			if NewApi[order["customer_id"]] != nil && NewApi[order["customer_id"]][order["customer_id"]] != nil {
+			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
+			if b {
 				var u User
 				// 数据库查找存在与否
 				result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
@@ -83,9 +66,9 @@ func NewUser() {
 					// log.Println(NewApi[order["customer_id"]])
 					u = User{
 						ObjectId: int32(order["id"].(float64)),
-						ApiKey:   NewApi[order["customer_id"]][order["category_id"]]["apikey"].(string),
-						Secret:   NewApi[order["customer_id"]][order["category_id"]]["secret"].(string),
-						Category: NewApi[order["customer_id"]][order["category_id"]]["category"].(string),
+						ApiKey:   api,
+						Secret:   sec,
+						Category: cate,
 						Name:     ParseSymbol(order["task_coin_name"].(string)),
 						IsRun:    -1,
 						Strategy: parseInput(order),
@@ -204,4 +187,31 @@ func parseInput(order map[string]interface{}) string {
 	strategy["reset"] = order["price_repair"]      // 补仓复位
 	str, _ := json.Marshal(&strategy)
 	return string(str)
+}
+
+func GetApiConfig(memberid interface{}, category interface{}) (bool, string, string, string) {
+	var (
+		name   string
+		apiKey string
+		secret string
+	)
+	api := StringMap(GetCache("db_task_api"))
+	Category := StringMap(GetCache("db_task_category"))
+
+	for _, value := range Category {
+		if value["id"] == category {
+			name = value["name"].(string)
+		}
+	}
+	for _, a := range api {
+		if a["category_id"] == category && a["member_id"] == memberid {
+			apiKey = a["apikey"].(string)
+			secret = a["secretkey"].(string)
+		}
+	}
+	if name != "" && apiKey != "" && secret != "" {
+		return true, name, apiKey, secret
+	} else {
+		return false, "", "", ""
+	}
 }

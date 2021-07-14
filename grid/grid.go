@@ -223,8 +223,8 @@ func (t *Trader) ReBalance(ctx context.Context, arg *Args) error {
 		t.ErrString = fmt.Sprintf("error when get balance in rebalance: %s", err)
 		return err
 	}
-	moneyHeld := balance[t.quoteCurrency]
-	coinHeld := balance[t.baseCurrency]
+	moneyHeld := balance[t.symbol.QuoteCurrency]
+	coinHeld := balance[t.symbol.BaseCurrency]
 	log.Printf("account has money %s, coin %s", moneyHeld, coinHeld)
 	t.cost = price
 	t.amount = coinNeed

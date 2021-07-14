@@ -228,6 +228,7 @@ func (t *Trader) ReBalance(ctx context.Context, arg *Args) error {
 	log.Printf("account has money %s, coin %s", moneyHeld, coinHeld)
 	t.cost = price
 	t.amount = coinNeed
+	log.Println("资产:", moneyNeed, moneyHeld)
 	if moneyNeed.Cmp(moneyHeld) == 1 {
 		return errors.New("no enough money")
 	}

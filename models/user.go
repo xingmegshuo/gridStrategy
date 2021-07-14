@@ -50,7 +50,7 @@ type User struct {
 func NewUser() {
 	//log.Println("i am working for parse data")
 	category := StringMap(GetCache("db_task_category"))
-	orders := StringMap(GetCache("db_task_order"))
+	// orders := StringMap(GetCache("db_task_order"))
 	api := StringMap(GetCache("db_task_api"))
 
 	var Category = make(map[interface{}]interface{})

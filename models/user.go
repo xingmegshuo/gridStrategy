@@ -71,10 +71,10 @@ func NewUser() {
 
 	// log.Println(NewApi)
 	for _, order := range orders {
-		log.Println(NewApi[order["category_id"]], "---------")
+		log.Println(NewApi[order["customer_id"]], "---------")
 		// 	// 符合条件的订单
 		if _, Ok := cacheNone[order["id"]]; !Ok {
-			if NewApi[order["category_id"]] != nil && NewApi[order["category_id"]][order["customer_id"]] != nil {
+			if NewApi[order["customer_id"]] != nil && NewApi[order["customer_id"]][order["customer_id"]] != nil {
 				var u User
 				// 数据库查找存在与否
 				result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)

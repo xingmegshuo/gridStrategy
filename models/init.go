@@ -52,7 +52,7 @@ func init() {
 		},
 	)
 	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{Logger: newLogger})
+	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{Logger: newLogger,PrepareStmt: true})
 	// db, err := gorm.Open(sqlite.Open("config.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -60,7 +60,7 @@ func init() {
 	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	sqlDB, _ := sql.Open("mysql", dsn)
-	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{Logger: newLogger})
+	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{Logger: newLogger, PrepareStmt: true})
 	if e != nil {
 		panic("failed to connect user database")
 	}

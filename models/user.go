@@ -107,9 +107,10 @@ func NewUser() {
 					Ch <- JobChan{u.ID, 000}
 				}
 				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
-				res := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
+				var p User
+				res := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&p)
 				if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-					if order["status"].(float64) != u.Status {
+					if order["status"].(float64) != p.Status {
 						log.Println("状态改变协程同步之策略协程", order["status"])
 						switch order["status"].(float64) {
 						case 2:
@@ -119,7 +120,7 @@ func NewUser() {
 						case 0:
 							// 发送禁用
 							log.Println("禁用任务")
-							if u.Status != -1 {
+							if p.Status != -1 {
 								Ch <- JobChan{Id: u.ID, Run: -1}
 							}
 						// case 3:
@@ -131,18 +132,18 @@ func NewUser() {
 						// 	UserDB.Delete(&u)
 						default:
 							// 1
-							u.Status = 1
-							if u.IsRun == 2 {
-								u.IsRun = -1
+							p.Status = 1
+							if p.IsRun == 2 {
+								p.IsRun = -1
 							}
-							u.Update()
+							p.Update()
 						}
 					} else {
-						if u.Status == 1 {
-							if u.IsRun == 2 {
-								u.IsRun = -1
+						if p.Status == 1 {
+							if p.IsRun == 2 {
+								p.IsRun = -1
 							}
-							u.Update()
+							p.Update()
 						}
 					}
 				}

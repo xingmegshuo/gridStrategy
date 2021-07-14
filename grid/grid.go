@@ -295,7 +295,7 @@ func (t *Trader) GetMoeny() {
 func (t *Trader) Close(ctx context.Context) {
 	// _ = t.mdb.Client().Disconnect(ctx)
 	log.Println("----------策略退出")
-	t.cancelAllOrders(ctx)
+	// t.cancelAllOrders(ctx)
 	//runtime.Goexit()
 }
 

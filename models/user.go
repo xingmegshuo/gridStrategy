@@ -67,7 +67,6 @@ func NewUser() {
 		info["category"] = Category[v["category_id"]]
 		useApi[v["category_id"]] = info
 		NewApi[v["member_id"]] = useApi
-		log.Println(info, "----------------")
 	}
 
 	// log.Println(NewApi)

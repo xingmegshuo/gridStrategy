@@ -86,9 +86,11 @@ func xhttpCraw(url string) {
 				if s["symbol"].(string) == model.ParseSymbol(v["en_name"].(string))+"usdt" {
 					var coinPrice = map[string]interface{}{}
 					model.UserDB.Raw("select * from db_coin_price where coin_id = ? ", v["id"].(int32)).Scan(&coinPrice)
+					log.Println("创建数据:", coinPrice)
+
 					if coinPrice == nil {
-						log.Println("创建表")
 						model.UserDB.Table("db_coin_price").Create(map[string]interface{}{"coin_id": v["id"].(int32)})
+						continue
 					}
 					// l.Println(coinPrice, "------old")
 					coinPrice["day_amount"] = s["amount"]          // 成交量
@@ -103,7 +105,7 @@ func xhttpCraw(url string) {
 					s := fmt.Sprintf("%.2f", raf) // 涨跌幅
 					coinPrice["raf"] = base + s + "%"
 					coinPrice["update_time"] = time.Now().Unix()
-					log.Println("更新了----new", v["en_name"], v["id"])
+					// log.Println("更新了----new", v["en_name"], v["id"])
 					model.UserDB.Table("db_coin_price").Where(map[string]interface{}{"coin_id": v["id"]}).Updates(&coinPrice)
 				}
 			}

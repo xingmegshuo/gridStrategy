@@ -467,7 +467,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 	d := 0
 	t.base = t.u.Base
 	z := 0
-	t.last = decimal.NewFromFloat(arg.Price)
+	t.last = t.grids[t.base].Price
 	t.basePrice = t.last
 	var pay decimal.Decimal
 	//var now decimal.Decimal
@@ -497,6 +497,7 @@ func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
 		}
 		// 计算盈利
 		win, _ := price.Sub(t.basePrice).Mul(t.amount).Float64()
+		log.Println("当前盈利", win, "止盈:", arg.Stop, "下跌:", price.Sub(t.last).Div(base))
 		if t.base == 0 {
 			l.Println("第一次买入:", price, t.grids[t.base].AmountBuy)
 			// t.base++

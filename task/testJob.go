@@ -86,9 +86,9 @@ func xhttpCraw(url string) {
 				if s["symbol"].(string) == model.ParseSymbol(v["en_name"].(string))+"usdt" {
 					var coinPrice = map[string]interface{}{}
 					model.UserDB.Raw("select * from db_coin_price where coin_id = ? ", v["id"].(int32)).Scan(&coinPrice)
-					log.Println("创建数据:", coinPrice)
+					// log.Println("创建数据:", coinPrice)
 
-					if coinPrice == nil {
+					if len(coinPrice) == 0 {
 						model.UserDB.Table("db_coin_price").Create(map[string]interface{}{"coin_id": v["id"].(int32)})
 						continue
 					}

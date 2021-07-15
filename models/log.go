@@ -11,6 +11,7 @@ package model
 import (
 	"strconv"
 
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -47,7 +48,7 @@ type RebotLog struct {
 	AddRate      float64 // 当前补仓比例
 	Status       string  // 订单状态
 	BuyOrSell    string  // 买入还是卖出
-	AccountMoney float64  // 账户余额
+	AccountMoney float64 // 账户余额
 }
 
 func (r *RebotLog) New() {
@@ -57,7 +58,7 @@ func (r *RebotLog) New() {
 func RebotUpdateBy(orderId int64, status string) {
 	order := strconv.FormatInt(orderId, 10)
 	var r RebotLog
-	DB.Where("select * from rebot_logs where `order_id` = ?",order ).First(&r)
+	DB.Where("select * from rebot_logs where `order_id` = ?", order).First(&r)
 	r.Status = status
 	DB.Updates(&r)
 	AddModelLog(&r)
@@ -73,6 +74,7 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	//  同步当前task_order
 	var data = map[string]interface{}{}
 	//  当前单数缺少
+	log.Println("同步数据:", amount, price, money)
 	data["hold_num"] = amount
 	data["hold_price"] = price
 	data["hold_amount"] = money
@@ -81,18 +83,19 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 
 // AddModelLog 增加日志
 func AddModelLog(r *RebotLog) {
+	log.Println("add trade-----", r.Price, r.HoldMoney)
 	var data = map[string]interface{}{}
 	data["order_sn"] = r.OrderId
 	data["order_id"] = r.UserID
-	if r.BuyOrSell == "买入"{
+	if r.BuyOrSell == "买入" {
 		data["type"] = 0
-	}else{
+	} else {
 		data["type"] = 1
 	}
-	data["price"] = r.Price
-	data["num"] = r.HoldNum
-	data["amount"] = r.HoldMoney
-	data["left_amount"] = r.AccountMoney
+	data["price"] = decimal.NewFromFloat(r.Price)
+	data["num"] = decimal.NewFromFloat(r.HoldNum)
+	data["amount"] = decimal.NewFromFloat(r.HoldMoney)
+	data["left_amount"] = decimal.NewFromFloat(r.AccountMoney)
 	data["status"] = 1
 	UserDB.Table("db_task_order_profit").Create(&data)
 }

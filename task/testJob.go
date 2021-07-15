@@ -41,7 +41,7 @@ func CrawRun() {
 	h.Get("火币")
 	Hurl := "https://" + h.Url
 	xhttp(Hurl+"/v1/common/symbols", "火币交易对")
-	// go xhttpCraw(Hurl + "/market/tickers")
+	go xhttpCraw(Hurl + "/market/tickers")
 }
 
 // xhttp 缓存信息
@@ -87,6 +87,7 @@ func xhttpCraw(url string) {
 					var coinPrice = map[string]interface{}{}
 					model.UserDB.Raw("select * from db_coin_price where coin_id = ? ", v["id"].(int32)).Scan(&coinPrice)
 					if coinPrice == nil {
+						log.Println("创建表")
 						model.UserDB.Table("db_coin_price").Create(map[string]interface{}{"coin_id": v["id"].(int32)})
 					}
 					// l.Println(coinPrice, "------old")
@@ -102,7 +103,7 @@ func xhttpCraw(url string) {
 					s := fmt.Sprintf("%.2f", raf) // 涨跌幅
 					coinPrice["raf"] = base + s + "%"
 					coinPrice["update_time"] = time.Now().Unix()
-					// l.Println("更新了----new", v["en_name"], v["id"])
+					log.Println("更新了----new", v["en_name"], v["id"])
 					model.UserDB.Table("db_coin_price").Where(map[string]interface{}{"coin_id": v["id"]}).Updates(&coinPrice)
 				}
 			}

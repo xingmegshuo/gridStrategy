@@ -170,7 +170,7 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 		// 补仓比例
 		rate := arg.Rate + (arg.AddRate * float64(i-2))
 		l.Println("补仓比例", rate)
-		currentPrice = decimal.NewFromFloat(float64(1) - rate*0.001).Mul(NowPrice)
+		currentPrice = decimal.NewFromFloat(float64(1) - rate*0.0003).Mul(NowPrice)
 		l.Println("当前价格-------", currentPrice)
 		amountBuy := decimal.NewFromFloat(arg.FirstBuy * rate * 0.01).Div(currentPrice).Round(amountPrecision)
 		realTotal := currentPrice.Mul(amountBuy)

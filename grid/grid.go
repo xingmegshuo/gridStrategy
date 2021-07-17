@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	l "log"
 	"strings"
-	"time"
+	"sync"
 	"zmyjobs/exchange/huobi"
 	"zmyjobs/logs"
 	model "zmyjobs/models"
@@ -54,128 +53,25 @@ type Args struct {
 }
 
 type Trader struct {
+	arg           *Args
 	ex            *Cli
 	symbol        *SymbolCategory
 	baseCurrency  string
 	quoteCurrency string
 	grids         []hs.Grid
-	// scale         decimal.Decimal
-	base      int
-	cost      decimal.Decimal // average price
-	amount    decimal.Decimal // amount held
-	ErrString string
-	last      decimal.Decimal
-	u         model.User
-	basePrice decimal.Decimal
-	over      bool
-	hold      decimal.Decimal
-}
-
-// Run 跑模型交易
-func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCategory, arg *Args) {
-	//var ctx *cli.Context
-	status := 0
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("结束了协程2")
-			return
-		default:
-		}
-		for i := 0; i < 1; i++ {
-			if status == 0 {
-				status = 1
-				log.Println("开启协程2中的任务")
-				g, e := NewGrid(grid, symbol)
-				if e != nil {
-					u.IsRun = -10
-					u.Error = "api 请求超时，或api接口更改"
-					u.Update()
-					//GridDone <- 1
-				} else {
-					defer g.Close(ctx)
-					log.Println("开启websocket服务连接,真正的执行策略-------")
-					g.u = u
-					g.Trade(ctx, arg)
-				}
-			}
-		}
-	}
-}
-
-// NewGrid 实例化对象，并验证api key的正确性
-func NewGrid(grid *[]hs.Grid, symbol *SymbolCategory) (*Trader, error) {
-
-	log.Println(symbol)
-	var cli *Cli
-	var err error
-	switch symbol.Category {
-	case "火币":
-		c, e := huobi.New(huobi.Config{Host: symbol.Host, Label: symbol.Label, SecretKey: symbol.Secret, AccessKey: symbol.Key})
-		err = e
-		cli = &Cli{c}
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &Trader{
-		grids:  *grid,
-		ex:     cli,
-		symbol: symbol,
-	}, nil
-}
-
-// Trade 创建websocket 并执行策略中的交易任务
-func (t *Trader) Trade(ctx context.Context, arg *Args) {
-	//_ = t.Print()
-	clientId := fmt.Sprintf("%d", time.Now().Unix())
-	c := 0
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("协程2中的websocket被暂停")
-			return
-		default:
-		}
-		for i := 0; i < 1; i++ {
-			if c == 0 {
-				c = 1
-				log.Println("开启协程2中任务的websocket")
-				go t.ex.huobi.SubscribeOrder(ctx, t.symbol.Symbol, clientId, t.OrderUpdateHandler)
-				go t.ex.huobi.SubscribeTradeClear(ctx, t.symbol.Symbol, clientId, t.TradeClearHandler)
-				if err := t.ReBalance(ctx, arg); err != nil {
-					t.u.IsRun = -10
-					t.u.Error = err.Error()
-					t.u.Update()
-					// 执行报错就关闭
-					GridDone <- 1
-				} else {
-					l.Println("我执行几次")
-					t.setupGridOrders(ctx, arg)
-					if t.ErrString != "" {
-						t.u.IsRun = -10
-						t.u.Error = t.ErrString
-						t.u.Update()
-						// 执行报错就关闭
-						GridDone <- 1
-					} else if t.over == true {
-						// 策略执行完毕
-						t.u.Money, _ = t.cost.Mul(t.amount).Float64()
-						// 盈利ctx
-						t.u.Money = t.u.Money - arg.NeedMoney
-						t.u.IsRun = 1
-						t.u.Update()
-						GridDone <- 1
-					} else {
-						t.u.IsRun = 2
-						t.u.Update()
-						GridDone <- 1
-					}
-				}
-			}
-		}
-	}
-
+	base          int
+	cost          decimal.Decimal // average price
+	amount        decimal.Decimal // amount held
+	ErrString     string
+	last          decimal.Decimal // 上次交易价格
+	u             model.User
+	basePrice     decimal.Decimal // 第一次交易价格
+	over          bool
+	hold          decimal.Decimal // 余额
+	pay           decimal.Decimal
+	SellOrder     uint64
+	OrderOver     bool // 交易状态
+	Locks         sync.Mutex
 }
 
 func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
@@ -186,9 +82,17 @@ func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
 	money, _ := price.Mul(hold).Float64()
 	t.GetMoeny()
 	account, _ := t.hold.Float64()
+	var b, q string
+	if buy == "买入" {
+		b = t.symbol.QuoteCurrency
+		q = t.symbol.BaseCurrency
+	} else {
+		q = t.symbol.BaseCurrency
+		b = t.symbol.QuoteCurrency
+	}
 	info := model.RebotLog{
-		BaseCoin:     t.symbol.BaseCurrency,
-		GetCoin:      t.symbol.QuoteCurrency,
+		BaseCoin:     b,
+		GetCoin:      q,
 		OrderId:      orderId,
 		Price:        p,
 		UserID:       t.u.ID,
@@ -221,23 +125,15 @@ func (t *Trader) Print() error {
 	return nil
 }
 
-func (t *Trader) ReBalance(ctx context.Context, arg *Args) error {
+func (t *Trader) ReBalance(ctx context.Context) error {
+	t.base = t.u.Base
 	price, err := t.ex.huobi.GetPrice(t.symbol.Symbol)
 	if err != nil {
 		return err
 	}
-	t.base = 1
-	moneyNeed := decimal.NewFromInt(int64(arg.NeedMoney))
-	coinNeed := decimal.NewFromInt(0)
-	//for i, g := range t.grids {
-	//	if g.Price.Cmp(price) == 1 {
-	//		t.base = i
-	//		coinNeed = coinNeed.Add(g.AmountBuy)
-	//	} else {
-	//		moneyNeed = moneyNeed.Add(g.TotalBuy)
-	//	}
-	//}
-	//log.Printf("now base = %d, moneyNeed = %s, coinNeed = %s", t.base, moneyNeed, coinNeed)
+	moneyNeed := decimal.NewFromInt(int64(t.arg.NeedMoney))
+	// coinNeed := decimal.NewFromInt(0)
+
 	balance, err := t.ex.huobi.GetSpotBalance()
 	if err != nil {
 		t.ErrString = fmt.Sprintf("error when get balance in rebalance: %s", err)
@@ -247,39 +143,11 @@ func (t *Trader) ReBalance(ctx context.Context, arg *Args) error {
 	coinHeld := balance[t.symbol.BaseCurrency]
 	log.Printf("account has money %s, coin %s", moneyHeld, coinHeld)
 	t.cost = price
-	t.amount = coinNeed
+	t.amount, _ = decimal.NewFromString(t.u.Total)
 	log.Println("资产:", moneyNeed, moneyHeld, balance)
-	if moneyNeed.Cmp(moneyHeld) == 1 {
+	if moneyNeed.Cmp(moneyHeld) == 1 && t.base == 0 {
 		return errors.New("no enough money")
 	}
-	//direct, amount := t.assetRebalancing(moneyNeed, coinNeed, moneyHeld, coinHeld, price)
-	//if direct == -2 || direct == 2 {
-	//	t.ErrString = fmt.Sprintf("no enough money for rebalance, direct: %d", direct)
-	//	return errors.New("money not enough")
-	//} else if direct == 0 {
-	//	log.Println("no need to rebalance")
-	//} else if direct == -1 {
-	//	// place sell order
-	//	t.base++
-	//	clientOrderId := fmt.Sprintf("p-s-%d", time.Now().Unix())
-	//	orderId, err := t.sell(clientOrderId, price, amount)
-	//	if err != nil {
-	//		t.ErrString = fmt.Sprintf("error when rebalance: %s", err)
-	//		return err
-	//	}
-	//	log.Printf("rebalance: sell %s coin at price %s, orderId is %d, clientOrderId is %s",
-	//		amount, price, orderId, clientOrderId)
-	//} else if direct == 1 {
-	//	// place buy order
-	//	clientOrderId := fmt.Sprintf("p-b-%d", time.Now().Unix())
-	//	orderId, err := t.buy(clientOrderId, price, amount)
-	//	if err != nil {
-	//		t.ErrString = fmt.Sprintf("error when rebalance: %s", err)
-	//		return err
-	//	}
-	//	log.Printf("rebalance: buy %s coin at price %s, orderId is %d, clientOrderId is %s",
-	//		amount, price, orderId, clientOrderId)
-	//}
 	return nil
 }
 
@@ -290,13 +158,22 @@ func (t *Trader) GetMoeny() {
 	}
 	moneyHeld := balance[t.symbol.QuoteCurrency]
 	t.hold = moneyHeld
+	// t.amount = balance[t.symbol.BaseCurrency]
+}
+
+func (t *Trader) GetMycoin() decimal.Decimal {
+	balance, err := t.ex.huobi.GetSpotBalance()
+	if err != nil {
+		t.ErrString = fmt.Sprintf("error when get balance in rebalance: %s", err)
+	}
+	// moneyHeld := balance[t.symbol.QuoteCurrency]
+	return balance[t.symbol.BaseCurrency]
+
 }
 
 func (t *Trader) Close(ctx context.Context) {
 	// _ = t.mdb.Client().Disconnect(ctx)
 	log.Println("----------策略退出")
-	// t.cancelAllOrders(ctx)
-	//runtime.Goexit()
 }
 
 func (t *Trader) OrderUpdateHandler(response interface{}) {
@@ -307,7 +184,13 @@ func (t *Trader) OrderUpdateHandler(response interface{}) {
 	//log.Printf("subOrderResponse = %#v", subOrderResponse)
 	if subOrderResponse.Action == "sub" {
 		if subOrderResponse.IsSuccess() {
+			// o := subOrderResponse.Data
 			log.Printf("Subscription topic %s successfully", subOrderResponse.Ch)
+			// model.RebotUpdateBy(o.ClientOrderId, "成功")
+			// model.AsyncData(t.u.ObjectId, t.amount, GetPrice(t.symbol.Symbol), t.hold)
+			// if o.OrderId == int64(t.SellOrder) {
+			// 	t.over = true
+			// }
 		} else {
 			log.Fatalf("Subscription topic %s error, code: %d, message: %s",
 				subOrderResponse.Ch, subOrderResponse.Code, subOrderResponse.Message)
@@ -327,8 +210,15 @@ func (t *Trader) OrderUpdateHandler(response interface{}) {
 		case "cancellation":
 			log.Printf("order cancelled, orderId: %d, clientOrderId: %s", o.OrderId, o.ClientOrderId)
 		case "trade":
-			log.Printf("order filled, orderId: %d, clientOrderId: %s, fill type: %s", o.OrderId, o.ClientOrderId, o.OrderStatus)
-			model.RebotUpdateBy(o.TradeId, "成功")
+			t.OrderOver = true
+			log.Printf("交易成功 order filled, orderId: %d, clientOrderId: %s, fill type: %s", o.OrderId, o.ClientOrderId, o.OrderStatus)
+			t.GetMoeny()
+			model.RebotUpdateBy(o.ClientOrderId, t.hold, "成功")
+			model.AsyncData(t.u.ObjectId, t.amount, GetPrice(t.symbol.Symbol), t.hold)
+
+			if o.OrderId == int64(t.SellOrder) {
+				t.over = true
+			}
 			go t.processOrderTrade(o.TradeId, uint64(o.OrderId), o.ClientOrderId, o.OrderStatus, o.TradePrice, o.TradeVolume, o.RemainAmt)
 		default:
 			log.Printf("unknown eventType, should never happen, orderId: %d, clientOrderId: %s, eventType: %s",
@@ -402,26 +292,6 @@ func (t *Trader) processOrderTrade(tradeId int64, orderId uint64, clientOrderId,
 			"remainAmount", remainAmount)
 		return
 	}
-	// if strings.HasPrefix(clientOrderId, "b-") {
-	// 	// buy order filled
-	// 	if orderId != t.grids[t.base+1].Order {
-	// 		log.Printf("[ERROR] buy order position is NOT the base+1, base: %d", t.base)
-	// 		return
-	// 	}
-	// 	// t.grids[t.base+1].Order = 0
-	// 	t.down()
-	// } else {
-	// 	log.Printf("I don't know the clientOrderId: %s, maybe it's a manual order: %d", clientOrderId, orderId)
-	// }
-	// else if strings.HasPrefix(clientOrderId, "s-") {
-	// sell order filled
-	// if orderId != t.grids[t.base-1].Order {
-	// log.Printf("[ERROR] sell order position is NOT the base+1, base: %d", t.base)
-	// return
-	// }
-	// t.grids[t.base-1].Order = 0
-	// t.up()
-	// }
 
 }
 
@@ -445,197 +315,41 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 	newTotal := oldTotal.Add(tradeTotal)
 	t.cost = newTotal.Div(t.amount)
 	log.Println("Average cost update", "cost", t.cost)
+	// 计算均价
 }
 
 func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate float64) (uint64, error) {
 	log.Printf("[Order][buy] price: %s, amount: %s", price, amount)
-	t.log(clientOrderId, price, "限价", t.base+1, amount, rate, "买入")
-	return t.ex.huobi.PlaceOrder(huobi.OrderTypeBuyLimit, t.symbol.Symbol, clientOrderId, price, amount)
+	orderId, err := t.ex.huobi.PlaceOrder(huobi.OrderTypeBuyLimit, t.symbol.Symbol, clientOrderId, price, amount)
+	if err == nil {
+		t.log(clientOrderId, price, "限价", t.base, amount, rate, "买入")
+		t.grids[t.base].Price = price
+	}
+	return orderId, err
 }
-
 func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
 	log.Printf("[Order][sell] price: %s, amount: %s", price, amount)
-	t.log(clientOrderId, price, "限价", t.base+1, amount, 0, "卖了")
-	return t.ex.huobi.PlaceOrder(huobi.OrderTypeSellLimit, t.symbol.Symbol, clientOrderId, price, amount)
-}
-
-// setupGridOrders 测试
-func (t *Trader) setupGridOrders(ctx context.Context, arg *Args) {
-	// 计数
-	count := 0
-	// 跌
-	d := 0
-	t.base = t.u.Base
-	z := 0
-	t.last = t.grids[t.base].Price
-	t.basePrice = t.last
-	var pay decimal.Decimal
-	//var now decimal.Decimal
-	var (
-		low  = t.last
-		high = t.last
-		base = t.last
-	)
-	for {
-		count++
-		time.Sleep(time.Second * 2)
-		price, err := t.ex.huobi.GetPrice(t.symbol.Symbol)
-		if err != nil {
-			t.ErrString = err.Error()
-			return
-		}
-		if t.last.Cmp(price) == 1 {
-			z++
-		} else {
-			d++
-		}
-		if low.Cmp(price) == 1 {
-			low = price
-		}
-		if high.Cmp(price) == -1 {
-			high = price
-		}
-		// 计算盈利
-		win, _ := price.Sub(t.basePrice).Mul(t.amount).Float64()
-		log.Println("当前盈利", win, "止盈:", arg.Stop, "下跌:", price.Sub(t.last).Div(base))
-		if t.base == 0 {
-			l.Println("第一次买入:", price, t.grids[t.base].AmountBuy)
-			// t.base++
-			clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-			orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, 0)
-			if err != nil {
-				log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
-				continue
-			} else {
-				t.base++
-				t.last = price
-				low = price
-				high = price
-				t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
-				pay = t.amount.Mul(price).Add(pay)
-				model.AsyncData(t.u.ObjectId, t.amount, pay.Div(t.amount), pay)
-			}
-			t.grids[t.base-1].Order = orderId
-		}
-		// if win <= -0.15 {
-		// 	l.Println("卖出:", price, t.amount)
-		// 	t.log(price, "限价", t.base, t.amount, 0, 0, 0)
-		// 	return
-		// }
-		if count%2 == 0 {
-			// 上涨
-			if z > d {
-				// 现在价值,等待盈利卖出 最高价-当前价的比例
-				s, _ := high.Sub(price).Div(t.basePrice).Float64()
-				if win >= arg.Stop || s > arg.Reduce {
-					l.Println("卖出:", price, t.amount)
-					clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
-					_, err := t.sell(clientOrderId, price, t.amount)
-					if err != nil {
-						log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
-						continue
-					} else {
-						t.over = true
-						t.cost = price
-						model.AsyncData(t.u.ObjectId, 0, 0, 0)
-					}
-				}
-				return
-			}
-		} else {
-			// 下跌
-			if t.base != len(t.grids)-1 {
-				// priceRate := arg.AddRate*float64(t.base-1)+arg.Rate
-				priceRate := float64(0.05)
-				// 当前价-上次交易价
-				c, _ := price.Sub(t.last).Div(base).Float64()
-				if c >= priceRate {
-					// 继续跌
-					// l.Println("第次买入:", t.base, price, t.grids[t.base].AmountBuy, c, win)
-					// t.base++
-					clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-					orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, arg.AddRate*float64(t.base-1)+arg.Rate)
-					if err != nil {
-						log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
-						continue
-					} else {
-						t.base++
-						t.last = price
-						t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
-						pay = t.amount.Mul(price).Add(pay)
-						low = price
-						high = price
-						model.AsyncData(t.u.ObjectId, t.amount, pay.Div(t.amount), pay)
-
-					}
-					t.grids[t.base].Order = orderId
-				}
-			} else {
-				// 最后一单 回调 当前价-最低价比例
-				c, _ := price.Sub(low).Div(base).Float64()
-				if c >= arg.Callback {
-					l.Println("最后一次买入:", price, t.grids[t.base].AmountBuy, c)
-					clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-					orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, arg.AddRate*float64(t.base-1)+arg.Rate)
-					if err != nil {
-						log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
-						continue
-					} else {
-						t.base++
-						t.last = price
-						low = price
-						high = price
-						t.amount = t.amount.Add(t.grids[t.base].AmountBuy)
-						pay = t.amount.Mul(price).Add(pay)
-						model.AsyncData(t.u.ObjectId, t.amount, pay.Div(t.amount), pay)
-					}
-					t.grids[t.base].Order = orderId
-				}
-			}
-		}
-
-		if t.base != t.u.Base {
-			t.u.Base = t.base
-			t.u.Update()
-		}
+	orderId, err := t.ex.huobi.PlaceOrder(huobi.OrderTypeSellLimit, t.symbol.Symbol, clientOrderId, price, amount)
+	if err == nil {
+		t.log(clientOrderId, price, "限价", t.base+1, amount, 0, "卖出")
 	}
-
-	//for i := t.base - 1; i >= 0; i-- {
-	//	// sell
-	//	clientOrderId := fmt.Sprintf("s-%d-%d", i, time.Now().Unix())
-	//	orderId, err := t.sell(clientOrderId, t.grids[i].Price, t.grids[i].AmountSell)
-	//	if err != nil {
-	//		log.Printf("error when setupGridOrders, grid number: %d, err: %s", i, err)
-	//		continue
-	//	}
-	//	t.grids[i].Order = orderId
-	//}
-	//for i := t.base + 1; i < len(t.grids); i++ {
-	//	// buy
-	//	clientOrderId := fmt.Sprintf("b-%d-%d", i, time.Now().Unix())
-	//	orderId, err := t.buy(clientOrderId, t.grids[i].Price, t.grids[i].AmountBuy)
-	//	if err != nil {
-	//		log.Printf("error when setupGridOrders, grid number: %d, err: %s", i, err)
-	//		continue
-	//	}
-	//	t.grids[i].Order = orderId
-	//}
+	return orderId, err
 }
 
-func (t *Trader) cancelAllOrders(ctx context.Context) {
-	for i := 0; i < len(t.grids); i++ {
-		if t.grids[i].Order == 0 {
-			continue
-		}
-		if ret, err := t.ex.huobi.CancelOrder(t.grids[i].Order); err == nil {
-			log.Printf("cancel order successful, orderId: %d", t.grids[i].Order)
-			t.grids[i].Order = 0
+// func (t *Trader) cancelAllOrders(ctx context.Context) {
+// 	for i := 0; i < len(t.grids); i++ {
+// 		if t.grids[i].Order == 0 {
+// 			continue
+// 		}
+// 		if ret, err := t.ex.huobi.CancelOrder(t.grids[i].Order); err == nil {
+// 			log.Printf("cancel order successful, orderId: %d", t.grids[i].Order)
+// 			t.grids[i].Order = 0
 
-		} else {
-			log.Printf("cancel order error: orderId: %d, return code: %d, err: %s", t.grids[i].Order, ret, err)
-		}
-	}
-}
+// 		} else {
+// 			log.Printf("cancel order error: orderId: %d, return code: %d, err: %s", t.grids[i].Order, ret, err)
+// 		}
+// 	}
+// }
 
 // 0: no need
 // 1: buy

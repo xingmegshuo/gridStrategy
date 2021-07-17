@@ -28,30 +28,30 @@ var Ch = make(chan JobChan)
 
 type User struct {
 	gorm.Model
-	Status    float64 //
-	BasePrice float64
-	Money     float64
-	Base      int
-	Type      float64
-	Strategy  string
-	IsRun     int64  // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败
-	Name      string // 交易对
-	ApiKey    string
-	Secret    string
-	Category  string
-	ObjectId  int32
-	MinPrice  string
-	MaxPrice  string
-	Total     string
-	Number    float64
-	Error     string
+	Status    float64 // 状态
+	BasePrice float64 // 基础价格
+	Money     float64 // 钱
+	Base      int     // 当前第几单
+	Type      float64 // 类型
+	Strategy  string  // 策略内容
+	IsRun     int64   // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败
+	Name      string  // 交易对
+	ApiKey    string  // 秘钥
+	Secret    string  // 秘钥
+	Category  string  // 分类
+	ObjectId  int32   `gorm:"index"` // userid
+	MinPrice  string  // 最低价
+	MaxPrice  string  // 最高价
+	Total     string  // 持仓
+	Number    float64 // 单数
+	Error     string  // 错误
+	Grids     string  // 策略
 }
 
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
-	//log.Println("i am working for parse data")
+	// log.Println("i am working for parse data")
 	orders := StringMap(GetCache("db_task_order"))
-
 	// log.Println(NewApi)
 	for _, order := range orders {
 		// 	// 符合条件的订单
@@ -85,11 +85,11 @@ func NewUser() {
 				} else {
 					cacheNone[order["id"]] = order["status"]
 				}
-				// 			// 启用
-				if u.IsRun == -2 {
-					log.Println("检测到策略执行出错.................")
-					Ch <- JobChan{u.ID, 000}
-				}
+				//
+				// if u.IsRun == -2 {
+				// 	// log.Println("检测到策略执行出错.................")
+				// 	// Ch <- JobChan{u.ID, 000}
+				// }
 				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
 				var p User
 				res := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&p)
@@ -146,10 +146,10 @@ func StringMap(data string) []map[string]interface{} {
 }
 
 // GetUserJob 获取所有用户
-func GetUserJob() []User {
+func GetUserJob() *[]User {
 	var users []User
 	DB.Table("users").Find(&users)
-	return users
+	return &users
 }
 
 // Update 更新

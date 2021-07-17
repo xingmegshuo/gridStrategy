@@ -3,6 +3,7 @@ package huobi
 import (
 	"errors"
 	"fmt"
+
 	"github.com/huobirdcenter/huobi_golang/pkg/model/market"
 	"github.com/xyths/hs"
 )

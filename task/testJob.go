@@ -13,13 +13,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
+	"sync"
 	"time"
-
 	model "zmyjobs/models"
 )
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
 var crawJob = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 5s")
+
+var crawLock sync.Mutex
 
 func InitJob(j model.Job, f func()) {
 	err := C.AddFunc(j.Spec, f)
@@ -37,11 +40,15 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
+	log.Println("working for data clone ......")
+	crawLock.Lock()
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	h := model.Host{}
 	h.Get("火币")
 	Hurl := "https://" + h.Url
 	xhttp(Hurl+"/v1/common/symbols", "火币交易对")
-	go xhttpCraw(Hurl + "/market/tickers")
+	xhttpCraw(Hurl + "/market/tickers")
+	crawLock.Unlock()
 }
 
 // xhttp 缓存信息
@@ -69,6 +76,7 @@ func xhttpCraw(url string) {
 	resp, err := client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
+		tx := model.UserDB.Begin()
 		content, _ := ioutil.ReadAll(resp.Body)
 		var data = make(map[string]interface{})
 		_ = json.Unmarshal(content, &data)
@@ -79,17 +87,24 @@ func xhttpCraw(url string) {
 		// l.Println(realData[0])
 		// byteData, _ := json.Marshal(data["data"])
 		// l.Println(data["data"])
-		var coin = []map[string]interface{}{}
-		model.UserDB.Raw("select id,en_name from db_coin").Scan(&coin)
-		for _, v := range coin {
+		if !model.CheckCache("coin") {
+			var coin = []map[string]interface{}{}
+			model.UserDB.Raw("select id,en_name from db_coin").Scan(&coin)
+			byteData, _ := json.Marshal(coin)
+
+			model.SetCache("coins", string(byteData), time.Second*60)
+		}
+		coins := model.StringMap(model.GetCache("coins"))
+		// l.Println(coins)
+
+		for _, v := range coins {
 			for _, s := range realData {
 				if s["symbol"].(string) == model.ParseSymbol(v["en_name"].(string))+"usdt" {
 					var coinPrice = map[string]interface{}{}
-					model.UserDB.Raw("select * from db_coin_price where coin_id = ? ", v["id"].(int32)).Scan(&coinPrice)
+					model.UserDB.Raw("select * from db_coin_price where coin_id = ? ", v["id"].(float64)).Scan(&coinPrice)
 					// log.Println("创建数据:", coinPrice)
-
 					if len(coinPrice) == 0 {
-						model.UserDB.Table("db_coin_price").Create(map[string]interface{}{"coin_id": v["id"].(int32)})
+						model.UserDB.Table("db_coin_price").Create(map[string]interface{}{"coin_id": v["id"].(float64)})
 						continue
 					}
 					// l.Println(coinPrice, "------old")
@@ -110,5 +125,6 @@ func xhttpCraw(url string) {
 				}
 			}
 		}
+		tx.Commit()
 	}
 }

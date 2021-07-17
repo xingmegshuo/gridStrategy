@@ -9,7 +9,7 @@
 package model
 
 import (
-	"strconv"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -35,7 +35,7 @@ import (
 // RebotLog 机器人日志
 type RebotLog struct {
 	gorm.Model
-	OrderId      string  // orderid
+	OrderId      string  `gorm:"index"` // orderid
 	BaseCoin     string  // 交易货币
 	GetCoin      string  // 买入货币
 	Price        float64 // 当前交易价格
@@ -55,12 +55,13 @@ func (r *RebotLog) New() {
 	DB.Create(&r)
 }
 
-func RebotUpdateBy(orderId int64, status string) {
-	order := strconv.FormatInt(orderId, 10)
+func RebotUpdateBy(orderId string, m decimal.Decimal, status string) {
+	log.Println(orderId)
+	// order := strconv.FormatInt(orderId, 10)
+	money, _ := m.Float64()
 	var r RebotLog
-	DB.Where("select * from rebot_logs where `order_id` = ?", order).First(&r)
-	r.Status = status
-	DB.Updates(&r)
+	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
+	DB.Table("rebot_logs").Where("id = ?", r.ID).Update("status", status).Update("account_money", money)
 	AddModelLog(&r)
 }
 
@@ -73,12 +74,12 @@ func Message(mes string) {
 func AsyncData(id interface{}, amount interface{}, price interface{}, money interface{}) {
 	//  同步当前task_order
 	var data = map[string]interface{}{}
-	//  当前单数缺少
+	UserDB.Raw("select * from db_task_order where `id` = ?", id).Scan(&data)
 	log.Println("同步数据:", amount, price, money)
 	data["hold_num"] = amount
 	data["hold_price"] = price
 	data["hold_amount"] = money
-	UserDB.Table("db_task_order").First(map[string]interface{}{"id": id}).Updates(&data)
+	UserDB.Table("db_task_order").Where("id = ?", id).Updates(&data)
 }
 
 // AddModelLog 增加日志
@@ -86,16 +87,26 @@ func AddModelLog(r *RebotLog) {
 	log.Println("add trade-----", r.Price, r.HoldMoney)
 	var data = map[string]interface{}{}
 	data["order_sn"] = r.OrderId
+	data["category_id"] = 2
 	data["order_id"] = r.UserID
 	if r.BuyOrSell == "买入" {
-		data["type"] = 0
+		data["type"] = 1
 	} else {
 		data["type"] = 1
 	}
+	data["coin_name"] = "币币交易"
+	data["task_coin_id"] = 1
+	data["remark"] = "none"
+	data["jy_coin_id"] = 1
+	data["js_coin_id"] = 1
+	data["order_type"] = 1
+	data["extra"] = "none"
 	data["price"] = decimal.NewFromFloat(r.Price)
 	data["num"] = decimal.NewFromFloat(r.HoldNum)
 	data["amount"] = decimal.NewFromFloat(r.HoldMoney)
 	data["left_amount"] = decimal.NewFromFloat(r.AccountMoney)
 	data["status"] = 1
+	data["create_time"] = time.Now().Unix()
+	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_profit").Create(&data)
 }

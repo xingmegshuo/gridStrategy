@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/driver/mysql"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -51,21 +52,37 @@ func init() {
 			Colorful:      false,
 		},
 	)
-	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{Logger: newLogger,PrepareStmt: true})
-	// db, err := gorm.Open(sqlite.Open("config.db"), &gorm.Config{})
+	serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
+	serverDB.SetMaxIdleConns(2000) //设置最大连接数
+	serverDB.SetMaxOpenConns(2000)
+	// serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
+	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{Logger: newLogger, PrepareStmt: true})
+
+	// db, err := gorm.Open(sqlite.Open("config.db"), &gorm.Config{
+	// 	SkipDefaultTransaction: true,
+	// 	PrepareStmt:            true,
+	// 	Logger:                 newLogger,
+	// })
 	if err != nil {
 		panic("failed to connect database")
 	}
-	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
-	dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	// dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	sqlDB, _ := sql.Open("mysql", dsn)
-	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{Logger: newLogger, PrepareStmt: true})
+	sqlDB.SetMaxIdleConns(2000) //设置最大连接数
+	sqlDB.SetMaxOpenConns(2000)
+	sqlDB.SetConnMaxLifetime(time.Second * 600) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{
+		Logger:                 newLogger,
+		PrepareStmt:            true,
+		SkipDefaultTransaction: true,
+	})
 	if e != nil {
 		panic("failed to connect user database")
 	}
-	UserDB = userDB
-	DB = db
+	UserDB = userDB.Session(&gorm.Session{PrepareStmt: true})
+	DB = db.Session(&gorm.Session{PrepareStmt: true})
+
 	db.AutoMigrate(&Job{}, &Host{}, &User{}, &RebotLog{})
 
 	rdb := redis.NewClient(&redis.Options{

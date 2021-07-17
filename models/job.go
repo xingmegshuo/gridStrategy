@@ -45,5 +45,5 @@ func GetJob(j *Job) *Job {
 
 // UpdateJob 更新数据库状态
 func (j *Job) UpdateJob() {
-	DB.Updates(j)
+	DB.First(&Job{}, j.ID).Updates(j)
 }

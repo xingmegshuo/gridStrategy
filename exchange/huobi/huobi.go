@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 	"zmyjobs/logs"
 
@@ -20,6 +21,7 @@ import (
 )
 
 var log = logs.Log
+var connectLock1 sync.Mutex
 
 type Config struct {
 	Label        string
@@ -117,8 +119,8 @@ func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
 		return decimal.NewFromFloat(0), err
 	}
 	for _, candlestick := range candlesticks {
-		log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
-			candlestick.Open, candlestick.High, candlestick.Low, candlestick.Close)
+		// log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
+		// candlestick.Open, candlestick.High, candlestick.Low, candlestick.Close)
 		return candlestick.Close, nil
 	}
 
@@ -135,7 +137,6 @@ func GetPriceSymbol(symbol string) (decimal.Decimal, error) {
 		return decimal.NewFromFloat(0), err
 	}
 	for _, candlestick := range candlesticks {
-		log.Println(candlestick)
 		log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
 			candlestick.Open, candlestick.High, candlestick.Low, candlestick.Close)
 		return candlestick.Close, nil
@@ -251,6 +252,7 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 	responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeOrderWebSocketV2Client).Init(c.Config.AccessKey, c.Config.SecretKey, c.Config.Host)
 	Connect := 0
+	var thisLock sync.Mutex
 	hb.SetHandler(
 		// Connected handler
 		func(resp *auth.WebSocketV2AuthenticationResponse) {
@@ -267,19 +269,18 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 		case <-ctx.Done():
 			log.Println("close websocket 1 ----------")
 			hb.UnSubscribe(symbol, clientId)
-			log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 			hb.Close()
 			return
 		default:
 		}
 		if Connect == 0 {
+			thisLock.Lock()
 			Connect = 1
+			thisLock.Unlock()
 			log.Println("开启websocket 1 ----------")
 			hb.Connect(true)
 		}
-
 	}
-
 }
 
 func (c *Client) PlaceOrders(orderType, symbol string, price, amount float64) (uint64, error) {
@@ -363,19 +364,19 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("close websocket 2 ----------")
 			hb.UnSubscribe(symbol, clientId)
 			time.Sleep(time.Second * 5)
 			hb.Close()
+			connectLock1.Unlock()
+
 			// log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 			return
 		default:
 
 		}
 		if Connect == 0 {
+			connectLock1.Lock()
 			Connect = 1
-			log.Println("开启websocket 2 ----------")
-
 			hb.Connect(true)
 		}
 	}

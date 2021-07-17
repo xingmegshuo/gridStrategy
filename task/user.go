@@ -10,6 +10,8 @@ package job
 
 import (
 	"encoding/json"
+	"runtime"
+	"sync"
 	"time"
 	model "zmyjobs/models"
 )
@@ -18,25 +20,30 @@ var user = model.NewJob(model.ConfigMap["jobType1"], "LoadDB", "@every 5s")
 
 var db = model.UserDB
 
+var updateCount sync.Mutex
+
 func UserJobRun() {
+	runtime.GOMAXPROCS(2)
 	LoadUser()
 }
 
 // LoadUser 数据库读入缓存
 func LoadUser() {
-	// userData()
+	userData()
 	for i := 1; i < 2; i++ {
-		// go model.NewUser()
+		go model.NewUser()
 		go RunWG()
 	}
 }
 
 func userData() {
+	updateCount.Lock()
 	user.Count++
 	user.UpdateJob()
 	WriteCache("db_task_order", time.Second*10)
 	WriteCache("db_task_api", time.Second*10)
 	WriteCache("db_task_category", time.Second*10)
+	updateCount.Unlock()
 }
 
 // WriteCache mysql查询写入redis

@@ -28,7 +28,7 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 				status = 1
 				log.Println("开启协程2中的任务")
 				g, e := NewGrid(grid, symbol, arg)
-				g.Locks.Lock()
+				// g.Locks.Lock()
 				if e != nil {
 					u.IsRun = -10
 					u.Error = "api 请求超时，或api接口更改"

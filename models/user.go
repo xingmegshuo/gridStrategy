@@ -39,13 +39,14 @@ type User struct {
 	ApiKey    string  // 秘钥
 	Secret    string  // 秘钥
 	Category  string  // 分类
-	ObjectId  int32   `gorm:"index"` // userid
+	ObjectId  int32   `gorm:"index"` // 订单id
 	MinPrice  string  // 最低价
 	MaxPrice  string  // 最高价
 	Total     string  // 持仓
 	Number    float64 // 单数
 	Error     string  // 错误
 	Grids     string  // 策略
+	Custom    float64 // 用户id
 }
 
 // NewUser 从缓存获取如果数据库不存在就添加
@@ -80,6 +81,7 @@ func NewUser() {
 						Type:   order["frequency"].(float64),
 						Status: 1,
 						Base:   0,
+						Custom: order["customer_id"].(float64),
 					}
 					DB.Create(&u)
 				} else {

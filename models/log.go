@@ -111,8 +111,16 @@ func AddModelLog(r *RebotLog) {
 	UserDB.Table("db_task_order_profit").Create(&data)
 }
 
-
 // GotMoney 盈利分红
-func GotMoney(){
-	
-}
+// func GotMoney(money float64, uId float64) {
+// 	if money > 0 { // 盈利
+// 		var pid string
+// 		tx := UserDB.Begin()                                            // 事务开始
+// 		u := tx.Raw("select `pids` from db_customer where id = ?", uId) // 获取用户
+// 		u.Scan(&pid)                                                    // 获取用户上级
+
+// 	} else { // 亏损
+// 		;
+// 	}
+
+// }

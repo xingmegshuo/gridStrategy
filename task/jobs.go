@@ -24,14 +24,14 @@ func Init() {
 	Wg.Add(1)
 	// InitJob(*job,TestRun)
 	InitJob(*user, UserJobRun)
-	// InitJob(*crawJob, CrawRun)
+	InitJob(*crawJob, CrawRun)
 }
 
 // Exit 退出任务
 func Exit() {
 	log.Println("job run over")
 	JobExit(*user)
-	// JobExit(*crawJob)
+	JobExit(*crawJob)
 	model.StopUser()
 	//JobExit(*job)
 }

@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"runtime"
 	"strconv"
 	"zmyjobs/grid"
 	"zmyjobs/logs"
@@ -60,9 +59,11 @@ func RunWG() {
 						symbol, arg, straggly := PrintStrategy(u, Symbols)
 						if straggly != nil {
 							start = 1
-							runtime.GOMAXPROCS(1)
-							log.Println("协程开始----------------用户:", u.ID, "---交易币种:", u.Name, symbol)
-							go RunStrategy(&straggly, u, &symbol, arg)
+							// runtime.GOMAXPROCS(1)
+							log.Println("协程开始----------------用户:", u.ID, "---交易币种:", u.Name, symbol, arg)
+							u.IsRun = 10
+							u.Update()
+							// go RunStrategy(&straggly, u, &symbol, arg)
 						} else {
 							u.IsRun = -2
 							u.Error = "参数配置错误，不能生成策略"

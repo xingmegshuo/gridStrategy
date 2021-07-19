@@ -110,3 +110,9 @@ func AddModelLog(r *RebotLog) {
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_profit").Create(&data)
 }
+
+
+// GotMoney 盈利分红
+func GotMoney(){
+	
+}

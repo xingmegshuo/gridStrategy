@@ -39,7 +39,7 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 					log.Println("开启websocket服务连接,真正的执行策略-------")
 					g.u = u
 					g.Trade(ctx)
-					g.Locks.Unlock()
+					// g.Locks.Unlock()
 				}
 			}
 		}

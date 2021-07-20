@@ -15,6 +15,7 @@ import (
 // Run 跑模型交易
 func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCategory, arg *Args) {
 	//var ctx *cli.Context
+	log.Println("i am string .......")
 	status := 0
 	for {
 		select {
@@ -23,6 +24,8 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 			return
 		default:
 		}
+		// time.Sleep(time.Second * 3)
+		// log.Println("i am run", status)
 		for i := 0; i < 1; i++ {
 			if status == 0 {
 				status = 1
@@ -36,10 +39,12 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 					GridDone <- 1
 				} else {
 					defer g.Close(ctx)
-					log.Println("开启websocket服务连接,真正的执行策略-------")
 					g.u = u
-					g.Trade(ctx)
+					go g.Trade(ctx)
+
 					// g.Locks.Unlock()
+					// log.Println("GAN .........")
+					// runtime.Goexit()
 				}
 			}
 		}

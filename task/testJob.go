@@ -40,7 +40,7 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
-	log.Println("working for data clone ......")
+	// log.Println("working for data clone ......")
 	crawLock.Lock()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	h := model.Host{}
@@ -111,7 +111,7 @@ func xhttpCraw(url string) {
 					coinPrice["day_amount"] = s["amount"]          // 成交量
 					coinPrice["open_price"] = s["open"]            // 开盘价
 					coinPrice["before_price"] = coinPrice["price"] // 直前价格
-					coinPrice["price"] = s["close"]                // 当前价格
+					coinPrice["price_usd"] = s["close"]            // 当前价格
 					raf := (s["close"].(float64) - s["open"].(float64)) / s["open"].(float64) * 100
 					base := "+"
 					if raf < 0 {

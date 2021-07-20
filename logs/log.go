@@ -15,13 +15,14 @@ import (
 	"runtime"
 	"time"
 
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
 )
 
 var Log *logrus.Logger
 
 func init() {
-	now := time.Now()
+	// now := time.Now()
 	logFilePath := ""
 	if dir, err := os.Getwd(); err == nil {
 		logFilePath = dir + "/logFile/"
@@ -29,23 +30,30 @@ func init() {
 	if err := os.MkdirAll(logFilePath, 0777); err != nil {
 		fmt.Println(err.Error())
 	}
-	logFileName := now.Format("2006-01-02") + ".log"
+	logFileName := "log.log"
 	//日志文件
-	fileName := path.Join(logFilePath, logFileName)
-	if _, err := os.Stat(fileName); err != nil {
-		if _, err := os.Create(fileName); err != nil {
-			fmt.Println(err.Error())
-		}
-	}
+	// fileName := path.Join(logFilePath, logFileName)
+	// if _, err := os.Stat(fileName); err != nil {
+	// 	if _, err := os.Create(fileName); err != nil {
+	// 		fmt.Println(err.Error())
+	// 	}
+	// }
 	//写入文件
-	src, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	// src, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	writer, err := rotatelogs.New(
+		logFilePath+"%Y-%m-%d.log",
+		rotatelogs.WithLinkName(logFilePath+logFileName),
+		rotatelogs.WithMaxAge(15*24*time.Hour),
+		rotatelogs.WithRotationTime(time.Hour*24),
+	)
+
 	if err != nil {
 		fmt.Println("err", err)
 	}
 	//设置输出
 	Log = logrus.New()
 
-	Log.Out = src
+	Log.Out = writer
 	//设置日志级别
 	// Log.SetLevel(logrus.DebugLevel)
 	//设置日志格式

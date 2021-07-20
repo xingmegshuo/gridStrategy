@@ -75,7 +75,7 @@ func NewUser() {
 						Strategy: parseInput(order),
 						// MinPrice: order["price_stop"].(string),
 						// MaxPrice: order["price_add"].(string),
-						Money:  order["money"].(float64),
+						Money:  GetAccount(order["customer_id"].(float64)),
 						Number: order["num"].(float64),
 						// Total:    order["hold_num"].(string),
 						Type:   order["frequency"].(float64),
@@ -191,6 +191,7 @@ func parseInput(order map[string]interface{}) string {
 	return string(str)
 }
 
+// GetApiConfig 获取用户设置的平台分类及秘钥
 func GetApiConfig(memberid interface{}, category interface{}) (bool, string, string, string) {
 	var (
 		name   string
@@ -216,4 +217,11 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 	} else {
 		return false, "", "", ""
 	}
+}
+
+// GetAccount 获取用户余额
+func GetAccount(uId float64) float64 {
+	var amount float64
+	UserDB.Raw("select `amount` from db_coin_amount where `customer_id` = ? and `coin_id` = ?", uId, 2).Scan(&amount)
+	return amount
 }

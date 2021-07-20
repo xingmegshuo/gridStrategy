@@ -12,7 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strconv"
+	"fmt"
 	"zmyjobs/grid"
 	"zmyjobs/logs"
 	model "zmyjobs/models"
@@ -26,7 +26,7 @@ var log = logs.Log
 // RunWG 生成用户策略
 func RunWG() {
 	//time.Sleep(time.Second)
-	//log.Println("i am working for make strategy and start run ")
+	log.Println("i am working for make strategy and start run ")
 	users := LoadUsers()
 	for _, u := range *users {
 		start := 0
@@ -55,15 +55,17 @@ func RunWG() {
 				//}
 			default:
 				if u.Status == float64(1) && u.IsRun == int64(-1) && Symbols != nil && start == 0 {
+					log.Println("符合要求")
 					for i := 1; i < 2; i++ {
 						symbol, arg, straggly := PrintStrategy(u, Symbols)
 						if straggly != nil {
 							start = 1
+							// u.IsRun = 10
+							// u.Update()
 							// runtime.GOMAXPROCS(1)
 							log.Println("协程开始----------------用户:", u.ID, "---交易币种:", u.Name, symbol, arg)
-							u.IsRun = 10
-							u.Update()
-							// go RunStrategy(&straggly, u, &symbol, arg)
+
+							go RunStrategy(&straggly, u, &symbol, arg)
 						} else {
 							u.IsRun = -2
 							u.Error = "参数配置错误，不能生成策略"
@@ -75,6 +77,7 @@ func RunWG() {
 			}
 		}
 	}
+	// runtime.Goexit()
 }
 
 // LoadUsers 获取数据库用户内容
@@ -161,7 +164,7 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 	// scale := decimal.NewFromFloat(math.Pow(arg.MinPrice/arg.Price, 1.0/float64(number)))
 	preTotal := decimal.NewFromFloat(arg.FirstBuy).Div(decimal.NewFromFloat(arg.Price)).Round(amountPrecision)
 	currentPrice := decimal.NewFromFloat(arg.Price)
-	NowPrice := currentPrice
+	// NowPrice := currentPrice
 	var grids []hs.Grid
 	// 第一次买入
 	currentGrid := hs.Grid{
@@ -176,22 +179,25 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 	for i := 2; i <= number; i++ {
 		// 补仓比例 10
 		rate := arg.Rate + (arg.AddRate * float64(i-2))
-		priceRate := 0.02 + (arg.AddRate * 0.01 * float64(i-2))                                                           // 跌幅 下降2个点买入                                                                                                                   // 跌幅
-		currentPrice = decimal.NewFromFloat(float64(1) - priceRate).Mul(NowPrice)                                         // 当前价格
-		amountBuy := decimal.NewFromFloat(arg.FirstBuy + arg.FirstBuy*rate*0.01).Div(currentPrice).Round(amountPrecision) // 当前买入
-		realTotal := currentPrice.Mul(amountBuy)                                                                          // 当前买入
+		priceRate := 0.02 + (arg.AddRate * 0.01 * float64(i-2))                                          // 0.02 跌幅比例
+		log.Println(rate, "--------", priceRate, "------", arg.FirstBuy*rate*0.01+arg.FirstBuy)          // 跌幅 下降2个点买入                                                                                                                   // 跌幅
+		currentPrice = grids[i-2].Price.Sub(decimal.NewFromFloat(priceRate).Mul(grids[0].Price))         // 再下降几个百分点
+		realTotal := grids[i-2].TotalBuy.Add(decimal.NewFromFloat(rate * 0.01).Mul(grids[i-2].TotalBuy)) // 当前买入价值
+		amountBuy := realTotal.Div(currentPrice).Round(amountPrecision)                                  // 当前买入
+
 		if realTotal.Cmp(minTotal) == -1 {
 			log.Printf("total %s less than minTotal(%s)", realTotal, minTotal)
 			return nil, errors.New(" total not enough")
 		}
 		arg.NeedMoney += arg.FirstBuy + arg.FirstBuy*rate*0.01
+		arg.NeedMoney = model.ParseStringFloat(fmt.Sprintf("%.2f", arg.NeedMoney))
+		log.Println("需要资金:", arg.NeedMoney)
 		currentGrid = hs.Grid{
 			Id:        i,
 			Price:     currentPrice,
 			AmountBuy: amountBuy,
 			TotalBuy:  realTotal,
 		}
-		// log.Println(currentGrid)
 		grids = append(grids, currentGrid)
 	}
 	// 打印网格模型
@@ -201,24 +207,17 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 			g.Id, g.TotalBuy.StringFixed(amountPrecision+pricePrecision),
 			g.Price.StringFixed(pricePrecision),
 			g.AmountBuy.StringFixed(amountPrecision), g.AmountSell.StringFixed(amountPrecision))
-
 	}
 
 	return grids, nil
 }
 
-// ParseStringFloat 字符串转浮点型
-func ParseStringFloat(str string) float64 {
-	floatValue, _ := strconv.ParseFloat(str, 64)
-	return floatValue
-}
-
 // RunStrategy 开启策略
 func RunStrategy(s *[]hs.Grid, u model.User, symbol *grid.SymbolCategory, arg *grid.Args) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 OuterLoop:
 	for {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
 		select {
 		case <-grid.GridDone:
 			log.Println("收到消息,暂停策略,exiting ......", u.ID)
@@ -226,13 +225,16 @@ OuterLoop:
 		default:
 		}
 		// 执行任务不是一次执行
+
 		if u.IsRun == -1 {
 			u.IsRun = 10
 			u.Update()
 			for i := 0; i < 1; i++ {
-				log.Println("协程2开始---------")
 				go grid.Run(ctx, s, u, symbol, arg)
 			}
+
+			// runtime.Goexit()
+
 		}
 	}
 }
@@ -249,14 +251,14 @@ func ParseStrategy(u model.User) *grid.Args {
 		u.BasePrice = arg.Price
 		u.Update()
 	}
-	arg.FirstBuy = ParseStringFloat(data["FirstBuy"].(string))
-	arg.Rate = ParseStringFloat(data["rate"].(string))
+	arg.FirstBuy = model.ParseStringFloat(data["FirstBuy"].(string))
+	arg.Rate = model.ParseStringFloat(data["rate"].(string))
 	arg.MinBuy = arg.FirstBuy
-	arg.AddRate = ParseStringFloat(data["growth"].(string))
-	arg.Callback = ParseStringFloat(data["callback"].(string))
-	arg.Reduce = ParseStringFloat(data["reduce"].(string))
-	arg.Stop = ParseStringFloat(data["stop"].(string))
-	arg.AddMoney = ParseStringFloat(data["add"].(string))
+	arg.AddRate = model.ParseStringFloat(data["growth"].(string))
+	arg.Callback = model.ParseStringFloat(data["callback"].(string))
+	arg.Reduce = model.ParseStringFloat(data["reduce"].(string))
+	arg.Stop = model.ParseStringFloat(data["stop"].(string))
+	arg.AddMoney = model.ParseStringFloat(data["add"].(string))
 	return &arg
 }
 

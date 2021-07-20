@@ -26,7 +26,6 @@ var log = logs.Log
 // RunWG 生成用户策略
 func RunWG() {
 	//time.Sleep(time.Second)
-	log.Println("i am working for make strategy and start run ")
 	users := LoadUsers()
 	for _, u := range *users {
 		start := 0

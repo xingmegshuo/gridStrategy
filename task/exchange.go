@@ -1,5 +1,5 @@
 /***************************
-@File        : exchange.go.go
+@File        : exchange.go
 @Time        : 2021/7/2 15:08
 @AUTHOR      : small_ant
 @Email       : xms.chnb@gmail.com
@@ -9,9 +9,9 @@
 package job
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"zmyjobs/grid"
 	"zmyjobs/logs"
 	model "zmyjobs/models"
@@ -33,27 +33,18 @@ func RunWG() {
 		for {
 			select {
 			case v := <-model.Ch:
-				u.Status = float64(v.Run)
-				u.Update()
-				// 停止策略,协程退出
-				if u.IsRun == 10 {
-					log.Println("向协程1发送退出")
-					u.IsRun = 2
-					u.Update()
-					grid.GridDone <- 1
+				// log.Println(v, "获取到", model.UpdateStatus(v.Id))
+
+				if v.Run == 2 || v.Run == 3 {
+					if model.UpdateStatus(v.Id) == 10 {
+						grid.GridDone <- 1
+					}
 					break OuterLoop
 				}
-				//if u.IsRun == -2 {
-				//	//Done <- 1
-				//	u.IsRun = -10
-				//	log.Println("策略运行出错，正在退出...........", u.IsRun)
-				//	u.Update()
-				//	grid.GridDone <- 1
-				//	break OuterLoop
-				//}
+
 			default:
 				if u.Status == float64(1) && u.IsRun == int64(-1) && Symbols != nil && start == 0 {
-					log.Println("符合要求")
+					// log.Println("符合要求")
 					for i := 1; i < 2; i++ {
 						symbol, arg, straggly := PrintStrategy(u, Symbols)
 						if straggly != nil {
@@ -61,12 +52,8 @@ func RunWG() {
 							// u.IsRun = 10
 							// u.Update()
 							// runtime.GOMAXPROCS(1)
-							log.Println("协程开始----------------用户:", u.ObjectId, "---交易币种:", u.Name)
+							log.Println("协程开始----------------用户:", u.ObjectId, "---交易币种:", u.Name, straggly)
 							go RunStrategy(&straggly, u, &symbol, arg)
-						} else {
-							u.IsRun = -2
-							u.Error = "参数配置错误，不能生成策略"
-							u.Update()
 						}
 					}
 				}
@@ -125,10 +112,12 @@ func PrintStrategy(u model.User, symbol []map[string]interface{}) (grid.SymbolCa
 
 	strategy, e := MakeStrategy(arg, int(u.Number), int32(amountPrecision), int32(pricePrecision), NminAmount, NminToal)
 
+	// SaveStrategy(u, &strategy, false)
+
 	if e != nil {
 		u.Error = e.Error()
 		u.Status = float64(0)
-		u.IsRun = int64(-2)
+		u.IsRun = int64(-10)
 		u.Update()
 		return grid.SymbolCategory{}, arg, nil
 	} else {
@@ -149,8 +138,16 @@ func PrintStrategy(u model.User, symbol []map[string]interface{}) (grid.SymbolCa
 		}
 		// 生成策略后开始跑
 		if s, ok := LoadStrategy(u); ok {
+			for i := u.Base; i < len(strategy); i++ {
+				if strategy[i] != (*s)[i] {
+					(*s)[i] = strategy[i]
+				}
+			}
 			strategy = *s
+			log.Println("重载策略")
+			strategy, _ = MakeLoad(arg, int(u.Number), int32(amountPrecision), int32(pricePrecision), NminAmount, NminToal, strategy, u.Base)
 		}
+		go SaveStrategy(u, &strategy, true)
 		return symbolData, arg, strategy
 	}
 }
@@ -188,7 +185,7 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 		}
 		m, _ := realTotal.Float64() // 钱
 		arg.NeedMoney += m
-		// arg.NeedMoney = model.ParseStringFloat(fmt.Sprintf("%.2f", arg.NeedMoney))
+		arg.NeedMoney = model.ParseStringFloat(fmt.Sprintf("%.2f", arg.NeedMoney))
 		currentGrid = hs.Grid{
 			Id:        i,
 			Price:     currentPrice,
@@ -209,25 +206,57 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 	return grids, nil
 }
 
+// MakeLoad 重载模型
+func MakeLoad(arg *grid.Args, number int, amountPrecision int32,
+	pricePrecision int32, minAmount decimal.Decimal, minTotal decimal.Decimal, grids []hs.Grid, base int) ([]hs.Grid, error) {
+
+	currentPrice := decimal.NewFromFloat(arg.Price)
+
+	// 补仓
+	for i := 2; i <= number; i++ {
+		// 补仓比例 10
+		if base <= i-1 {
+			rate := arg.Rate + (arg.AddRate * float64(i-2))
+			realTotal := grids[i-2].TotalBuy.Add(decimal.NewFromFloat(rate * 0.01).Mul(grids[i-2].TotalBuy)) // 当前买入价值
+			grids[i-1].AmountBuy = realTotal.Div(currentPrice).Round(amountPrecision)                        // 当前买入
+			grids[i-1].TotalBuy = realTotal
+		}
+	}
+	// 打印网格模型
+	log.Printf("Id\tTotal\tPrice\tAmountBuy\tAmountSell")
+	var m decimal.Decimal
+	for _, g := range grids {
+		log.Printf("%2d\t%s\t%s\t%s\t%s",
+			g.Id, g.TotalBuy.StringFixed(amountPrecision+pricePrecision),
+			g.Price.StringFixed(pricePrecision),
+			g.AmountBuy.StringFixed(amountPrecision), g.AmountSell.StringFixed(amountPrecision))
+		m = m.Add(g.TotalBuy)
+	}
+	arg.NeedMoney, _ = m.Float64()
+	log.Println("需要资金:", arg.NeedMoney)
+	return grids, nil
+}
+
 // RunStrategy 开启策略
 func RunStrategy(s *[]hs.Grid, u model.User, symbol *grid.SymbolCategory, arg *grid.Args) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
 OuterLoop:
 	for {
 		select {
 		case <-grid.GridDone:
 			log.Println("收到消息,暂停策略,exiting ......", u.ID)
+			u.IsRun = 2
+			u.Update()
 			break OuterLoop
 		default:
 		}
 		// 执行任务不是一次执行
-
 		if u.IsRun == -1 {
 			u.IsRun = 10
 			u.Update()
 			for i := 0; i < 1; i++ {
-				go grid.Run(ctx, s, u, symbol, arg)
+				// go grid.Run(ctx, s, u, symbol, arg)
 			}
 
 			// runtime.Goexit()
@@ -270,8 +299,13 @@ func LoadStrategy(u model.User) (*[]hs.Grid, bool) {
 }
 
 // SaveStrategy 保存
-func SaveStrategy(u model.User, g *[]hs.Grid) {
-	s, _ := json.Marshal(&g)
-	u.Grids = string(s)
-	u.Update()
+func SaveStrategy(u model.User, g *[]hs.Grid, b bool) {
+	if b {
+		// log.Println("清除完数据------------")
+		s, _ := json.Marshal(*g)
+		grids := string(s)
+
+		model.DB.Table("users").Where("object_id", u.ObjectId).Update("grids", grids)
+	}
+
 }

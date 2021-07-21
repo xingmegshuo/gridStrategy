@@ -40,9 +40,9 @@ func userData() {
 	updateCount.Lock()
 	user.Count++
 	user.UpdateJob()
-	WriteCache("db_task_order", time.Second*10)
-	WriteCache("db_task_api", time.Second*10)
-	WriteCache("db_task_category", time.Second*10)
+	WriteCache("db_task_order", time.Second*5)
+	WriteCache("db_task_api", time.Second*5)
+	WriteCache("db_task_category", time.Second*5)
 	updateCount.Unlock()
 }
 

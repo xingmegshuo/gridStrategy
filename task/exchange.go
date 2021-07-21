@@ -256,7 +256,7 @@ OuterLoop:
 			u.IsRun = 10
 			u.Update()
 			for i := 0; i < 1; i++ {
-				// go grid.Run(ctx, s, u, symbol, arg)
+				go grid.Run(ctx, s, u, symbol, arg)
 			}
 
 			// runtime.Goexit()

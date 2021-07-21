@@ -9,6 +9,7 @@
 package job
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -239,8 +240,8 @@ func MakeLoad(arg *grid.Args, number int, amountPrecision int32,
 
 // RunStrategy 开启策略
 func RunStrategy(s *[]hs.Grid, u model.User, symbol *grid.SymbolCategory, arg *grid.Args) {
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 OuterLoop:
 	for {
 		select {

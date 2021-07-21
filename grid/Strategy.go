@@ -196,7 +196,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		win := float64(0)
 		t.pay = t.cost.Mul(t.amount) // 当前支付
 		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
-			win, _ = price.Mul(t.amount).Sub(t.pay).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
+			win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 		}
 		die, _ := t.last.Sub(price).Div(t.basePrice).Float64()
 		if count%30 == 0 {

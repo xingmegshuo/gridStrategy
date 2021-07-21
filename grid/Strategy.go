@@ -234,7 +234,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 
 		if 0 < t.base && t.base < len(t.grids)-1 {
 			// c, _ := price.Sub(t.last).Div(t.basePrice).Float64()
-			if die*100 >= float64(3) {
+			if die*100 >= float64(2) {
 				// +float64(t.base-1)*t.arg.AddRate {
 				//  t.GetRate() {
 				t.OrderOver = false

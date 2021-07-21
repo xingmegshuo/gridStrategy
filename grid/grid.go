@@ -334,6 +334,8 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 	if err == nil {
 		t.log(clientOrderId, price, "限价", t.base, amount, rate, "买入")
 		t.grids[t.base].Price = price
+		t.grids[t.base].AmountBuy = price.Mul(amount)
+
 	}
 	return orderId, err
 }

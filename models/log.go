@@ -81,7 +81,7 @@ func RebotUpdateBy(orderId string, m decimal.Decimal, status string) {
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
 	DB.Table("rebot_logs").Where("id = ?", r.ID).Update("status", status).Update("account_money", money)
-	AddModelLog(&r)
+	AddModelLog(&r, money)
 }
 
 // Message 发通知
@@ -102,7 +102,7 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 }
 
 // AddModelLog 增加日志
-func AddModelLog(r *RebotLog) {
+func AddModelLog(r *RebotLog, m float64) {
 	log.Println("add trade-----", r.Price, r.HoldMoney)
 	var data = map[string]interface{}{}
 	data["order_sn"] = r.OrderId
@@ -123,7 +123,7 @@ func AddModelLog(r *RebotLog) {
 	data["price"] = decimal.NewFromFloat(r.Price)
 	data["num"] = decimal.NewFromFloat(r.HoldNum)
 	data["amount"] = decimal.NewFromFloat(r.HoldMoney)
-	data["left_amount"] = decimal.NewFromFloat(r.AccountMoney)
+	data["left_amount"] = decimal.NewFromFloat(m)
 	data["status"] = 1
 	data["create_time"] = time.Now().Unix()
 	data["update_time"] = time.Now().Unix()

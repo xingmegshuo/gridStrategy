@@ -130,14 +130,34 @@ func NewUser() {
 						}
 					}
 				}
+				// 更新策略参数
+				if u.Strategy != parseInput(order) {
+					// log.Println("修改参数")
+					u.Strategy = parseInput(order)
+					u.Update()
+				}
+			} else {
+				u = User{
+					ObjectId: int32(order["id"].(float64)),
+					ApiKey:   api,
+					Secret:   sec,
+					Category: cate,
+					Name:     ParseSymbol(order["task_coin_name"].(string)),
+					IsRun:    -10,
+					Strategy: parseInput(order),
+					// MinPrice: order["price_stop"].(string),
+					// MaxPrice: order["price_add"].(string),
+					Money:  GetAccount(order["customer_id"].(float64)),
+					Number: order["num"].(float64),
+					// Total:    order["hold_num"].(string),
+					Type:   order["frequency"].(float64),
+					Status: order["status"].(float64),
+					Base:   0,
+					Custom: order["customer_id"].(float64),
+				}
+				DB.Create(&u)
 			}
-			// 更新策略参数
-			if u.Strategy != parseInput(order) {
-				log.Println("修改参数")
-				u.Strategy = parseInput(order)
-				u.Update()
 
-			}
 		}
 
 		// if !b {

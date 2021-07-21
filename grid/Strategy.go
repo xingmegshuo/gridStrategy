@@ -198,9 +198,9 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
 			win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 		}
-		reduce := high.Sub(price).Div(t.last)
+		reduce, _ := high.Sub(price).Div(t.last).Float64()
 		die, _ := t.last.Sub(price).Div(t.basePrice).Float64()
-		if count%60 == 0 {
+		if count%180 == 0 {
 			// log.Println("支付:", t.pay, "现价值:", price.Mul(t.amount))
 			log.Println("当前盈利", win*100, "单数:", t.base, "下跌:", die*100, "上次交易:", t.last, "当前价格：", price, "持仓:", t.amount, "最高价:", high,
 				"最低价:", low, "回降比例:", reduce)
@@ -263,7 +263,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		}
 
 		//  止盈 t.arg.Stop
-		if win*100 > t.arg.Stop {
+		if win*100 > t.arg.Stop && reduce*100 > t.arg.Reduce {
 			log.Println("盈利卖出")
 			id, err := t.Sell(price)
 			if err != nil {

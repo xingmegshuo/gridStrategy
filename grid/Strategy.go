@@ -15,12 +15,11 @@ import (
 // Run 跑模型交易
 func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCategory, arg *Args) {
 	//var ctx *cli.Context
-	log.Println("i am string .......")
 	status := 0
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("结束了协程2")
+			log.Println("暂停交易", u.ObjectId)
 			return
 		default:
 		}
@@ -29,7 +28,7 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 		for i := 0; i < 1; i++ {
 			if status == 0 {
 				status = 1
-				log.Println("开启协程2中的任务")
+				log.Println("尝试获取用户账户数据，校验余额，api 等信息正确性---", u.ObjectId)
 				g, e := NewGrid(grid, symbol, arg)
 				// g.Locks.Lock()
 				if e != nil {
@@ -81,18 +80,18 @@ func (t *Trader) Trade(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("协程2中的websocket被暂停")
+			log.Println("结束交易和websocket-----", t.u.ObjectId)
 			return
 		default:
 		}
 		for i := 0; i < 1; i++ {
 			if c == 0 {
 				c = 1
-				log.Println("开启协程2中任务的websocket")
-
+				log.Println("开启websocket--------", t.u.ObjectId)
 				go t.ex.huobi.SubscribeOrder(ctx, t.symbol.Symbol, clientId, t.OrderUpdateHandler)
 				go t.ex.huobi.SubscribeTradeClear(ctx, t.symbol.Symbol, clientId, t.TradeClearHandler)
 				if err := t.ReBalance(ctx); err != nil {
+					fmt.Println("校验账户余额不足够，策略不开始----", t.u.ObjectId)
 					t.u.IsRun = -10
 					t.u.Error = err.Error()
 					t.u.Update()
@@ -106,31 +105,34 @@ func (t *Trader) Trade(ctx context.Context) {
 								t.pay = t.pay.Add(t.grids[i].TotalBuy)
 							}
 						}
-						time.Sleep(time.Second * 10)
-						log.Println("testing ............. ")
-						// t.setupGridOrders(ctx)
-						// if t.ErrString != "" {
-						// 	t.u.IsRun = -10
-						// 	t.u.Error = t.ErrString
-						// 	t.u.Update()
-						// 	// 执行报错就关闭
-						// 	GridDone <- 1
-						// 	break
-						// }
-						// time.Sleep(time.Second * 30)
-						// if t.over && t.base >= len(t.grids) {
-						// 	// 策略执行完毕 to do 计算盈利
-						// 	t.u.Money, _ = t.cost.Mul(t.amount).Float64()
-						// 	// 盈利ctx
-						// 	t.u.Money = t.u.Money - t.arg.NeedMoney
-						// 	t.u.IsRun = 1
-						// 	t.u.Update()
-						// 	GridDone <- 1
-						// 	break
-						// } else {
-						// 	t.cancel(t.SellOrder)
-						// 	continue
-						// }
+						// time.Sleep(time.Second * 10)
+						// log.Println("testing ............. ")
+						t.setupGridOrders(ctx)
+						if t.ErrString != "" {
+							log.Println("网络链接问题：", t.u.ObjectId)
+							t.u.IsRun = -10
+							t.u.Error = t.ErrString
+							t.u.Update()
+							// 执行报错就关闭
+							GridDone <- 1
+							break
+						}
+						time.Sleep(time.Second * 30)
+						if t.over && t.base >= len(t.grids) {
+							log.Println("策略一次执行完毕:", t.u.ObjectId)
+							// 策略执行完毕 to do 计算盈利
+							t.u.Money, _ = t.cost.Mul(t.amount).Float64()
+							// 盈利ctx
+							t.u.Money = t.u.Money - t.arg.NeedMoney
+							t.u.IsRun = 1
+							t.u.Update()
+							GridDone <- 1
+							break
+						} else {
+							log.Println("卖出时超时,撤单重新卖...", t.u.ObjectId)
+							t.cancel(t.SellOrder)
+							continue
+						}
 					}
 
 				}
@@ -165,14 +167,14 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 	}
 	t.basePrice = t.grids[0].Price // 第一次交易价格
 
-	log.Println(t.last, t.basePrice, t.pay, "---------策略开始")
+	log.Println(t.last, t.basePrice, t.pay, "---------策略开始", "用户:", t.u.ObjectId)
 	var (
 		low  = t.last
 		high = t.last
 	)
 	for {
 		count++
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 		t.GetMoeny()                                       // 获取当前money和持仓
 		price, err := t.ex.huobi.GetPrice(t.symbol.Symbol) //获取当前价格
 		if err != nil {
@@ -194,12 +196,10 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		win := float64(0)
 		t.pay = t.cost.Mul(t.amount) // 当前支付
 		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
-			// log.Println(t.pay, price.Mul(t.amount))
-			win, _ = price.Sub(t.last).Mul(t.amount).Div(t.pay).Float64()
-			// log.Println(t.pay, price.Mul(t.amount))
+			win, _ = price.Mul(t.amount).Sub(t.pay).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 		}
 		die, _ := t.last.Sub(price).Div(t.basePrice).Float64()
-		if count%10 == 0 {
+		if count%30 == 0 {
 			// log.Println("支付:", t.pay, "现价值:", price.Mul(t.amount))
 			log.Println("当前盈利", win*100, "单数:", t.base, "下跌:", die*100, "上次交易:", t.last, "当前价格：", price, t.amount)
 		}

@@ -126,12 +126,23 @@ func (t *Trader) Print() error {
 }
 
 func (t *Trader) ReBalance(ctx context.Context) error {
-	t.base = t.u.Base
+	t.base = t.u.Base // 从暂停中恢复
 	price, err := t.ex.huobi.GetPrice(t.symbol.Symbol)
 	if err != nil {
 		return err
 	}
-	moneyNeed := decimal.NewFromInt(int64(t.arg.NeedMoney))
+	moneyNeed := decimal.NewFromInt(int64(t.arg.NeedMoney)) // 策略需要总金额
+	t.cost = price
+
+	for i := 0; i < len(t.grids); i++ {
+		if i < t.base {
+			moneyNeed = moneyNeed.Sub(t.grids[i].TotalBuy)
+			t.cost = t.grids[i].Price.Add(t.cost)
+		}
+	}
+	if t.base > 0 {
+		t.cost = t.cost.Div(decimal.NewFromInt(int64(t.base))) // 持仓均价
+	}
 	// coinNeed := decimal.NewFromInt(0)
 
 	balance, err := t.ex.huobi.GetSpotBalance()
@@ -141,9 +152,8 @@ func (t *Trader) ReBalance(ctx context.Context) error {
 	}
 	moneyHeld := balance[t.symbol.QuoteCurrency]
 	coinHeld := balance[t.symbol.BaseCurrency]
-	log.Printf("account has money %s, coin %s", moneyHeld, coinHeld)
-	t.cost = price
-	t.amount, _ = decimal.NewFromString(t.u.Total)
+	log.Printf("account has money %s, coin %s", moneyHeld, coinHeld, t.u.ObjectId)
+	t.amount, _ = decimal.NewFromString(t.u.Total) // 当前持仓
 	log.Println("资产:", moneyNeed, moneyHeld, balance)
 	if moneyNeed.Cmp(moneyHeld) == 1 && t.base == 0 {
 		return errors.New("no enough money")

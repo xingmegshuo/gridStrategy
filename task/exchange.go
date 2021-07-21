@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"zmyjobs/grid"
 	"zmyjobs/logs"
 	model "zmyjobs/models"
@@ -62,8 +61,7 @@ func RunWG() {
 							// u.IsRun = 10
 							// u.Update()
 							// runtime.GOMAXPROCS(1)
-							log.Println("协程开始----------------用户:", u.ID, "---交易币种:", u.Name, symbol, arg)
-
+							log.Println("协程开始----------------用户:", u.ObjectId, "---交易币种:", u.Name)
 							go RunStrategy(&straggly, u, &symbol, arg)
 						} else {
 							u.IsRun = -2
@@ -178,8 +176,8 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 	for i := 2; i <= number; i++ {
 		// 补仓比例 10
 		rate := arg.Rate + (arg.AddRate * float64(i-2))
-		priceRate := 0.02 + (arg.AddRate * 0.01 * float64(i-2))                                          // 0.02 跌幅比例
-		log.Println(rate, "--------", priceRate, "------", arg.FirstBuy*rate*0.01+arg.FirstBuy)          // 跌幅 下降2个点买入                                                                                                                   // 跌幅
+		priceRate := 0.02 + (arg.AddRate * 0.01 * float64(i-2)) // 0.02 跌幅比例
+		// log.Println(rate, "--------", priceRate, "------", grids[i-2].TotalBuy.Mul(decimal.NewFromFloat(1+rate*0.01))) // 跌幅 下降2个点买入                                                                                                                   // 跌幅
 		currentPrice = grids[i-2].Price.Sub(decimal.NewFromFloat(priceRate).Mul(grids[0].Price))         // 再下降几个百分点
 		realTotal := grids[i-2].TotalBuy.Add(decimal.NewFromFloat(rate * 0.01).Mul(grids[i-2].TotalBuy)) // 当前买入价值
 		amountBuy := realTotal.Div(currentPrice).Round(amountPrecision)                                  // 当前买入
@@ -188,9 +186,9 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 			log.Printf("total %s less than minTotal(%s)", realTotal, minTotal)
 			return nil, errors.New(" total not enough")
 		}
-		arg.NeedMoney += arg.FirstBuy + arg.FirstBuy*rate*0.01
-		arg.NeedMoney = model.ParseStringFloat(fmt.Sprintf("%.2f", arg.NeedMoney))
-		log.Println("需要资金:", arg.NeedMoney)
+		m, _ := realTotal.Float64() // 钱
+		arg.NeedMoney += m
+		// arg.NeedMoney = model.ParseStringFloat(fmt.Sprintf("%.2f", arg.NeedMoney))
 		currentGrid = hs.Grid{
 			Id:        i,
 			Price:     currentPrice,
@@ -207,7 +205,7 @@ func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
 			g.Price.StringFixed(pricePrecision),
 			g.AmountBuy.StringFixed(amountPrecision), g.AmountSell.StringFixed(amountPrecision))
 	}
-
+	log.Println("需要资金:", arg.NeedMoney)
 	return grids, nil
 }
 

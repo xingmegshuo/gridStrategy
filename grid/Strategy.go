@@ -199,10 +199,10 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 			win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 		}
 		die, _ := t.last.Sub(price).Div(t.basePrice).Float64()
-		if count%5 == 0 {
+		if count%20 == 0 {
 			// log.Println("支付:", t.pay, "现价值:", price.Mul(t.amount))
 			log.Println("当前盈利", win*100, "单数:", t.base, "下跌:", die*100, "上次交易:", t.last, "当前价格：", price, "持仓:", t.amount)
-			log.Println("当前价值", price.Mul(t.amount), "差价:", price.Mul(t.amount).Sub(t.pay), "盈利: ", price.Mul(t.amount).Sub(t.pay))
+			// log.Println("当前价值", price.Mul(t.amount), "差价:", price.Mul(t.amount).Sub(t.pay), "盈利: ", price.Mul(t.amount).Sub(t.pay))
 		}
 
 		//  第一单

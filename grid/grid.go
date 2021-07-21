@@ -152,7 +152,7 @@ func (t *Trader) ReBalance(ctx context.Context) error {
 	}
 	moneyHeld := balance[t.symbol.QuoteCurrency]
 	coinHeld := balance[t.symbol.BaseCurrency]
-	log.Printf("account has money %s, coin %s", moneyHeld, coinHeld, t.u.ObjectId)
+	log.Printf("account has money %s, coin %s,orderFor %d", moneyHeld, coinHeld, t.u.ObjectId)
 	t.amount, _ = decimal.NewFromString(t.u.Total) // 当前持仓
 	log.Println("资产:", moneyNeed, moneyHeld, balance)
 	if moneyNeed.Cmp(moneyHeld) == 1 && t.base == 0 {

@@ -153,7 +153,11 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 	if t.base > len(t.grids)-1 && len(t.grids) > 0 {
 		t.last = t.grids[len(t.grids)-1].Price
 	} else {
-		t.last = t.grids[t.base].Price // 上次交易价格
+		if t.base == 0 {
+			t.last = t.grids[0].Price
+		} else {
+			t.last = t.grids[t.base-1].Price // 上次交易价格
+		}
 	}
 	t.basePrice = t.grids[0].Price // 第一次交易价格
 

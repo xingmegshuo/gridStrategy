@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"zmyjobs/exchange/huobi"
@@ -39,17 +40,26 @@ type Cli struct {
 }
 
 type Args struct {
-	FirstBuy  float64
-	Price     float64
-	Rate      float64
-	MinBuy    float64
-	AddRate   float64
-	NeedMoney float64
-	MinPrice  float64
-	Callback  float64
-	Reduce    float64
-	Stop      float64
-	AddMoney  float64
+	FirstBuy     float64 // 首单
+	FirstDouble  float64 // 首单加倍
+	Price        float64 // 价格
+	IsChange     bool    // 是否为固定加仓金额
+	Rate         float64 // 补仓比例
+	MinBuy       float64 // 最少买入
+	AddRate      float64 // 补仓增幅
+	NeedMoney    float64 // 需要NeedMoney
+	MinPrice     float64 // 最小价格
+	Callback     float64 // 回降
+	Reduce       float64 // 回调
+	Stop         float64 // 止盈
+	AddMoney     float64 // 补仓金额
+	Decline      float64 // 跌幅比例
+	Out          bool    // 出局方式
+	OrderType    int64   // 市价/限价
+	IsLimit      bool    // 是否限高
+	LimitHigh    float64 // 限高价格
+	StrategyType int64   // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市
+	Crile        bool    // 是否循环
 }
 
 type Trader struct {
@@ -60,18 +70,19 @@ type Trader struct {
 	quoteCurrency string
 	grids         []hs.Grid
 	base          int
+	ErrString     string
+	over          bool
+	u             model.User
+	pay           decimal.Decimal // 投入金额
 	cost          decimal.Decimal // average price
 	amount        decimal.Decimal // amount held
-	ErrString     string
 	last          decimal.Decimal // 上次交易价格
-	u             model.User
 	basePrice     decimal.Decimal // 第一次交易价格
-	over          bool
 	hold          decimal.Decimal // 余额
-	pay           decimal.Decimal
-	SellOrder     uint64
-	OrderOver     bool // 交易状态
+	SellOrder     string          // 卖出订单号
+	OrderOver     bool            // 交易状态
 	Locks         sync.Mutex
+	SellMoney     decimal.Decimal // 卖出金额
 }
 
 func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
@@ -184,6 +195,7 @@ func (t *Trader) GetMycoin() decimal.Decimal {
 func (t *Trader) Close(ctx context.Context) {
 	// _ = t.mdb.Client().Disconnect(ctx)
 	log.Println("----------策略退出")
+	runtime.Goexit()
 }
 
 func (t *Trader) OrderUpdateHandler(response interface{}) {
@@ -224,11 +236,14 @@ func (t *Trader) OrderUpdateHandler(response interface{}) {
 			log.Printf("交易成功 order filled, orderId: %d, clientOrderId: %s, fill type: %s", o.OrderId, o.ClientOrderId, o.OrderStatus)
 			t.GetMoeny()
 			model.RebotUpdateBy(o.ClientOrderId, t.hold, "成功")
-			model.AsyncData(t.u.ObjectId, t.amount, GetPrice(t.symbol.Symbol), t.hold)
-
-			if o.OrderId == int64(t.SellOrder) {
-				t.over = true
+			model.AsyncData(t.u.ObjectId, t.amount, GetPrice(t.symbol.Symbol), t.pay)
+			if o.ClientOrderId == t.SellOrder {
+				p, _ := decimal.NewFromString(o.TradePrice)
+				v, _ := decimal.NewFromString(o.TradeVolume)
+				t.SellMoney = t.SellMoney.Add(p.Mul(v))
+				t.grids[t.base].AmountSell = t.SellMoney
 			}
+
 			go t.processOrderTrade(o.TradeId, uint64(o.OrderId), o.ClientOrderId, o.OrderStatus, o.TradePrice, o.TradeVolume, o.RemainAmt)
 		default:
 			log.Printf("unknown eventType, should never happen, orderId: %d, clientOrderId: %s, eventType: %s",
@@ -334,7 +349,7 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 	if err == nil {
 		t.log(clientOrderId, price, "限价", t.base, amount, rate, "买入")
 		t.grids[t.base].Price = price
-		t.grids[t.base].AmountBuy = price.Mul(amount)
+		t.grids[t.base].AmountBuy = amount // 实际买入
 
 	}
 	return orderId, err

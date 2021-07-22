@@ -12,7 +12,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"runtime"
+	"time"
 	"zmyjobs/grid"
 	"zmyjobs/logs"
 	model "zmyjobs/models"
@@ -34,35 +35,42 @@ func RunWG() {
 		for {
 			select {
 			case v := <-model.Ch:
-				// log.Println(v, "获取到", model.UpdateStatus(v.Id))
-
 				if v.Run == 2 || v.Run == 3 {
 					if model.UpdateStatus(v.Id) == 10 {
 						grid.GridDone <- 1
 					}
 					break OuterLoop
 				}
-
 			default:
-				if u.Status == float64(1) && u.IsRun == int64(-1) && Symbols != nil && start == 0 {
-					// log.Println("符合要求")
+			}
+			if u.Status == 1 && model.UpdateStatus(u.ID) == int64(-1) && Symbols != nil && start == 0 {
+				log.Println("符合要求", model.UpdateStatus(u.ID))
+				symbol, arg, straggly := PrintStrategy(u, Symbols)
+				if straggly != nil {
 					for i := 1; i < 2; i++ {
-						symbol, arg, straggly := PrintStrategy(u, Symbols)
-						if straggly != nil {
-							start = 1
-							// u.IsRun = 10
-							// u.Update()
-							// runtime.GOMAXPROCS(1)
-							log.Println("协程开始----------------用户:", u.ObjectId, "---交易币种:", u.Name, straggly)
-							go RunStrategy(&straggly, u, &symbol, arg)
-						}
+						start = 1
+						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, straggly, arg, symbol, u.Grids)
+						go RunStrategy(&straggly, u, &symbol, arg)
 					}
 				}
-				break OuterLoop
 			}
+			if model.UpdateStatus(u.ID) == int64(1) && u.Status == 1 {
+				_, arg, straggly := PrintStrategy(u, Symbols)
+				if straggly != nil && arg.Crile {
+					log.Println("重新开始", u.ObjectId)
+					u.IsRun = -1
+					u.Grids = ""
+					u.Total = ""
+					u.Base = 0
+					u.RunCount++
+					u.Update()
+					time.Sleep(time.Second * 10)
+				}
+				runtime.Goexit()
+			}
+			break OuterLoop
 		}
 	}
-	// runtime.Goexit()
 }
 
 // LoadUsers 获取数据库用户内容
@@ -111,9 +119,7 @@ func PrintStrategy(u model.User, symbol []map[string]interface{}) (grid.SymbolCa
 	NminAmount := decimal.NewFromFloat(minAmount)
 	NminToal := decimal.NewFromFloat(minToal)
 
-	strategy, e := MakeStrategy(arg, int(u.Number), int32(amountPrecision), int32(pricePrecision), NminAmount, NminToal)
-
-	// SaveStrategy(u, &strategy, false)
+	strategy, e := MakeStrategy(arg, int(u.Number), int32(amountPrecision), int32(pricePrecision), NminAmount, NminToal, u)
 
 	if e != nil {
 		u.Error = e.Error()
@@ -137,104 +143,82 @@ func PrintStrategy(u model.User, symbol []map[string]interface{}) (grid.SymbolCa
 			BaseCurrency:    baseCurrency,
 			QuoteCurrency:   quoteCurrency,
 		}
-		// 生成策略后开始跑
-		if s, ok := LoadStrategy(u); ok {
-			for i := u.Base; i < len(strategy); i++ {
-				if strategy[i] != (*s)[i] {
-					(*s)[i] = strategy[i]
-				}
-			}
-			strategy = *s
-			log.Println("重载策略")
-			strategy, _ = MakeLoad(arg, int(u.Number), int32(amountPrecision), int32(pricePrecision), NminAmount, NminToal, strategy, u.Base)
-		}
-		go SaveStrategy(u, &strategy, true)
 		return symbolData, arg, strategy
 	}
 }
 
 // MakeStrategy 网格模型
 func MakeStrategy(arg *grid.Args, number int, amountPrecision int32,
-	pricePrecision int32, minAmount decimal.Decimal, minTotal decimal.Decimal) ([]hs.Grid, error) {
+	pricePrecision int32, minAmount decimal.Decimal, minTotal decimal.Decimal, u model.User) ([]hs.Grid, error) {
 	// scale := decimal.NewFromFloat(math.Pow(arg.MinPrice/arg.Price, 1.0/float64(number)))
-	preTotal := decimal.NewFromFloat(arg.FirstBuy).Div(decimal.NewFromFloat(arg.Price)).Round(amountPrecision)
-	currentPrice := decimal.NewFromFloat(arg.Price)
-	// NowPrice := currentPrice
-	var grids []hs.Grid
-	// 第一次买入
-	currentGrid := hs.Grid{
-		Id:        1,
-		Price:     currentPrice.Round(pricePrecision),
-		AmountBuy: preTotal,
-		TotalBuy:  decimal.NewFromFloat(arg.FirstBuy),
-	}
-	arg.NeedMoney += arg.FirstBuy
-	grids = append(grids, currentGrid)
-	// 补仓
-	for i := 2; i <= number; i++ {
-		// 补仓比例 10
-		rate := arg.Rate + (arg.AddRate * float64(i-2))
-		priceRate := 0.02 + (arg.AddRate * 0.01 * float64(i-2)) // 0.02 跌幅比例
-		// log.Println(rate, "--------", priceRate, "------", grids[i-2].TotalBuy.Mul(decimal.NewFromFloat(1+rate*0.01))) // 跌幅 下降2个点买入                                                                                                                   // 跌幅
-		currentPrice = grids[i-2].Price.Sub(decimal.NewFromFloat(priceRate).Mul(grids[0].Price))         // 再下降几个百分点
-		realTotal := grids[i-2].TotalBuy.Add(decimal.NewFromFloat(rate * 0.01).Mul(grids[i-2].TotalBuy)) // 当前买入价值
-		amountBuy := realTotal.Div(currentPrice).Round(amountPrecision)                                  // 当前买入
 
-		if realTotal.Cmp(minTotal) == -1 {
-			log.Printf("total %s less than minTotal(%s)", realTotal, minTotal)
-			return nil, errors.New(" total not enough")
+	currentPrice := decimal.NewFromFloat(arg.Price).Round(pricePrecision)
+	preTotal := decimal.NewFromFloat(arg.FirstBuy).Div(currentPrice).Round(amountPrecision)
+	var grids []hs.Grid
+	// 如果策略已经存在
+	if s, ok := LoadStrategy(u); ok {
+		for i := 2; i <= number; i++ {
+			// 补仓比例 10
+			if u.Base <= i-1 {
+				decline := arg.Decline + arg.AddRate // 当前价格跌幅
+				(*s)[i-1].Price = (*s)[i-2].Price.Sub(currentPrice.Mul(decimal.NewFromFloat(decline * 0.01)))
+				if arg.IsChange {
+					// 固定金额
+					(*s)[i-1].TotalBuy = (*s)[i-2].TotalBuy.Add(decimal.NewFromFloat(arg.AddMoney))
+				} else {
+					rate := arg.Rate*0.01 + 1 // 补仓比例
+					(*s)[i-1].TotalBuy = (*s)[i-2].TotalBuy.Mul(decimal.NewFromFloat(rate))
+				}
+				(*s)[i-1].AmountBuy = (*s)[i-1].TotalBuy.Div((*s)[i-1].Price).Round(amountPrecision)
+			}
 		}
-		m, _ := realTotal.Float64() // 钱
-		arg.NeedMoney += m
-		arg.NeedMoney = model.ParseStringFloat(fmt.Sprintf("%.2f", arg.NeedMoney))
-		currentGrid = hs.Grid{
-			Id:        i,
+		grids = *s
+	} else {
+		// 第一次买入
+		currentGrid := hs.Grid{
+			Id:        1,
 			Price:     currentPrice,
-			AmountBuy: amountBuy,
-			TotalBuy:  realTotal,
+			AmountBuy: preTotal,
+			TotalBuy:  decimal.NewFromFloat(arg.FirstBuy),
 		}
 		grids = append(grids, currentGrid)
-	}
-	// 打印网格模型
-	log.Printf("Id\tTotal\tPrice\tAmountBuy\tAmountSell")
-	for _, g := range grids {
-		log.Printf("%2d\t%s\t%s\t%s\t%s",
-			g.Id, g.TotalBuy.StringFixed(amountPrecision+pricePrecision),
-			g.Price.StringFixed(pricePrecision),
-			g.AmountBuy.StringFixed(amountPrecision), g.AmountSell.StringFixed(amountPrecision))
-	}
-	log.Println("需要资金:", arg.NeedMoney)
-	return grids, nil
-}
-
-// MakeLoad 重载模型
-func MakeLoad(arg *grid.Args, number int, amountPrecision int32,
-	pricePrecision int32, minAmount decimal.Decimal, minTotal decimal.Decimal, grids []hs.Grid, base int) ([]hs.Grid, error) {
-
-	currentPrice := decimal.NewFromFloat(arg.Price)
-
-	// 补仓
-	for i := 2; i <= number; i++ {
-		// 补仓比例 10
-		if base <= i-1 {
-			rate := arg.Rate + (arg.AddRate * float64(i-2))
-			realTotal := grids[i-2].TotalBuy.Add(decimal.NewFromFloat(rate * 0.01).Mul(grids[i-2].TotalBuy)) // 当前买入价值
-			grids[i-1].AmountBuy = realTotal.Div(currentPrice).Round(amountPrecision)                        // 当前买入
-			grids[i-1].TotalBuy = realTotal
+		// 补仓
+		for i := 2; i <= number; i++ {
+			// 补仓比例 10
+			decline := arg.Decline + arg.AddRate // 当前价格跌幅
+			price := grids[i-2].Price.Sub(currentPrice.Mul(decimal.NewFromFloat(decline * 0.01)))
+			var TotalBuy decimal.Decimal
+			if arg.IsChange {
+				// 固定金额
+				TotalBuy = grids[i-2].TotalBuy.Add(decimal.NewFromFloat(arg.AddMoney))
+			} else {
+				rate := arg.Rate*0.01 + 1 // 补仓比例
+				TotalBuy = grids[i-2].TotalBuy.Mul(decimal.NewFromFloat(rate))
+			}
+			if TotalBuy.Cmp(minTotal) == -1 {
+				log.Printf("total %s less than minTotal(%s)", TotalBuy, minTotal)
+				return nil, errors.New(" total not enough")
+			}
+			currentGrid = hs.Grid{
+				Id:        i,
+				Price:     price,
+				AmountBuy: TotalBuy.Div(price).Round(amountPrecision),
+				TotalBuy:  TotalBuy,
+			}
+			grids = append(grids, currentGrid)
 		}
 	}
-	// 打印网格模型
-	log.Printf("Id\tTotal\tPrice\tAmountBuy\tAmountSell")
-	var m decimal.Decimal
 	for _, g := range grids {
-		log.Printf("%2d\t%s\t%s\t%s\t%s",
+		log.Printf("%2d - - %s - - %s - - %s - - %s",
 			g.Id, g.TotalBuy.StringFixed(amountPrecision+pricePrecision),
 			g.Price.StringFixed(pricePrecision),
 			g.AmountBuy.StringFixed(amountPrecision), g.AmountSell.StringFixed(amountPrecision))
-		m = m.Add(g.TotalBuy)
+		if u.Base < g.Id {
+			m, _ := g.TotalBuy.Float64()
+			arg.NeedMoney += m
+		}
 	}
-	arg.NeedMoney, _ = m.Float64()
-	log.Println("需要资金:", arg.NeedMoney)
+	log.Println("需要资金", arg.NeedMoney)
 	return grids, nil
 }
 
@@ -246,22 +230,25 @@ OuterLoop:
 	for {
 		select {
 		case <-grid.GridDone:
-			log.Println("收到消息,暂停策略,exiting ......", u.ID)
-			u.IsRun = 2
-			u.Update()
+			log.Println("收到消息,暂停策略,exiting ......", u.ObjectId)
+			if model.UpdateStatus(u.ID) == 10 {
+				u.IsRun = 2
+				u.Update()
+			}
 			break OuterLoop
 		default:
 		}
 		// 执行任务不是一次执行
-		if u.IsRun == -1 {
+		if model.UpdateStatus(u.ID) == -1 {
+			// log.Println("what 1")
+			gr, _ := json.Marshal(&s)
+			u.Grids = string(gr)
 			u.IsRun = 10
 			u.Update()
 			for i := 0; i < 1; i++ {
 				go grid.Run(ctx, s, u, symbol, arg)
+				// log.Println("what is waring  ")
 			}
-
-			// runtime.Goexit()
-
 		}
 	}
 }
@@ -286,6 +273,14 @@ func ParseStrategy(u model.User) *grid.Args {
 	arg.Reduce = model.ParseStringFloat(data["reduce"].(string))
 	arg.Stop = model.ParseStringFloat(data["stop"].(string))
 	arg.AddMoney = model.ParseStringFloat(data["add"].(string))
+	arg.StrategyType = int64(data["Strategy"].(float64))
+	if arg.StrategyType == 1 {
+		arg.IsChange = false
+	}
+	if data["frequency"].(float64) == 2 {
+		arg.Crile = true
+	}
+	arg.Decline = 1.5 // 暂设跌幅
 	return &arg
 }
 
@@ -297,16 +292,4 @@ func LoadStrategy(u model.User) (*[]hs.Grid, bool) {
 		return &data, true
 	}
 	return &data, false
-}
-
-// SaveStrategy 保存
-func SaveStrategy(u model.User, g *[]hs.Grid, b bool) {
-	if b {
-		// log.Println("清除完数据------------")
-		s, _ := json.Marshal(*g)
-		grids := string(s)
-
-		model.DB.Table("users").Where("object_id", u.ObjectId).Update("grids", grids)
-	}
-
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"time"
 	"zmyjobs/exchange/huobi"
 	model "zmyjobs/models"
@@ -19,7 +20,7 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("暂停交易", u.ObjectId)
+			log.Println("停止交易", u.ObjectId)
 			return
 		default:
 		}
@@ -37,13 +38,8 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 					u.Update()
 					GridDone <- 1
 				} else {
-					defer g.Close(ctx)
 					g.u = u
 					go g.Trade(ctx)
-
-					// g.Locks.Unlock()
-					// log.Println("GAN .........")
-					// runtime.Goexit()
 				}
 			}
 		}
@@ -91,7 +87,7 @@ func (t *Trader) Trade(ctx context.Context) {
 				go t.ex.huobi.SubscribeOrder(ctx, t.symbol.Symbol, clientId, t.OrderUpdateHandler)
 				go t.ex.huobi.SubscribeTradeClear(ctx, t.symbol.Symbol, clientId, t.TradeClearHandler)
 				if err := t.ReBalance(ctx); err != nil {
-					fmt.Println("校验账户余额不足够，策略不开始----", t.u.ObjectId)
+					log.Println("校验账户余额不足够，策略不开始----", t.u.ObjectId)
 					t.u.IsRun = -10
 					t.u.Error = err.Error()
 					t.u.Update()
@@ -99,42 +95,36 @@ func (t *Trader) Trade(ctx context.Context) {
 					GridDone <- 1
 				} else {
 					// t.over = false
-					for {
-						for i := 0; i < len(t.grids); i++ {
-							if i < t.base {
-								t.pay = t.pay.Add(t.grids[i].TotalBuy)
-							}
-						}
-						// time.Sleep(time.Second * 10)
-						// log.Println("testing ............. ")
-						t.setupGridOrders(ctx)
-						if t.ErrString != "" {
-							log.Println("网络链接问题：", t.u.ObjectId)
-							t.u.IsRun = -10
-							t.u.Error = t.ErrString
-							t.u.Update()
-							// 执行报错就关闭
-							GridDone <- 1
-							break
-						}
-						time.Sleep(time.Second * 30)
-						if t.over && t.base >= len(t.grids) {
-							log.Println("策略一次执行完毕:", t.u.ObjectId)
-							// 策略执行完毕 to do 计算盈利
-							t.u.Money, _ = t.cost.Mul(t.amount).Float64()
-							// 盈利ctx
-							t.u.Money = t.u.Money - t.arg.NeedMoney
-							t.u.IsRun = 1
-							t.u.Update()
-							GridDone <- 1
-							break
-						} else {
-							log.Println("卖出时超时,撤单重新卖...", t.u.ObjectId)
-							t.cancel(t.SellOrder)
-							continue
+					// for {
+					for i := 0; i < len(t.grids); i++ {
+						if i < t.base {
+							t.pay = t.pay.Add(t.grids[i].TotalBuy)
+							t.SellMoney = t.SellMoney.Add(t.grids[i].AmountSell)
 						}
 					}
 
+					t.setupGridOrders(ctx)
+					// t.testGridOrder(ctx)
+					if t.ErrString != "" {
+						log.Println("网络链接问题：", t.u.ObjectId)
+						t.u.IsRun = -10
+						t.u.Error = t.ErrString
+						t.u.Update()
+						// 执行报错就关闭
+						GridDone <- 1
+					}
+					if t.over {
+
+						// 策略执行完毕 to do 计算盈利
+
+						log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.SellMoney.Sub(t.pay))
+						// 盈利ctx
+
+						t.u.IsRun = 1
+						t.u.Update()
+
+						GridDone <- 1
+					}
 				}
 			}
 		}
@@ -173,6 +163,12 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		high = t.last
 	)
 	for {
+		select {
+		case <-ctx.Done():
+			log.Println("close get price ", t.u.ObjectId)
+			runtime.Goexit()
+		default:
+		}
 		count++
 		time.Sleep(time.Second * 1)
 		t.GetMoeny()                                       // 获取当前money和持仓
@@ -194,7 +190,6 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		}
 		// 计算盈利
 		win := float64(0)
-		// t.pay = t.cost.Mul(t.amount) // 当前支付
 		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
 			win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 		}
@@ -264,14 +259,26 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 
 		//  止盈 t.arg.Stop
 		if win*100 > t.arg.Stop && reduce*100 > t.arg.Reduce {
-			log.Println("盈利卖出")
+			log.Println("盈利卖出", t.u.ObjectId)
 			id, err := t.Sell(price)
 			if err != nil {
 				log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 				continue
 			} else {
-				t.SellOrder = id
-				break
+				if t.WaitOrder() {
+					SellGrid := hs.Grid{
+						Id:         t.base + 1,
+						Price:      price,
+						Order:      id,
+						AmountSell: t.amount,
+						TotalBuy:   t.amount.Mul(price),
+					}
+					t.grids = append(t.grids, SellGrid)
+					t.over = true
+					t.base = -1
+				} else {
+					t.cancel(id)
+				}
 			}
 		}
 
@@ -321,12 +328,42 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 			t.u.Grids = string(s)
 			t.u.Update()
 		}
+		if t.over {
+			log.Println("任务结束", t.u.ObjectId)
+			break
+		}
+	}
+}
+
+func (t *Trader) testGridOrder(ctx context.Context) {
+	t.basePrice = t.grids[0].Price
+	c := 0
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("close get price ")
+			runtime.Goexit()
+		default:
+		}
+		c++
+		time.Sleep(time.Second * 1)
+		t.GetMoeny()                                       // 获取当前money和持仓
+		price, err := t.ex.huobi.GetPrice(t.symbol.Symbol) //获取当前价格
+		if err != nil {
+			t.ErrString = err.Error()
+			break
+		}
+		log.Println(price.Sub(t.basePrice).Div(t.basePrice), price.Sub(t.basePrice).Div(t.basePrice).Cmp(decimal.NewFromFloat(0.01)))
+		if c > 10 {
+			t.over = true
+			break
+		}
 	}
 }
 
 func (t *Trader) Buy(price decimal.Decimal) (uint64, error) {
 	clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-	orderId, err := t.buy(clientOrderId, price, t.grids[t.base].AmountBuy, t.GetRate())
+	orderId, err := t.buy(clientOrderId, price, t.grids[t.base].TotalBuy.Div(price).Round(t.symbol.AmountPrecision), t.GetRate())
 	return orderId, err
 }
 
@@ -335,6 +372,7 @@ func (t *Trader) Sell(price decimal.Decimal) (uint64, error) {
 	t.amount = t.GetMycoin()
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision))
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
+	t.SellOrder = clientOrderId
 	return orderId, err
 }
 

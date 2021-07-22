@@ -75,15 +75,17 @@ func init() {
 	sqlDB.SetMaxOpenConns(2000)
 	sqlDB.SetConnMaxLifetime(time.Second * 600) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{
-		Logger:                 newLogger,
-		PrepareStmt:            true,
-		SkipDefaultTransaction: true,
+		Logger:      newLogger,
+		PrepareStmt: true,
+		// SkipDefaultTransaction: true,
 	})
 	if e != nil {
 		panic("failed to connect user database")
 	}
-	UserDB = userDB.Session(&gorm.Session{PrepareStmt: true})
-	DB = db.Session(&gorm.Session{PrepareStmt: true})
+	UserDB = userDB
+	// .Session(&gorm.Session{PrepareStmt: true})
+	DB = db
+	// .Session(&gorm.Session{PrepareStmt: true})
 
 	db.AutoMigrate(&Job{}, &Host{}, &User{}, &RebotLog{})
 

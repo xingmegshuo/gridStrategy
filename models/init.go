@@ -65,6 +65,7 @@ func init() {
 	// 	PrepareStmt:            true,
 	// 	Logger:                 newLogger,
 	// })
+
 	if err != nil {
 		panic("failed to connect database")
 	}

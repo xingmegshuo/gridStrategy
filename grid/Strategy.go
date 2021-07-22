@@ -32,7 +32,7 @@ func Run(ctx context.Context, grid *[]hs.Grid, u model.User, symbol *SymbolCateg
 				log.Println("尝试获取用户账户数据，校验余额，api 等信息正确性---", u.ObjectId)
 				g, e := NewGrid(grid, symbol, arg)
 				// g.Locks.Lock()
-				if e != nil {
+				if e != nil || len(g.grids) != int(u.Number) {
 					u.IsRun = -10
 					u.Error = "api 请求超时，或api接口更改"
 					u.Update()
@@ -150,7 +150,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 	d := 0 // 跌
 	z := 0 // 涨
 	count := 0
-	if t.base > len(t.grids)-1 {
+	if t.base > len(t.grids)-1 && len(t.grids) > 0 {
 		t.last = t.grids[len(t.grids)-1].Price
 	} else {
 		t.last = t.grids[t.base-1].Price // 上次交易价格

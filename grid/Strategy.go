@@ -100,7 +100,7 @@ func (t *Trader) Trade(ctx context.Context) {
 				} else {
 					for i := 0; i < len(t.grids); i++ {
 						if i < t.base {
-							t.pay = t.pay.Add(t.grids[i].TotalBuy)
+							t.pay = t.pay.Add(t.RealGrids[i].TotalBuy)
 							t.SellMoney = t.SellMoney.Add(t.grids[i].AmountSell)
 						}
 					}

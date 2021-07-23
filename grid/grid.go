@@ -330,16 +330,16 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 	t.OrderOver = true
 	log.Printf("交易成功 order filled, orderId: %d, clientOrderId: %s, fill type: %s", trade.OrderId, trade.ClientOrder, trade.OrderType)
 	t.GetMoeny()
-	t.RealGrids[t.base-1].AmountBuy = trade.Volume
-	t.RealGrids[t.base-1].Price = trade.Price
-	t.RealGrids[t.base-1].TotalBuy = t.RealGrids[t.base-1].Price.Mul(t.RealGrids[t.base-1].AmountBuy)
+	t.RealGrids[t.base].AmountBuy = trade.Volume
+	t.RealGrids[t.base].Price = trade.Price
+	t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(t.RealGrids[t.base].AmountBuy)
 
-	model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base-1].Price, t.RealGrids[t.base-1].AmountBuy, trade.TransactFee, t.RealGrids[t.base-1].TotalBuy, "成功")
-	t.pay = t.pay.Add(t.RealGrids[t.base-1].TotalBuy)
+	model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, trade.TransactFee, t.RealGrids[t.base].TotalBuy, "成功")
+	t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
 	model.AsyncData(t.u.ObjectId, t.amount, model.GetPrice(t.symbol.Symbol), t.pay)
 	if trade.ClientOrder == t.SellOrder {
 		t.SellMoney = t.SellMoney.Add(trade.Price.Mul(trade.Volume))
-		t.RealGrids[t.base-1].AmountSell = t.SellMoney
+		t.RealGrids[t.base].AmountSell = t.SellMoney
 		t.over = true
 	}
 	log.Println("Average cost update", "cost", t.cost)

@@ -50,6 +50,7 @@ type RebotLog struct {
 	HoldMoney    float64 // 当前价值美金
 	PayMoney     float64 // 当前投入金额
 	AddRate      float64 // 当前补仓比例
+	TransactFee  float64 // 手续费
 	Status       string  // 订单状态
 	BuyOrSell    string  // 买入还是卖出
 	AccountMoney float64 // 账户余额
@@ -74,13 +75,13 @@ func (r *RebotLog) New() {
 	DB.Create(&r)
 }
 
-func RebotUpdateBy(orderId string, m decimal.Decimal, status string) {
-	log.Println(orderId)
+func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal, transactFee decimal.Decimal, m decimal.Decimal, status string) {
+	log.Println(orderId, "------订单成功")
 	// order := strconv.FormatInt(orderId, 10)
 	money, _ := m.Float64()
 	var r RebotLog
+	DB.Table("rebot_logs").Where("id = ?", r.ID).Update("status", status).Update("account_money", money).Update("price", price).Update("hold_num", hold).Update("transac_fee", transactFee)
 	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
-	DB.Table("rebot_logs").Where("id = ?", r.ID).Update("status", status).Update("account_money", money)
 	AddModelLog(&r, money)
 }
 
@@ -93,11 +94,31 @@ func RebotUpdateBy(orderId string, m decimal.Decimal, status string) {
 func AsyncData(id interface{}, amount interface{}, price interface{}, money interface{}) {
 	//  同步当前task_order
 	var data = map[string]interface{}{}
-	UserDB.Raw("select * from db_task_order where `id` = ?", id).Scan(&data)
+	// UserDB.Raw("select * from db_task_order where `id` = ?", id).Scan(&data)
 	log.Println("同步数据:", amount, price, money)
 	data["hold_num"] = amount
 	data["hold_price"] = price
-	data["hold_amount"] = money
+	data["hold_amount"] = money // 持仓金额
+	UpdateOrder(id, data)
+}
+
+// PreView 预览策略
+func PreView(id interface{}, strategy string) {
+	log.Println("我运行了")
+	var data = map[string]interface{}{}
+	data["grids"] = strategy
+	UpdateOrder(id, data)
+}
+
+// StrategyError 策略配置错误和运行错误
+func StrategyError(id interface{}, e string) {
+	var data = map[string]interface{}{}
+	data["status"] = 2
+	data["error_msg"] = e
+	UpdateOrder(id, data)
+}
+
+func UpdateOrder(id interface{}, data map[string]interface{}) {
 	UserDB.Table("db_task_order").Where("id = ?", id).Updates(&data)
 }
 
@@ -111,7 +132,7 @@ func AddModelLog(r *RebotLog, m float64) {
 	if r.BuyOrSell == "买入" {
 		data["type"] = 1
 	} else {
-		data["type"] = 1
+		data["type"] = 2
 	}
 	data["coin_name"] = "币币交易"
 	data["task_coin_id"] = 1
@@ -122,7 +143,7 @@ func AddModelLog(r *RebotLog, m float64) {
 	data["extra"] = "none"
 	data["price"] = decimal.NewFromFloat(r.Price)
 	data["num"] = decimal.NewFromFloat(r.HoldNum)
-	data["amount"] = decimal.NewFromFloat(r.HoldMoney)
+	data["amount"] = decimal.NewFromFloat(r.Price * r.HoldNum)
 	data["left_amount"] = decimal.NewFromFloat(m)
 	data["status"] = 1
 	data["create_time"] = time.Now().Unix()

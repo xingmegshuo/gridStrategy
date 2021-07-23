@@ -34,7 +34,7 @@ type User struct {
 	Base      int     // 当前第几单
 	Type      float64 // 类型
 	Strategy  string  // 策略内容
-	IsRun     int64   // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败
+	IsRun     int64   // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败 100 等待重新开始
 	Name      string  // 交易对
 	ApiKey    string  // 秘钥
 	Secret    string  // 秘钥
@@ -45,9 +45,12 @@ type User struct {
 	Total     string  // 持仓
 	Number    float64 // 单数
 	Error     string  // 错误
-	Grids     string  // 策略
+	Grids     string  // 策略预设
 	Custom    float64 // 用户id
 	RunCount  int     // 执行次数
+	RealGrids string  // 实际执行策略
+	Arg       string  // 策略参数
+	Symbol    string  // 交易对参数
 }
 
 // NewUser 从缓存获取如果数据库不存在就添加
@@ -63,7 +66,8 @@ func NewUser() {
 			// 数据库查找存在与否
 			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 			// 条件 数据库未找到，订单启用，创建新的任务
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) && order["status"].(float64) == 1 {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				//  && order["status"].(float64) == 1 {
 				// log.Println(NewApi[order["customer_id"]])
 				u = User{
 					ObjectId: int32(order["id"].(float64)),
@@ -83,17 +87,10 @@ func NewUser() {
 					Base:   0,
 					Custom: order["customer_id"].(float64),
 				}
+				u = UpdateUser(u)
 				DB.Create(&u)
 			} else if result.Error == nil {
-
-				//
-				// if u.IsRun == -2 {
-				// 	// log.Println("检测到策略执行出错.................")
-				// 	// Ch <- JobChan{u.ID, 000}
-				// }
-
 				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
-
 				if order["status"].(float64) != u.Status {
 					log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
 					u.Status = order["status"].(float64)
@@ -127,6 +124,7 @@ func NewUser() {
 					if u.Status == 1 {
 						if u.IsRun == 2 {
 							u.IsRun = -1
+							u = UpdateUser(u)
 							u.Update()
 						}
 					}
@@ -135,36 +133,12 @@ func NewUser() {
 				if u.Strategy != parseInput(order) {
 					// log.Println("修改参数")
 					u.Strategy = parseInput(order)
+					u = UpdateUser(u)
 					u.Update()
 				}
-			} else {
-				u = User{
-					ObjectId: int32(order["id"].(float64)),
-					ApiKey:   api,
-					Secret:   sec,
-					Category: cate,
-					Name:     ParseSymbol(order["task_coin_name"].(string)),
-					IsRun:    -10,
-					Strategy: parseInput(order),
-					// MinPrice: order["price_stop"].(string),
-					// MaxPrice: order["price_add"].(string),
-					Money:  GetAccount(order["customer_id"].(float64)),
-					Number: order["num"].(float64),
-					// Total:    order["hold_num"].(string),
-					Type:   order["frequency"].(float64),
-					Status: order["status"].(float64),
-					Base:   0,
-					Custom: order["customer_id"].(float64),
-				}
-				DB.Create(&u)
 			}
-
 		}
 
-		// if !b {
-		// 	cacheNone[order["id"]] = order["status"]
-		// }
-		// }
 	}
 }
 
@@ -190,6 +164,7 @@ func (u *User) Update() {
 // StopUser 停止所有任务
 func StopUser() {
 	DB.Where(&User{Status: float64(1), IsRun: 10}).UpdateColumns(User{IsRun: int64(2)})
+	DB.Where(&User{Status: float64(1), IsRun: 100}).UpdateColumns(User{IsRun: int64(2)})
 }
 
 // parseSymbol 解析交易对
@@ -213,8 +188,8 @@ func parseInput(order map[string]interface{}) string {
 	strategy["add"] = order["price_add"]           // 加仓金额
 	strategy["reset"] = order["price_repair"]      // 补仓复位
 	strategy["frequency"] = order["frequency"]     // 是否为循环策略
-	str, _ := json.Marshal(&strategy)
-	return string(str)
+	strategy["decline"] = order["decline"]
+	return ToStringJson(&strategy)
 }
 
 // GetApiConfig 获取用户设置的平台分类及秘钥
@@ -257,4 +232,55 @@ func UpdateStatus(id uint) (res int64) {
 	DB.Raw("select is_run from users where id = ?", id).Scan(&res)
 	// log.Println("我的状态", res)
 	return
+}
+
+// LoadSymbols 获取交易对
+func LoadSymbols(name string) []map[string]interface{} {
+	switch name {
+	case "火币":
+		//log.Println(model.GetCache("火币交易对"))
+		return StringMap(GetCache("火币交易对"))
+	default:
+		return StringMap(GetCache("火币交易对"))
+	}
+}
+
+// SourceStrategy 生成并写入表
+func SourceStrategy(u User, load bool) (*[]Grid, error) {
+	if data, ok := LoadStrategy(u); ok && !load {
+		return data, nil
+	} else {
+		if strategy, e := MakeStrategy(u); e == nil {
+			return strategy, nil
+		} else {
+			return nil, e
+		}
+	}
+}
+
+// LoadStrategy 从表中加载策略
+func LoadStrategy(u User) (*[]Grid, bool) {
+	var data []Grid
+	_ = json.Unmarshal([]byte(u.Grids), &data)
+	if float64(len(data)) == u.Number {
+		return &data, true
+	}
+	return &data, false
+}
+
+// UpdateUser  更新u
+func UpdateUser(u User) User {
+	u.Arg = ToStringJson(ParseStrategy(u))
+	u.Symbol = ToStringJson(NewSymbol(u))
+	if grid, e := SourceStrategy(u, true); e == nil {
+		s, _ := json.Marshal(grid)
+		u.Grids = string(s)
+		PreView(u.ObjectId, u.Grids)
+	} else {
+		u.IsRun = -10
+		u.Status = 2
+		u.Error = e.Error()
+		StrategyError(u.ObjectId, e.Error())
+	}
+	return u
 }

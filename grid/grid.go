@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
-	"sync"
 	"zmyjobs/exchange/huobi"
 	"zmyjobs/logs"
 	model "zmyjobs/models"
@@ -14,7 +13,6 @@ import (
 	"github.com/huobirdcenter/huobi_golang/logging/applogger"
 	"github.com/huobirdcenter/huobi_golang/pkg/model/order"
 	"github.com/shopspring/decimal"
-	"github.com/xyths/hs"
 )
 
 type SymbolCategory struct {
@@ -63,26 +61,24 @@ type Args struct {
 }
 
 type Trader struct {
-	arg           *Args
-	ex            *Cli
-	symbol        *SymbolCategory
-	baseCurrency  string
-	quoteCurrency string
-	grids         []hs.Grid
-	base          int
-	ErrString     string
-	over          bool
-	u             model.User
-	pay           decimal.Decimal // 投入金额
-	cost          decimal.Decimal // average price
-	amount        decimal.Decimal // amount held
-	last          decimal.Decimal // 上次交易价格
-	basePrice     decimal.Decimal // 第一次交易价格
-	hold          decimal.Decimal // 余额
-	SellOrder     string          // 卖出订单号
-	OrderOver     bool            // 交易状态
-	Locks         sync.Mutex
-	SellMoney     decimal.Decimal // 卖出金额
+	arg       *model.Args
+	ex        *Cli
+	symbol    *model.SymbolCategory
+	grids     []model.Grid
+	RealGrids []model.Grid
+	base      int
+	ErrString string
+	over      bool
+	u         model.User
+	pay       decimal.Decimal // 投入金额
+	cost      decimal.Decimal // average price
+	amount    decimal.Decimal // amount held
+	last      decimal.Decimal // 上次交易价格
+	basePrice decimal.Decimal // 第一次交易价格
+	hold      decimal.Decimal // 余额
+	SellOrder string          // 卖出订单号
+	SellMoney decimal.Decimal // 卖出金额
+	OrderOver bool
 }
 
 func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
@@ -147,8 +143,10 @@ func (t *Trader) ReBalance(ctx context.Context) error {
 
 	for i := 0; i < len(t.grids); i++ {
 		if i < t.base {
-			moneyNeed = moneyNeed.Sub(t.grids[i].TotalBuy)
-			t.cost = t.grids[i].Price.Add(t.cost)
+
+			t.cost = t.RealGrids[i].Price.Add(t.cost)
+		} else {
+			moneyNeed = moneyNeed.Add(t.grids[i].TotalBuy)
 		}
 	}
 	if t.base > 0 {
@@ -232,17 +230,6 @@ func (t *Trader) OrderUpdateHandler(response interface{}) {
 		case "cancellation":
 			log.Printf("order cancelled, orderId: %d, clientOrderId: %s", o.OrderId, o.ClientOrderId)
 		case "trade":
-			t.OrderOver = true
-			log.Printf("交易成功 order filled, orderId: %d, clientOrderId: %s, fill type: %s", o.OrderId, o.ClientOrderId, o.OrderStatus)
-			t.GetMoeny()
-			model.RebotUpdateBy(o.ClientOrderId, t.hold, "成功")
-			model.AsyncData(t.u.ObjectId, t.amount, GetPrice(t.symbol.Symbol), t.pay)
-			if o.ClientOrderId == t.SellOrder {
-				p, _ := decimal.NewFromString(o.TradePrice)
-				v, _ := decimal.NewFromString(o.TradeVolume)
-				t.SellMoney = t.SellMoney.Add(p.Mul(v))
-				t.grids[t.base].AmountSell = t.SellMoney
-			}
 
 			go t.processOrderTrade(o.TradeId, uint64(o.OrderId), o.ClientOrderId, o.OrderStatus, o.TradePrice, o.TradeVolume, o.RemainAmt)
 		default:
@@ -279,6 +266,7 @@ func (t *Trader) TradeClearHandler(response interface{}) {
 				Volume:            decimal.RequireFromString(subResponse.Data.TradeVolume),
 				TransactFee:       decimal.RequireFromString(subResponse.Data.TransactFee),
 				FeeDeduct:         decimal.RequireFromString(subResponse.Data.FeeDeduct),
+				ClientOrder:       subResponse.Data.ClientOrderId,
 				FeeDeductCurrency: subResponse.Data.FeeDeductType,
 			}
 			log.Printf("Order update, symbol: %s, order id: %d, price: %s, volume: %s",
@@ -339,8 +327,23 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 	tradeTotal := trade.Volume.Mul(trade.Price)
 	newTotal := oldTotal.Add(tradeTotal)
 	t.cost = newTotal.Div(t.amount)
+	t.OrderOver = true
+	log.Printf("交易成功 order filled, orderId: %d, clientOrderId: %s, fill type: %s", trade.OrderId, trade.ClientOrder, trade.OrderType)
+	t.GetMoeny()
+	t.RealGrids[t.base-1].AmountBuy = trade.Volume
+	t.RealGrids[t.base-1].Price = trade.Price
+	t.RealGrids[t.base-1].TotalBuy = t.RealGrids[t.base-1].Price.Mul(t.RealGrids[t.base-1].AmountBuy)
+
+	model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base-1].Price, t.RealGrids[t.base-1].AmountBuy, trade.TransactFee, t.RealGrids[t.base-1].TotalBuy, "成功")
+	t.pay = t.pay.Add(t.RealGrids[t.base-1].TotalBuy)
+	model.AsyncData(t.u.ObjectId, t.amount, model.GetPrice(t.symbol.Symbol), t.pay)
+	if trade.ClientOrder == t.SellOrder {
+		t.SellMoney = t.SellMoney.Add(trade.Price.Mul(trade.Volume))
+		t.RealGrids[t.base-1].AmountSell = t.SellMoney
+		t.over = true
+	}
 	log.Println("Average cost update", "cost", t.cost)
-	// 计算均价
+
 }
 
 func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate float64) (uint64, error) {
@@ -348,17 +351,28 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 	orderId, err := t.ex.huobi.PlaceOrder(huobi.OrderTypeBuyLimit, t.symbol.Symbol, clientOrderId, price, amount)
 	if err == nil {
 		t.log(clientOrderId, price, "限价", t.base, amount, rate, "买入")
+		t.RealGrids = append(t.RealGrids, model.Grid{
+			Id:      t.base + 1,
+			Price:   price,
+			Decline: rate,
+		})
 		t.grids[t.base].Price = price
 		t.grids[t.base].AmountBuy = amount // 实际买入
-
 	}
 	return orderId, err
 }
-func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
+func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal, rate float64) (uint64, error) {
 	log.Printf("[Order][sell] price: %s, amount: %s", price, amount)
 	orderId, err := t.ex.huobi.PlaceOrder(huobi.OrderTypeSellLimit, t.symbol.Symbol, clientOrderId, price, amount)
 	if err == nil {
-		t.log(clientOrderId, price, "限价", t.base+1, amount, 0, "卖出")
+		t.log(clientOrderId, price, "限价", t.base, amount, rate, "买入")
+		t.RealGrids = append(t.RealGrids, model.Grid{
+			Id:      t.base + 1,
+			Price:   price,
+			Decline: rate,
+		})
+		t.grids[t.base].Price = price
+		t.grids[t.base].AmountBuy = amount // 实际买入
 	}
 	return orderId, err
 }
@@ -473,12 +487,4 @@ func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal) (uint
 
 func (t *Trader) ErrLoad() string {
 	return t.ErrString
-}
-
-func GetPrice(symbol string) decimal.Decimal {
-	price, err := huobi.GetPriceSymbol(symbol)
-	if err == nil {
-		return price
-	}
-	return decimal.NewFromFloat(0)
 }

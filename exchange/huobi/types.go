@@ -1,8 +1,9 @@
 package huobi
 
 import (
-	"github.com/shopspring/decimal"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -45,4 +46,6 @@ type Trade struct {
 	TransactFee       decimal.Decimal
 	FeeDeduct         decimal.Decimal
 	FeeDeductCurrency string
+
+	ClientOrder string
 }

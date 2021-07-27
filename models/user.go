@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -55,8 +56,10 @@ type User struct {
 
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
-
 	orders := StringMap(GetCache("db_task_order"))
+	if GetCache("火币交易对") == "" {
+		time.Sleep(time.Second * 2)
+	}
 	for _, order := range orders {
 		// 符合条件的订单
 		// if _, Ok := cacheNone[order["id"]]; !Ok {
@@ -90,38 +93,27 @@ func NewUser() {
 				u = UpdateUser(u)
 				DB.Create(&u)
 			} else if result.Error == nil {
-				// status 0 禁用, 1 启用 2 暂停 3 删除 缓存与数据不相等
-				if order["status"].(float64) != u.Status {
+				// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
+				if order["status"].(float64)+1 != u.Status {
 					log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
-					u.Status = order["status"].(float64)
+					u.Status = order["status"].(float64) + 1
 					u.Update()
 					switch order["status"].(float64) {
-					case 2:
+					case 0:
 						// 发送暂停
 						Ch <- JobChan{Id: u.ID, Run: 2}
-					case 0:
-						// 发送禁用
-						// log.Println("禁用任务")
-						if u.Status != -1 {
-							Ch <- JobChan{Id: u.ID, Run: -1}
-						}
 					case 3:
-						// 发送删除
-						// u.Status = float64(3)
-						// u.Update()
-						// DB.Delete(&p)
 						Ch <- JobChan{Id: u.ID, Run: 3}
-
-					default:
-						// 1
-						u.Status = 1
+					case 1:
+						u.Status = 2
 						if u.IsRun == 2 {
 							u.IsRun = -1
 						}
 						u.Update()
+					default:
 					}
 				} else {
-					if u.Status == 1 {
+					if u.Status == 2 {
 						if u.IsRun == 2 {
 							u.IsRun = -1
 							u = UpdateUser(u)
@@ -138,7 +130,6 @@ func NewUser() {
 				}
 			}
 		}
-
 	}
 }
 
@@ -158,13 +149,13 @@ func GetUserJob() *[]User {
 
 // Update 更新
 func (u *User) Update() {
-	DB.Updates(&u)
+	DB.Updates(u)
 }
 
 // StopUser 停止所有任务
 func StopUser() {
-	DB.Where(&User{Status: float64(1), IsRun: 10}).UpdateColumns(User{IsRun: int64(2)})
-	DB.Where(&User{Status: float64(1), IsRun: 100}).UpdateColumns(User{IsRun: int64(2)})
+	DB.Where(&User{Status: float64(2), IsRun: 10}).UpdateColumns(User{IsRun: int64(2)})
+	DB.Where(&User{Status: float64(2), IsRun: 100}).UpdateColumns(User{IsRun: int64(2)})
 }
 
 // parseSymbol 解析交易对
@@ -188,8 +179,14 @@ func parseInput(order map[string]interface{}) string {
 	strategy["add"] = order["price_add"]           // 加仓金额
 	strategy["reset"] = order["price_repair"]      // 补仓复位
 	strategy["frequency"] = order["frequency"]     // 是否为循环策略
-	strategy["decline"] = order["decline"]
-	return ToStringJson(&strategy)
+	strategy["decline"] = order["decline"]         // 跌幅比例
+	strategy["allSell"] = order["one_sell"]        // 一键平仓
+	strategy["one_buy"] = order["one_buy"]         // 一键补仓
+	strategy["double"] = order["double_first"]     // 首单加倍
+	strategy["limit_high"] = order["limit_high"]   // 限高
+	strategy["high_price"] = order["high_price"]   // 限高价格
+	strategy["stop_buy"] = order["stop_buy"]       // 停止买入
+	return ToStringJson(strategy)
 }
 
 // GetApiConfig 获取用户设置的平台分类及秘钥
@@ -227,6 +224,13 @@ func GetAccount(uId float64) float64 {
 	return amount
 }
 
+// GetMealAccount 获取预冲账户
+func GetMealAccount(uId float64) float64 {
+	var amount float64
+	UserDB.Raw("select `meal_amount` from db_coin_amount where `customer_id` = ? and `coin_id` = ?", uId, 2).Scan(&amount)
+	return amount
+}
+
 // UpdateStatus 刷新状态
 func UpdateStatus(id uint) (res int64) {
 	DB.Raw("select is_run from users where id = ?", id).Scan(&res)
@@ -238,7 +242,7 @@ func UpdateStatus(id uint) (res int64) {
 func LoadSymbols(name string) []map[string]interface{} {
 	switch name {
 	case "火币":
-		//log.Println(model.GetCache("火币交易对"))
+		// fmt.Println(GetCache("火币交易对"))
 		return StringMap(GetCache("火币交易对"))
 	default:
 		return StringMap(GetCache("火币交易对"))
@@ -278,7 +282,7 @@ func UpdateUser(u User) User {
 		PreView(u.ObjectId, u.Grids)
 	} else {
 		u.IsRun = -10
-		u.Status = 2
+		u.Status = 1
 		u.Error = e.Error()
 		StrategyError(u.ObjectId, e.Error())
 	}

@@ -6,6 +6,9 @@ import (
     "github.com/shopspring/decimal"
 )
 
+var BuyCh = make(chan int)  // 立即补仓
+var SellCh = make(chan int) // 立即平仓
+
 // SymbolCategory 交易对参数
 type SymbolCategory struct {
     Category        string
@@ -25,7 +28,7 @@ type SymbolCategory struct {
 // Args 策略输入参数
 type Args struct {
     FirstBuy     float64 // 首单
-    FirstDouble  float64 // 首单加倍
+    FirstDouble  bool    // 首单加倍
     Price        float64 // 价格
     IsChange     bool    // 是否为固定加仓金额
     Rate         float64 // 补仓比例
@@ -44,22 +47,30 @@ type Args struct {
     LimitHigh    float64 // 限高价格
     StrategyType int64   // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市
     Crile        bool    // 是否循环
+    OneBuy       bool    // 一键补仓
+    AllSell      bool    // 一键平仓
+    StopBuy      bool    // 停止买入
 }
 
 // 策略预览内容
 type Grid struct {
     Id         int
-    Price      decimal.Decimal
-    AmountBuy  decimal.Decimal
-    Decline    float64
-    AmountSell decimal.Decimal
-    TotalBuy   decimal.Decimal
-    Order      uint64
+    Price      decimal.Decimal // 价格
+    AmountBuy  decimal.Decimal // 买入数量
+    Decline    float64         // 跌幅
+    AmountSell decimal.Decimal // 卖出数量
+    TotalBuy   decimal.Decimal // money
+    Order      uint64          // 订单id
 }
 
 func StringArg(data string) (a Args) {
     _ = json.Unmarshal([]byte(data), &a)
     return
+}
+
+func ArgString(a *Args) string {
+    s, _ := json.Marshal(&a)
+    return string(s)
 }
 
 func StringSymobol(data string) (a SymbolCategory) {

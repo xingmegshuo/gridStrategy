@@ -38,14 +38,13 @@ func RunWG() {
 				}
 			default:
 			}
-			if u.Status == 1 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
+			if u.Status == 2 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
 				log.Println("符合要求", model.UpdateStatus(u.ID))
 				for i := 1; i < 2; i++ {
 					start = 1
 					log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)
 					go RunStrategy(u)
 				}
-
 			}
 			// 循环策略进入
 			if model.UpdateStatus(u.ID) == int64(1) && u.Status == 1 {
@@ -56,6 +55,7 @@ func RunWG() {
 				u.Base = 0
 				u.RunCount++
 				u.Update()
+				model.AddRun(u.ObjectId, u.RunCount)
 				time.Sleep(time.Second * 60)
 				u.IsRun = -1
 				u = model.UpdateUser(u)
@@ -95,7 +95,6 @@ OuterLoop:
 			u.Update()
 			for i := 0; i < 1; i++ {
 				go grid.Run(ctx, u)
-				log.Println("what is waring  ")
 			}
 		}
 	}

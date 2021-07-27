@@ -82,11 +82,7 @@ func xhttpCraw(url string) {
 		_ = json.Unmarshal(content, &data)
 		byteData, _ := json.Marshal(data["data"])
 		var realData = []map[string]interface{}{}
-		// l.Println(data["data"])
 		_ = json.Unmarshal(byteData, &realData)
-		// l.Println(realData[0])
-		// byteData, _ := json.Marshal(data["data"])
-		// l.Println(data["data"])
 		if !model.CheckCache("coin") {
 			var coin = []map[string]interface{}{}
 			model.UserDB.Raw("select id,en_name from db_coin").Scan(&coin)
@@ -95,8 +91,6 @@ func xhttpCraw(url string) {
 			model.SetCache("coins", string(byteData), time.Second*60)
 		}
 		coins := model.StringMap(model.GetCache("coins"))
-		// l.Println(coins)
-
 		for _, v := range coins {
 			for _, s := range realData {
 				if s["symbol"].(string) == model.ParseSymbol(v["en_name"].(string))+"usdt" {
@@ -126,5 +120,21 @@ func xhttpCraw(url string) {
 			}
 		}
 		tx.Commit()
+		var task_coins = []map[string]interface{}{}
+		model.UserDB.Raw("select name,id from db_task_coin").Scan(&task_coins)
+		for _, d := range task_coins {
+			for _, s := range realData {
+				if s["symbol"].(string) == model.ParseSymbol(d["name"].(string)) {
+					raf := (s["close"].(float64) - s["open"].(float64)) / s["open"].(float64) * 100
+					base := "+"
+					if raf < 0 {
+						base = ""
+					}
+					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
+					model.UserDB.Table("db_task_coin").Where("id = ?", d["id"]).Update("price_usd", s["close"].(float64)).
+						Update("price", s["close"].(float64)*6.5).Update("day_amount", s["amount"]).Update("raf", base+r+"%")
+				}
+			}
+		}
 	}
 }

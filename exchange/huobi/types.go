@@ -43,7 +43,7 @@ type Trade struct {
 	Price  decimal.Decimal // trade price
 	Volume decimal.Decimal // trade volume
 
-	TransactFee       decimal.Decimal
+	TransactFee       decimal.Decimal //手续费
 	FeeDeduct         decimal.Decimal
 	FeeDeductCurrency string
 

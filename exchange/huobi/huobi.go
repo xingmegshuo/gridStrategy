@@ -32,9 +32,11 @@ type Config struct {
 }
 
 const (
-	DefaultHost        = "api.huobi.pro"
-	OrderTypeSellLimit = "sell-limit"
-	OrderTypeBuyLimit  = "buy-limit"
+	DefaultHost         = "api.huobi.pro"
+	OrderTypeSellLimit  = "sell-limit"  // 限价卖出
+	OrderTypeBuyLimit   = "buy-limit"   // 限价买入
+	OrderTypeBuyMarket  = "buy-market"  // 市价买入
+	OrderTypeSellMarket = "sell-market" // 市价卖出
 )
 
 type Client struct {
@@ -445,4 +447,25 @@ func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amou
 		return 0, errors.New(resp.ErrorMessage)
 	}
 	return 0, errors.New("unknown status")
+}
+
+func (c *Client) SearchOrder(order string) (map[string]string, bool, error) {
+	var data = map[string]string{}
+
+	hb := new(client.OrderClient).Init(c.Config.AccessKey, c.Config.SecretKey, c.Config.Host)
+	response, err := hb.GetOrderById(order)
+	// fmt.Println(resp, err)
+	if err != nil {
+		return nil, false, err
+	} else if response != nil {
+		if response.Data.State == "filled" {
+			data["amount"] = response.Data.FilledAmount
+			data["price"] = response.Data.Price
+			data["fee"] = response.Data.FilledFees
+			return data, true, nil
+		} else if response.Data.State == "submitted" {
+			return nil, true, errors.New("等一会")
+		}
+	}
+	return data, false, nil
 }

@@ -9,12 +9,12 @@
 package model
 
 import (
-	"encoding/json"
-	"errors"
+    "encoding/json"
+    "errors"
 
-	"zmyjobs/exchange/huobi"
+    "zmyjobs/exchange/huobi"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 // NewSymbol 生成grid.SymbolCategory
@@ -35,6 +35,7 @@ func NewSymbol(u User) *SymbolCategory {
             minToal = v["min-order-value"].(float64)
             baseCurrency = v["base-currency"].(string)
             quoteCurrency = v["quote-currency"].(string)
+            // fmt.Println(fmt.Sprintf("%+v",v))
         }
     }
     h := Host{}
@@ -60,6 +61,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
     arg := StringArg(u.Arg)
     symbol := StringSymobol(u.Symbol)
     currentPrice := decimal.NewFromFloat(arg.Price).Round(symbol.PricePrecision)
+    // fmt.Println(fmt.Sprintf("%+v----%+v", arg, symbol))
     preTotal := decimal.NewFromFloat(arg.FirstBuy).Div(currentPrice).Round(symbol.AmountPrecision)
     var grids []Grid
     currentGrid := Grid{
@@ -96,13 +98,15 @@ func MakeStrategy(u User) (*[]Grid, error) {
         }
         grids = append(grids, currentGrid)
     }
-
+    if arg.FirstDouble {
+        grids[0].TotalBuy = grids[0].TotalBuy.Add(grids[0].TotalBuy)
+        grids[0].AmountBuy = grids[0].TotalBuy.Div(grids[0].Price).Round(symbol.AmountPrecision)
+    }
     for _, g := range grids {
-        log.Printf("id:%2d - - moeny:%s - - 价格: %s - - 买入量: %s - - 卖出:%s--跌幅: %d",
+        log.Printf("id:%2d - - moeny:%s - - 价格: %s - - 买入量: %s - - 卖出:%s--跌幅: %f",
             g.Id, g.TotalBuy.StringFixed(symbol.AmountPrecision+symbol.PricePrecision),
             g.Price.StringFixed(symbol.PricePrecision),
             g.AmountBuy.StringFixed(symbol.AmountPrecision), g.AmountSell.StringFixed(symbol.AmountPrecision), g.Decline)
-
         if u.Base < g.Id {
             m, _ := g.TotalBuy.Float64()
             arg.NeedMoney += m
@@ -117,12 +121,8 @@ func ParseStrategy(u User) *Args {
     var data = map[string]interface{}{}
     var arg Args
     _ = json.Unmarshal([]byte(u.Strategy), &data)
-    // if u.BasePrice > 0 {
-    //     arg.Price = u.BasePrice
-    // } else {
     arg.Price, _ = GetPrice(u.Name).Float64()
     u.BasePrice = arg.Price
-    // }
     arg.FirstBuy = ParseStringFloat(data["FirstBuy"].(string))
     arg.Rate = ParseStringFloat(data["rate"].(string))
     arg.MinBuy = arg.FirstBuy
@@ -140,6 +140,24 @@ func ParseStrategy(u User) *Args {
     }
     // log.Println(data)
     arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
+    log.Println(data)
+    if data["allSell"].(float64) == 2 {
+        SellCh <- 1
+    }
+    if data["one_buy"].(float64) == 2 {
+        arg.OneBuy = true
+    }
+    if data["limit_high"].(float64) == 2 {
+        arg.IsLimit = true
+        arg.LimitHigh = data["high_price"].(float64)
+    }
+    if data["double"].(float64) == 2 {
+        arg.FirstDouble = true
+    }
+    if data["stop_buy"].(float64) == 2 {
+        arg.StopBuy = true
+    }
+    // log.Println(fmt.Sprintf("%+v", arg))
     return &arg
 }
 

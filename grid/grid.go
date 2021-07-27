@@ -293,18 +293,16 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 
 	log.Printf("交易成功 order filled, orderId: %d, clientOrderId: %s, fill type: %s", trade.OrderId, trade.ClientOrder, trade.OrderType)
 	time.Sleep(time.Second * 3)
-	t.amount = t.amount.Add(trade.Volume).Sub(trade.TransactFee)
-	tradeTotal := trade.Volume.Mul(trade.Price)
-	newTotal := oldTotal.Add(tradeTotal)
-	t.cost = newTotal.Div(t.amount)
 
 	t.GetMoeny()
+
 	if trade.ClientOrder == t.SellOrder {
-		t.SellMoney = t.SellMoney.Add(trade.Price.Mul(trade.Volume)).Sub(trade.TransactFee)
-		t.RealGrids[t.base-1].AmountSell = t.SellMoney
+		log.Println(trade.Volume, "成交量-----------")
+		t.SellMoney = trade.Price.Mul(trade.Volume).Add(trade.TransactFee)
+		t.RealGrids[t.base-1].AmountSell = t.SellMoney.Abs()
 		t.over = true
 		hold := t.GetMycoin()
-		model.RebotUpdateBy(trade.ClientOrder, trade.Price, hold, trade.TransactFee, t.SellMoney, t.hold, "成功")
+		model.RebotUpdateBy(trade.ClientOrder, trade.Price, hold, trade.TransactFee, t.SellMoney.Abs(), t.hold, "成功")
 		model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price))
 	} else {
 		t.RealGrids[t.base].AmountBuy = trade.Volume.Sub(trade.TransactFee)
@@ -314,9 +312,14 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, trade.TransactFee, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 		t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
 		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay)
+		t.amount = t.amount.Add(trade.Volume).Sub(trade.TransactFee)
+		tradeTotal := trade.Volume.Mul(trade.Price)
+		newTotal := oldTotal.Add(tradeTotal)
+		t.cost = newTotal.Div(t.amount)
+		log.Println("Average cost update", "cost", t.cost)
 	}
 	t.OrderOver = true
-	log.Println("Average cost update", "cost", t.cost)
+
 }
 
 func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate float64) (uint64, error) {

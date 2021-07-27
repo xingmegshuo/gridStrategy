@@ -313,5 +313,6 @@ func (t *Trader) CalCulateProfit() decimal.Decimal {
 		pay = pay.Add(b.TotalBuy)
 		my = my.Add(b.AmountSell)
 	}
+	log.Println("pay:", pay, "my:", my)
 	return my.Sub(pay)
 }

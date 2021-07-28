@@ -47,7 +47,7 @@ func RunWG() {
 				}
 			}
 			// 循环策略进入
-			if model.UpdateStatus(u.ID) == int64(1) && u.Status == 1 {
+			if model.UpdateStatus(u.ID) == int64(1) && u.Status == 2 {
 				log.Println("重新开始", u.ObjectId)
 				u.IsRun = 100
 				u.RealGrids = ""
@@ -56,6 +56,7 @@ func RunWG() {
 				u.RunCount++
 				u.Update()
 				model.AddRun(u.ObjectId, u.RunCount)
+				// model.RunOver(u.ObjectId, u.BasePrice)
 				time.Sleep(time.Second * 60)
 				u.IsRun = -1
 				u = model.UpdateUser(u)

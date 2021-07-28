@@ -9,11 +9,11 @@
 package model
 
 import (
-    "fmt"
-    "testing"
+	"fmt"
+	"testing"
 )
 
 func TestGetMoney(t *testing.T) {
-    fmt.Println("testing start .....")
-    DeleteRebotLog("b-0-1627365995")
+	fmt.Println("testing start .....")
+	LogStrategy("火币", "doge", 2, 2, 10, 2, false, 10)
 }

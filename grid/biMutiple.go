@@ -1,9 +1,9 @@
 /***************************
-@File        : bimul.go
-@Time        : 2021/07/24 16:50:23
+@File        : biMutiple.go
+@Time        : 2021/07/28 11:31:40
 @AUTHOR      : small_ant
 @Email       : xms.chnb@gmail.com
-@Desc        : 智乘方策略  市价/现价 智乘方为整体出仓方式
+@Desc        : 智多元分开卖出
 ****************************/
 
 package grid
@@ -17,12 +17,11 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// setupBi bi乘方策略
-func (t *Trader) setupBi(ctx context.Context) {
+func (t *Trader) SetupBeMutiple(ctx context.Context) {
+
 	// 计数
 	count := 0
 	t.GetLastPrice()
-
 	log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "---------策略开始", "用户:", t.u.ObjectId)
 	var (
 		low  = t.last
@@ -38,6 +37,7 @@ func (t *Trader) setupBi(ctx context.Context) {
 			return
 		}
 		high, low = ChangeHighLow(price)
+
 		// 计算盈利
 		win := float64(0)
 		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
@@ -63,7 +63,6 @@ func (t *Trader) setupBi(ctx context.Context) {
 				continue
 			} else {
 				t.over = true
-				t.Tupdate()
 				break
 			}
 		default:
@@ -112,6 +111,12 @@ func (t *Trader) setupBi(ctx context.Context) {
 				continue
 			}
 		}
+		// 止盈
+		if t.base > 0 {
+			for _, g := range t.RealGrids {
+				win, _ = (price.Mul(g.AmountBuy).Sub(g.TotalBuy)).Div(g.TotalBuy).Float64()
+			}
+		}
 
 		//  如果不相等更新
 		if t.base != t.u.Base {
@@ -122,4 +127,5 @@ func (t *Trader) setupBi(ctx context.Context) {
 			break
 		}
 	}
+
 }

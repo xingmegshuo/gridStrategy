@@ -119,9 +119,7 @@ func NewUser() {
 							u = UpdateUser(u)
 							u.Update()
 						}
-						if u.IsRun == 1 {
-							RunOver(u.ObjectId, u.BasePrice)
-						}
+
 						if u.IsRun == -10 {
 							StrategyError(u.ObjectId, u.Error)
 						}
@@ -192,6 +190,7 @@ func parseInput(order map[string]interface{}) string {
 	strategy["limit_high"] = order["limit_high"]   // 限高
 	strategy["high_price"] = order["high_price"]   // 限高价格
 	strategy["stop_buy"] = order["stop_buy"]       // 停止买入
+	strategy["order_type"] = order["order_type"]   // 手动自动
 	return ToStringJson(strategy)
 }
 

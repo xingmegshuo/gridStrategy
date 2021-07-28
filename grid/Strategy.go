@@ -126,6 +126,9 @@ func (t *Trader) Trade(ctx context.Context) {
 						// 盈利ctx
 						t.u.IsRun = 1
 						t.u.BasePrice = p
+						model.RunOver(t.u.ObjectId, t.u.BasePrice)
+						model.LogStrategy(t.symbol.Category, t.symbol.QuoteCurrency, t.u.ObjectId,
+							t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
 						t.u.Update()
 						GridDone <- 1
 					}
@@ -178,7 +181,7 @@ func (t *Trader) GetRate() float64 {
 	}
 }
 
-func (t *Trader) WaitOrder(orderId string) bool {
+func (t *Trader) WaitOrder(orderId string, cli string) bool {
 	log.Println("等待订单交易.......")
 	start := time.Now()
 	for {
@@ -186,7 +189,7 @@ func (t *Trader) WaitOrder(orderId string) bool {
 			return true
 		}
 		if time.Since(start) >= time.Second*30 {
-			if t.SearchOrder(orderId) {
+			if t.SearchOrder(orderId, cli) {
 				return true
 			} else {
 				return false
@@ -203,7 +206,7 @@ func (t *Trader) WaitBuy(price decimal.Decimal) error {
 		log.Printf("买入错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if t.WaitOrder(strconv.FormatUint(orderId, 10)) {
+		if t.WaitOrder(strconv.FormatUint(orderId, 10), clientOrder) {
 			t.base++
 			t.last = price
 			return nil
@@ -222,7 +225,7 @@ func (t *Trader) WaitSell(price decimal.Decimal, rate float64) error {
 		log.Printf("卖出错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if t.WaitOrder(strconv.FormatUint(orderId, 10)) {
+		if t.WaitOrder(strconv.FormatUint(orderId, 10), clientOrder) {
 			t.last = price
 			return nil
 		} else {
@@ -272,7 +275,7 @@ func (t *Trader) AllSellMy() {
 }
 
 // SearchOrder 查询订单
-func (t *Trader) SearchOrder(clientOrderId string) bool {
+func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
 	data, b, err := t.ex.huobi.SearchOrder(clientOrderId)
 	if err == nil {
 		if b {
@@ -281,14 +284,13 @@ func (t *Trader) SearchOrder(clientOrderId string) bool {
 				price, _ := decimal.NewFromString(data["price"])
 				transact, _ := decimal.NewFromString(data["fee"])
 				oldTotal := t.amount.Mul(t.cost)
-
 				t.GetMoeny()
 				if clientOrderId == t.SellOrder {
 					t.SellMoney = t.SellMoney.Add(price.Mul(amount)).Abs().Sub(transact)
 					t.RealGrids[t.base-1].AmountSell = t.SellMoney
 					t.over = true
 					hold := t.GetMycoin()
-					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base-1].Price, hold, transact, t.RealGrids[t.base-1].AmountSell, t.hold, "成功")
+					model.RebotUpdateBy(client, t.RealGrids[t.base-1].Price, amount.Abs(), transact, t.RealGrids[t.base-1].AmountSell, t.hold, "成功")
 					model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price), t.base)
 				} else {
 					t.amount = t.amount.Add(amount).Sub(transact)
@@ -299,9 +301,9 @@ func (t *Trader) SearchOrder(clientOrderId string) bool {
 					t.RealGrids[t.base].AmountBuy = amount.Sub(transact)
 					t.RealGrids[t.base].Price = price
 					t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(amount)
-					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
+					model.RebotUpdateBy(client, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 					t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
-					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base)
+					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 				}
 				return true
 			}

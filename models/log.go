@@ -69,11 +69,6 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 	AddModelLog(&r, money)
 }
 
-// Message 发通知
-// func Message(mes string) {
-
-// }
-
 // asyncData 同步数据
 func AsyncData(id interface{}, amount interface{}, price interface{}, money interface{}, num interface{}) {
 	//  同步当前task_order
@@ -82,8 +77,8 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	log.Println("同步数据:", amount, price, money)
 	data["hold_num"] = amount
 	data["hold_price"] = price
-	data["hold_amount"] = money // 持仓金额
-	data["current_num"] = num   // 当前单数
+	data["hold_amount"] = money         // 持仓金额
+	data["current_num"] = num.(int) + 1 // 当前单数
 	UpdateOrder(id, data)
 }
 
@@ -105,18 +100,25 @@ func StrategyError(id interface{}, e string) {
 // AddRun 运行次数增加
 func AddRun(id interface{}, b interface{}) {
 	var data = map[string]interface{}{
-		"run_count": b,
+		"run_count":   b,
+		"current_num": 1,
+		"status":      1,
 		// "total_profit": b, // 订单盈利增加
 	}
+	log.Println("修改运行-----")
 	UpdateOrder(id, data)
 }
 
 // RunOver 运行完成
 func RunOver(id interface{}, b interface{}) {
 	var data = map[string]interface{}{
-		"status":       2,
-		"total_profit": b,
+		"status": 2,
 	}
+	if b.(float64) > 0 {
+		data["total_profit"] = b
+		GotMoney(b.(float64), id.(float64))
+	}
+	log.Println("修改盈利-----")
 	UpdateOrder(id, data)
 }
 
@@ -173,13 +175,11 @@ func AddModelLog(r *RebotLog, m float64) {
 	data["status"] = 1                            // 1启用
 	data["left_amount"] = decimal.NewFromFloat(m) // 账户余额
 	data["extra"] = ""
-
 	data["create_time"] = time.Now().Unix()
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_profit").Create(&data)
 	// data["description"] = "手动策略"                  // 策略类型
 	// data["order_number"] = r.AddNum                            // 当前第几单
-
 }
 
 // GotMoney 盈利分红
@@ -317,7 +317,6 @@ func GotMoney(money float64, uId float64) {
 			} else {
 				break
 			}
-
 		}
 		fmt.Println(fmt.Sprintf("级差分红剩余金额:%v--- 合伙人分红剩余:%v---- 平台收入:%2f", after, friends, realMoney*0.2+after+friends))
 	}
@@ -330,25 +329,6 @@ func ChangeAmount(money float64, u *map[string]interface{}, db *gorm.DB, b bool)
 	if b {
 		grade["profit_min_amount"] = ParseStringFloat((*u)["profit_min_amount"].(string)) + money
 	}
-	// 购买数量
-	// if (*u)["team_min_number"] != nil {
-	// 	t := ParseStringFloat((*u)["team_min_number"].(string))
-	// 	if t >= float64(200) {
-	// 		grade["level"] = 2
-	// 	}
-	// 	if t >= float64(500) {
-	// 		grade["level"] = 3
-	// 	}
-	// 	if t >= float64(1000) {
-	// 		grade["level"] = 4
-	// 	}
-	// 	if t >= float64(2000) {
-	// 		grade["level"] = 5
-	// 	}
-	// 	if t >= float64(3000) {
-	// 		grade["level"] = 6
-	// 	}
-	// }
 	fmt.Println(fmt.Sprintf("业绩更新:%+v,用户:%v", grade, (*u)["id"]))
 
 	// db.Table("db_customer").Where("id = ?", (*u)["id"]).Updates(&grade)
@@ -368,4 +348,32 @@ func ParseStringFloat(str string) float64 {
 // DeleteRebotLog 删除交易记录
 func DeleteRebotLog(orderId string) {
 	DB.Exec("delete from rebot_logs where order_id = ? ", orderId)
+}
+
+// LogStrategy 卖出盈利日志
+func LogStrategy(name interface{}, coin_name interface{}, order interface{}, member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}) {
+	log.Println("盈利日志")
+	var (
+		data     = map[string]interface{}{}
+		categroy interface{}
+		coin     interface{}
+	)
+	c := UserDB.Raw("select id from db_task_category where `name` like ?", "火币").Scan(&categroy)
+	d := UserDB.Raw("select id from db_task_coin where `en_name` like ?", "doge").Scan(&coin)
+	log.Println(categroy, coin, c, d)
+	data["category_id"] = 1
+	data["coin_id"] = coin
+	data["order_id"] = order
+	data["member_id"] = member
+	data["coin_name"] = coin_name
+	data["order_amount"] = amount
+	data["order_price"] = price
+	data["av_amount"] = money
+	data["type"] = 2
+	data["description"] = "手动策略"
+	if isHand {
+		data["description"] = "自动策略"
+	}
+	data["status"] = 1
+	UserDB.Table("db_task_order_log").Create(&data)
 }

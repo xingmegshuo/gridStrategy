@@ -120,7 +120,7 @@ func NewUser() {
 							u.Update()
 						}
 						if u.IsRun == 1 {
-							RunOver(u.ObjectId)
+							RunOver(u.ObjectId, u.BasePrice)
 						}
 					}
 				}

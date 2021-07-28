@@ -75,7 +75,7 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 // }
 
 // asyncData 同步数据
-func AsyncData(id interface{}, amount interface{}, price interface{}, money interface{}) {
+func AsyncData(id interface{}, amount interface{}, price interface{}, money interface{}, num interface{}) {
 	//  同步当前task_order
 	var data = map[string]interface{}{}
 	// UserDB.Raw("select * from db_task_order where `id` = ?", id).Scan(&data)
@@ -83,6 +83,7 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	data["hold_num"] = amount
 	data["hold_price"] = price
 	data["hold_amount"] = money // 持仓金额
+	data["current_num"] = num   // 当前单数
 	UpdateOrder(id, data)
 }
 
@@ -111,9 +112,10 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}) {
+func RunOver(id interface{}, b interface{}) {
 	var data = map[string]interface{}{
-		"status": 2,
+		"status":       2,
+		"total_profit": b,
 	}
 	UpdateOrder(id, data)
 }

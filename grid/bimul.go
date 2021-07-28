@@ -62,8 +62,7 @@ func (t *Trader) setupBi(ctx context.Context) {
                 time.Sleep(time.Second * 5)
                 continue
             } else {
-                t.u.IsRun = 1
-                t.Tupdate()
+                t.over = true
                 break
             }
         default:

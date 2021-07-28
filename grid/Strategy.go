@@ -122,8 +122,10 @@ func (t *Trader) Trade(ctx context.Context) {
 					if t.over {
 						// 策略执行完毕 to do 计算盈利
 						log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
+						p, _ := t.CalCulateProfit().Float64()
 						// 盈利ctx
 						t.u.IsRun = 1
+						t.u.BasePrice = p
 						t.u.Update()
 						GridDone <- 1
 					}
@@ -160,7 +162,7 @@ func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
 
 func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
-	t.amount = t.GetMycoin()
+	t.amount = t.CountBuy()
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
 	t.SellOrder = clientOrderId
@@ -288,16 +290,16 @@ func (t *Trader) SearchOrder(clientOrderId string) bool {
 				t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(amount)
 				t.GetMoeny()
 				if clientOrderId == t.SellOrder {
-					t.SellMoney = t.SellMoney.Add(price.Mul(amount)).Sub(transact)
-					t.RealGrids[t.base].AmountSell = t.SellMoney
+					t.SellMoney = t.SellMoney.Add(price.Mul(amount)).Abs().Sub(transact)
+					t.RealGrids[t.base-1].AmountSell = t.SellMoney
 					t.over = true
 					hold := t.GetMycoin()
-					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base].Price, hold, transact, t.RealGrids[t.base].AmountSell, t.hold, "成功")
-					model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price))
+					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base-1].Price, hold, transact, t.RealGrids[t.base-1].AmountSell, t.hold, "成功")
+					model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price), t.base)
 				} else {
 					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 					t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
-					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay)
+					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base)
 				}
 				return true
 			}
@@ -313,6 +315,15 @@ func (t *Trader) CalCulateProfit() decimal.Decimal {
 		pay = pay.Add(b.TotalBuy)
 		my = my.Add(b.AmountSell)
 	}
-	log.Println("pay:", pay, "my:", my)
+	// log.Println("pay:", pay, "my:", my)
 	return my.Sub(pay)
+}
+
+// CountBuy 计算买入数量
+func (t *Trader) CountBuy() decimal.Decimal {
+	var amount decimal.Decimal
+	for _, b := range t.RealGrids {
+		amount = amount.Add(b.AmountBuy)
+	}
+	return amount
 }

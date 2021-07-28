@@ -303,7 +303,7 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		t.over = true
 		hold := t.GetMycoin()
 		model.RebotUpdateBy(trade.ClientOrder, trade.Price, hold, trade.TransactFee, t.SellMoney.Abs(), t.hold, "成功")
-		model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price))
+		model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price), t.base)
 	} else {
 		t.RealGrids[t.base].AmountBuy = trade.Volume.Sub(trade.TransactFee)
 		t.RealGrids[t.base].Price = trade.Price
@@ -311,7 +311,7 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		t.RealGrids[t.base].Order = uint64(trade.OrderId)
 		model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, trade.TransactFee, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 		t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
-		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay)
+		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base)
 		t.amount = t.amount.Add(trade.Volume).Sub(trade.TransactFee)
 		tradeTotal := trade.Volume.Mul(trade.Price)
 		newTotal := oldTotal.Add(tradeTotal)

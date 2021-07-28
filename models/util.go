@@ -9,12 +9,12 @@
 package model
 
 import (
-    "encoding/json"
-    "errors"
+	"encoding/json"
+	"errors"
 
-    "zmyjobs/exchange/huobi"
+	"zmyjobs/exchange/huobi"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 // NewSymbol 生成grid.SymbolCategory
@@ -140,7 +140,7 @@ func ParseStrategy(u User) *Args {
     }
     // log.Println(data)
     arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
-    log.Println(data)
+    // log.Println(data)
     if data["allSell"].(float64) == 2 {
         SellCh <- 1
     }

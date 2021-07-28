@@ -281,13 +281,7 @@ func (t *Trader) SearchOrder(clientOrderId string) bool {
 				price, _ := decimal.NewFromString(data["price"])
 				transact, _ := decimal.NewFromString(data["fee"])
 				oldTotal := t.amount.Mul(t.cost)
-				t.amount = t.amount.Add(amount).Sub(transact)
-				tradeTotal := amount.Mul(price)
-				newTotal := oldTotal.Add(tradeTotal)
-				t.cost = newTotal.Div(t.amount)
-				t.RealGrids[t.base].AmountBuy = amount.Sub(transact)
-				t.RealGrids[t.base].Price = price
-				t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(amount)
+
 				t.GetMoeny()
 				if clientOrderId == t.SellOrder {
 					t.SellMoney = t.SellMoney.Add(price.Mul(amount)).Abs().Sub(transact)
@@ -297,6 +291,14 @@ func (t *Trader) SearchOrder(clientOrderId string) bool {
 					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base-1].Price, hold, transact, t.RealGrids[t.base-1].AmountSell, t.hold, "成功")
 					model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price), t.base)
 				} else {
+					t.amount = t.amount.Add(amount).Sub(transact)
+					tradeTotal := amount.Mul(price)
+					newTotal := oldTotal.Add(tradeTotal)
+					t.cost = newTotal.Div(t.amount)
+					t.TradeGrid()
+					t.RealGrids[t.base].AmountBuy = amount.Sub(transact)
+					t.RealGrids[t.base].Price = price
+					t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(amount)
 					model.RebotUpdateBy(clientOrderId, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 					t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
 					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base)
@@ -326,4 +328,10 @@ func (t *Trader) CountBuy() decimal.Decimal {
 		amount = amount.Add(b.AmountBuy)
 	}
 	return amount
+}
+
+func (t *Trader) TradeGrid() {
+	if len(t.RealGrids) != t.base+1 {
+		t.RealGrids = append(t.RealGrids, model.Grid{Id: t.base + 1})
+	}
 }

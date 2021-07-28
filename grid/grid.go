@@ -295,7 +295,6 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 	time.Sleep(time.Second * 3)
 
 	t.GetMoeny()
-
 	if trade.ClientOrder == t.SellOrder {
 		log.Println(trade.Volume, "成交量-----------")
 		t.SellMoney = trade.Price.Mul(trade.Volume).Add(trade.TransactFee)
@@ -305,6 +304,7 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		model.RebotUpdateBy(trade.ClientOrder, trade.Price, hold, trade.TransactFee, t.SellMoney.Abs(), t.hold, "成功")
 		model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price), t.base)
 	} else {
+		t.TradeGrid()
 		t.RealGrids[t.base].AmountBuy = trade.Volume.Sub(trade.TransactFee)
 		t.RealGrids[t.base].Price = trade.Price
 		t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(trade.Volume)
@@ -351,12 +351,6 @@ func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal, rate 
 	orderId, err := t.ex.huobi.PlaceOrder(orderType, t.symbol.Symbol, clientOrderId, price, amount)
 	if err == nil {
 		t.log(clientOrderId, price, orderTypeString, t.base, amount, rate, "卖出")
-
-		// t.RealGrids = append(t.RealGrids, model.Grid{
-		// 	Id: t.base + 1,
-		// 	// Price:   price,
-		// 	Decline: rate,
-		// })
 		t.RealGrids[t.base-1].Decline = rate
 	}
 	return orderId, err

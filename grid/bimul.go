@@ -9,12 +9,12 @@
 package grid
 
 import (
-	"context"
-	"runtime"
-	"time"
-	model "zmyjobs/models"
+    "context"
+    "runtime"
+    "time"
+    model "zmyjobs/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 // setupBi bi乘方策略

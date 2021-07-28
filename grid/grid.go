@@ -94,7 +94,7 @@ func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
 		Status:       "创建订单",
 		AccountMoney: account,
 		Category:     t.symbol.Category,
-		Custom:       uint(t.u.ObjectId),
+		Custom:       uint(t.u.Custom),
 	}
 	info.New()
 }

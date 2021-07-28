@@ -110,6 +110,14 @@ func AddRun(id interface{}, b interface{}) {
 	UpdateOrder(id, data)
 }
 
+// RunOver 运行完成
+func RunOver(id interface{}) {
+	var data = map[string]interface{}{
+		"status": 2,
+	}
+	UpdateOrder(id, data)
+}
+
 // OneSell 平仓执行
 func OneSell(id interface{}) {
 	var data = map[string]interface{}{}
@@ -147,7 +155,7 @@ func AddModelLog(r *RebotLog, m float64) {
 	data["buyer_id"] = r.Custom  // 会员
 	if r.BuyOrSell == "买入" {
 		data["type"] = 0 // 买入还是卖出
-		data["remark"] = fmt.Sprintf("当前第%d单", r.AddNum)
+		data["remark"] = fmt.Sprintf("当前第%d单", r.AddNum+1)
 	} else {
 		data["type"] = 1
 		data["remark"] = "卖出了"

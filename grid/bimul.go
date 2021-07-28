@@ -9,12 +9,12 @@
 package grid
 
 import (
-    "context"
-    "runtime"
-    "time"
-    model "zmyjobs/models"
+	"context"
+	"runtime"
+	"time"
+	model "zmyjobs/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 // setupBi bi乘方策略
@@ -62,6 +62,7 @@ func (t *Trader) setupBi(ctx context.Context) {
                 time.Sleep(time.Second * 5)
                 continue
             } else {
+                t.u.IsRun = 1
                 t.Tupdate()
                 break
             }

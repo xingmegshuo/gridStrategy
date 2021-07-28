@@ -103,7 +103,7 @@ func NewUser() {
 						// 发送暂停
 						Ch <- JobChan{Id: u.ID, Run: 2}
 					case 3:
-						Ch <- JobChan{Id: u.ID, Run: 3}
+						// Ch <- JobChan{Id: u.ID, Run: 3}
 					case 1:
 						u.Status = 2
 						if u.IsRun == 2 {
@@ -118,6 +118,9 @@ func NewUser() {
 							u.IsRun = -1
 							u = UpdateUser(u)
 							u.Update()
+						}
+						if u.IsRun == 1 {
+							RunOver(u.ObjectId)
 						}
 					}
 				}

@@ -355,14 +355,14 @@ func LogStrategy(name interface{}, coin_name interface{}, order interface{}, mem
 	log.Println("盈利日志")
 	var (
 		data     = map[string]interface{}{}
-		categroy interface{}
-		coin     interface{}
+		categroy = map[string]interface{}{}
+		coin     = map[string]interface{}{}
 	)
 	c := UserDB.Raw("select id from db_task_category where `name` like ?", "火币").Scan(&categroy)
 	d := UserDB.Raw("select id from db_task_coin where `en_name` like ?", "doge").Scan(&coin)
 	log.Println(categroy, coin, c, d)
-	data["category_id"] = 1
-	data["coin_id"] = coin
+	data["category_id"] = categroy["id"]
+	data["coin_id"] = coin["id"]
 	data["order_id"] = order
 	data["member_id"] = member
 	data["coin_name"] = coin_name
@@ -370,10 +370,13 @@ func LogStrategy(name interface{}, coin_name interface{}, order interface{}, mem
 	data["order_price"] = price
 	data["av_amount"] = money
 	data["type"] = 2
+	data["member_name"] = ""
 	data["description"] = "手动策略"
 	if isHand {
 		data["description"] = "自动策略"
 	}
 	data["status"] = 1
+	data["create_time"] = time.Now().Unix()
+	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_log").Create(&data)
 }

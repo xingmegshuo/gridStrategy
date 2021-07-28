@@ -36,7 +36,7 @@ func (t *Trader) SetupBeMutiple(ctx context.Context) {
 			t.ErrString = err.Error()
 			return
 		}
-		high, low = ChangeHighLow(price)
+		high, low = ChangeHighLow(price, high, low)
 
 		// 计算盈利
 		win := float64(0)

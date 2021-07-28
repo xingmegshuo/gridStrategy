@@ -97,7 +97,7 @@ func PreView(id interface{}, strategy string) {
 // StrategyError 策略配置错误和运行错误
 func StrategyError(id interface{}, e string) {
 	var data = map[string]interface{}{}
-	data["status"] = 0
+	data["status"] = 2
 	data["error_msg"] = e
 	UpdateOrder(id, data)
 }

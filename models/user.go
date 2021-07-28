@@ -122,6 +122,9 @@ func NewUser() {
 						if u.IsRun == 1 {
 							RunOver(u.ObjectId, u.BasePrice)
 						}
+						if u.IsRun == -10 {
+							StrategyError(u.ObjectId, u.Error)
+						}
 					}
 				}
 				// 更新策略参数

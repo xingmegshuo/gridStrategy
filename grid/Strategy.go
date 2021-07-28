@@ -331,7 +331,7 @@ func (t *Trader) CountBuy() decimal.Decimal {
 }
 
 func (t *Trader) TradeGrid() {
-	if len(t.RealGrids) != t.base+1 {
+	if len(t.RealGrids) < t.base+1 {
 		t.RealGrids = append(t.RealGrids, model.Grid{Id: t.base + 1})
 	}
 }

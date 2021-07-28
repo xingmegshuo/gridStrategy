@@ -21,7 +21,6 @@ type Cliex struct {
 }
 
 func NewEx(symbol *model.SymbolCategory) *Cliex {
-
 	return &Cliex{ex: util.NewApi(&util.Config{APIKey: symbol.Key, Secreet: symbol.Secret, Host: symbol.Host})}
 }
 
@@ -29,6 +28,11 @@ func NewEx(symbol *model.SymbolCategory) *Cliex {
 func (c *Cliex) GetAccount() {
 	// fmt.Println(c.ex)
 	info, _ := c.ex.GetAccount()
-	b := goex.Currency{Symbol: "DOGE", Desc: ""}
+	b := MakeCurrency("USDT")
 	fmt.Println(info.SubAccounts[b].Amount)
+}
+
+// MakeCurrency 创造一个currency
+func MakeCurrency(name string) goex.Currency {
+	return goex.Currency{Symbol: name, Desc: ""}
 }

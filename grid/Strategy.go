@@ -245,14 +245,14 @@ func (t *Trader) GetLastPrice() {
 }
 
 // ChangeHighLow 修改价格标定
-func ChangeHighLow(price decimal.Decimal) (low decimal.Decimal, high decimal.Decimal) {
+func ChangeHighLow(price decimal.Decimal, high decimal.Decimal, low decimal.Decimal) (decimal.Decimal, decimal.Decimal) {
 	if low.Cmp(price) == 1 { // 最低价
 		low = price
 	}
 	if high.Cmp(price) == -1 { // 最高价
 		high = price
 	}
-	return
+	return low, high
 }
 
 // Tupdate 更新数据

@@ -9,8 +9,8 @@
 package util
 
 import (
-    "github.com/nntaoli-project/goex"
-    "github.com/nntaoli-project/goex/builder"
+	"github.com/nntaoli-project/goex"
+	"github.com/nntaoli-project/goex/builder"
 )
 
 type Config struct {

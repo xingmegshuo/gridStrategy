@@ -55,9 +55,9 @@ type Trader struct {
 	last      decimal.Decimal       // 上次交易价格
 	basePrice decimal.Decimal       // 第一次交易价格
 	hold      decimal.Decimal       // 余额
-	SellOrder string                // 卖出订单号
+	SellOrder map[string]int        // 卖出订单号
 	SellMoney decimal.Decimal       // 卖出金额
-	OrderOver bool
+	OrderOver bool                  // 一次订单是否结束
 }
 
 // log 交易日志
@@ -172,11 +172,6 @@ func (t *Trader) OrderUpdateHandler(response interface{}) {
 		if subOrderResponse.IsSuccess() {
 			// o := subOrderResponse.Data
 			log.Printf("Subscription topic %s successfully", subOrderResponse.Ch)
-			// model.RebotUpdateBy(o.ClientOrderId, "成功")
-			// model.AsyncData(t.u.ObjectId, t.amount, GetPrice(t.symbol.Symbol), t.hold)
-			// if o.OrderId == int64(t.SellOrder) {
-			// 	t.over = true
-			// }
 		} else {
 			log.Fatalf("Subscription topic %s error, code: %d, message: %s",
 				subOrderResponse.Ch, subOrderResponse.Code, subOrderResponse.Message)
@@ -295,14 +290,16 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 	time.Sleep(time.Second * 3)
 
 	t.GetMoeny()
-	if trade.ClientOrder == t.SellOrder {
-		log.Println(trade.Volume, "成交量-----------")
+	if b, ok := t.SellOrder[trade.ClientOrder]; ok {
+		log.Println(trade.Volume, "成交量-----------", b)
 		t.SellMoney = trade.Price.Mul(trade.Volume).Add(trade.TransactFee)
-		t.RealGrids[t.base-1].AmountSell = t.SellMoney.Abs()
-		t.over = true
+		t.RealGrids[b-1].AmountSell = t.SellMoney.Abs()
 		hold := t.GetMycoin()
 		model.RebotUpdateBy(trade.ClientOrder, trade.Price, trade.Volume.Abs(), trade.TransactFee, t.SellMoney.Abs(), t.hold, "成功")
 		model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price), t.base)
+		if b == t.base {
+			t.over = true
+		}
 	} else {
 		t.TradeGrid()
 		t.RealGrids[t.base].AmountBuy = trade.Volume.Sub(trade.TransactFee)
@@ -319,7 +316,6 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		log.Println("Average cost update", "cost", t.cost)
 	}
 	t.OrderOver = true
-
 }
 
 func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate float64) (uint64, error) {

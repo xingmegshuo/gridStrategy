@@ -6,8 +6,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var BuyCh = make(chan int)  // 立即补仓
-var SellCh = make(chan int) // 立即平仓
+type Operate struct {
+	Id float64
+	Op int // 1 全部卖出 2 立即补仓 3. 停止买入
+}
+
+var OperateCh = make(chan Operate) // 立即补仓
 
 // SymbolCategory 交易对参数
 type SymbolCategory struct {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"runtime"
 	"strconv"
 	"time"
 	"zmyjobs/exchange/huobi"
@@ -154,7 +155,155 @@ func (t *Trader) cancel(order uint64, order_id string) {
 
 // setupGridOrders 测试
 func (t *Trader) setupGridOrders(ctx context.Context) {
-	t.setupBi(ctx)
+
+	count := 0
+	t.GetLastPrice()
+	log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "---------策略开始", "用户:", t.u.ObjectId)
+	var (
+		low  = t.last
+		high = t.last
+	)
+
+	for {
+		count++
+		time.Sleep(time.Millisecond * 500)                 // 间隔0.5秒查询
+		t.GetMoeny()                                       // 获取当前money和持仓
+		price, err := t.ex.huobi.GetPrice(t.symbol.Symbol) // 获取当前价格
+		if err != nil {
+			t.ErrString = err.Error()
+			return
+		}
+		low, high = ChangeHighLow(price, high, low)
+		// 计算盈利
+		win := float64(0)
+		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
+			win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
+		}
+		reduce, _ := high.Sub(price).Div(t.last).Float64() // 当前回降
+		top, _ := price.Sub(low).Div(t.last).Float64()     // 当前回调
+		die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
+		// 输出日志
+		if count%600 == 0 {
+			log.Println("当前盈利", win*100, "单数:", t.base, "下跌:", die*100, "上次交易:", t.last, "当前价格：",
+				price, "持仓:", t.amount, "最高价:", high, "最低价:", low, "回降比例:", reduce*100, "回调比例:", top*100)
+		}
+		select {
+		case <-ctx.Done():
+			log.Println("close get price ", t.u.ObjectId)
+			runtime.Goexit()
+		case op := <-model.OperateCh:
+			if op.Id == float64(t.u.ObjectId) {
+				if op.Op == 1 {
+					t.arg.AllSell = true
+					log.Println("卖出")
+				}
+				if op.Op == 2 {
+					t.arg.OneBuy = true
+					log.Println("买入")
+				}
+				if op.Op == 3 {
+					t.arg.StopBuy = true
+					log.Println("停止买入")
+				}
+				if op.Op == 4 {
+					t.arg.StopBuy = false
+					log.Println("恢复买入")
+				}
+			}
+		default:
+		}
+
+		//  第一单 进场时机无所谓
+		if t.base == 0 && !t.arg.StopBuy {
+			if count >= 10 {
+				t.OrderOver = false
+				log.Println("开始进场首次买入:---价格", price, "---数量:", t.grids[t.base].AmountBuy, "---money", t.grids[t.base].TotalBuy)
+				err := t.WaitBuy(price)
+				if err != nil {
+					log.Printf("买入错误: %d, err: %s", t.base, err)
+					time.Sleep(time.Second * 5)
+					continue
+				} else {
+					high = price
+					low = price
+					t.last = price
+				}
+			}
+		}
+		// 后续买入按照跌幅+回调来下单
+		if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy {
+			if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
+				t.OrderOver = false
+				log.Println(t.base, "买入:", price, t.grids[t.base].AmountBuy, "下降幅度:", die, "价格:", t.grids[t.base].Price, "----------", price.Cmp(t.grids[t.base].Price))
+				err := t.WaitBuy(price)
+				if err != nil {
+					log.Printf("买入错误: %d, err: %s", t.base, err)
+					time.Sleep(time.Second * 5)
+					continue
+				} else {
+					high = price
+					low = price
+					t.last = price
+				}
+			}
+		}
+
+		// 智乘方
+		if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
+			if t.setupBi(win, reduce, price) != nil {
+				continue
+			}
+		}
+		// 智多元
+		if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
+			if t.SetupBeMutiple(price, reduce, win) != nil {
+				continue
+			}
+		}
+
+		//  如果不相等更新
+		if t.base != t.u.Base {
+			t.Tupdate()
+		}
+
+		if t.over {
+			log.Println("任务结束", t.u.ObjectId)
+			break
+		}
+
+		// 清仓
+		if t.arg.AllSell {
+			log.Println("卖出咯")
+			t.arg.AllSell = false
+			t.AllSellMy()
+			err := t.WaitSell(price, win*100)
+			if err != nil {
+				time.Sleep(time.Second * 5)
+				continue
+			} else {
+				t.over = true
+				t.Tupdate()
+				break
+			}
+		}
+		// 立即买入
+		if t.arg.OneBuy {
+			log.Println("一键补仓")
+			t.arg.OneBuy = false
+			model.OneBuy(t.u.ObjectId)
+			err := t.WaitBuy(price)
+			if err != nil {
+				log.Printf("买入错误: %d, err: %s", t.base, err)
+				time.Sleep(time.Second * 5)
+				continue
+			} else {
+				high = price
+				low = price
+				t.last = price
+			}
+		}
+	}
+
 }
 
 func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
@@ -164,11 +313,20 @@ func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
 }
 
 func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, error) {
-	clientOrderId := fmt.Sprintf("b-%d-%d", t.base, time.Now().Unix())
+	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
 	t.amount = t.CountBuy()
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
-	t.SellOrder = clientOrderId
+	t.SellOrder[clientOrderId] = t.base
+	return orderId, clientOrderId, err
+}
+
+func (t *Trader) SellAmount(price decimal.Decimal, rate float64, amount decimal.Decimal) (uint64, string, error) {
+	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
+
+	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
+	// t.amount.RoundBank(-t.symbol.AmountPrecision))
+	t.SellOrder[clientOrderId] = len(t.SellOrder) + 1
 	return orderId, clientOrderId, err
 }
 
@@ -235,6 +393,24 @@ func (t *Trader) WaitSell(price decimal.Decimal, rate float64) error {
 	}
 }
 
+// WaitSellLimit 指定卖出数量
+func (t *Trader) WaitSellLimit(price decimal.Decimal, rate float64, amount decimal.Decimal) error {
+	t.OrderOver = false
+	orderId, clientOrder, err := t.SellAmount(price, rate, amount)
+	if err != nil {
+		log.Printf("卖出错误: %d, err: %s", t.base, err)
+		return err
+	} else {
+		if t.WaitOrder(strconv.FormatUint(orderId, 10), clientOrder) {
+			t.last = price
+			return nil
+		} else {
+			t.cancel(orderId, clientOrder)
+			return errors.New("卖出出错")
+		}
+	}
+}
+
 // GetLastPrice 获取上次交易价格
 func (t *Trader) GetLastPrice() {
 	if len(t.u.RealGrids) > 0 {
@@ -285,13 +461,15 @@ func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
 				transact, _ := decimal.NewFromString(data["fee"])
 				oldTotal := t.amount.Mul(t.cost)
 				t.GetMoeny()
-				if clientOrderId == t.SellOrder {
+				if b, ok := t.SellOrder[client]; ok {
 					t.SellMoney = t.SellMoney.Add(price.Mul(amount)).Abs().Sub(transact)
-					t.RealGrids[t.base-1].AmountSell = t.SellMoney
-					t.over = true
+					t.RealGrids[b-1].AmountSell = t.SellMoney
 					hold := t.GetMycoin()
-					model.RebotUpdateBy(client, t.RealGrids[t.base-1].Price, amount.Abs(), transact, t.RealGrids[t.base-1].AmountSell, t.hold, "成功")
+					model.RebotUpdateBy(client, t.RealGrids[t.base-1].Price, amount.Abs(), transact, t.RealGrids[b-1].AmountSell, t.hold, "成功")
 					model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price), t.base)
+					if b == t.base {
+						t.over = true
+					}
 				} else {
 					t.amount = t.amount.Add(amount).Sub(transact)
 					tradeTotal := amount.Mul(price)

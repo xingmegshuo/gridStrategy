@@ -70,8 +70,7 @@ func NewUser() {
 			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 			// 条件 数据库未找到，订单启用，创建新的任务
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				//  && order["status"].(float64) == 1 {
-				// log.Println(NewApi[order["customer_id"]])
+				log.Println("new 数据")
 				u = User{
 					ObjectId: int32(order["id"].(float64)),
 					ApiKey:   api,
@@ -127,8 +126,11 @@ func NewUser() {
 				}
 				// 更新策略参数
 				if u.Strategy != parseInput(order) {
-					// log.Println("修改参数")
+					log.Println("修改参数")
 					u.Strategy = parseInput(order)
+					if u.IsRun == 10 && order["stop_buy"].(float64) == 1 {
+						OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+					}
 					u = UpdateUser(u)
 					u.Update()
 				}
@@ -281,8 +283,11 @@ func LoadStrategy(u User) (*[]Grid, bool) {
 // UpdateUser  更新u
 func UpdateUser(u User) User {
 	u.Arg = ToStringJson(ParseStrategy(u))
+
 	u.Symbol = ToStringJson(NewSymbol(u))
+
 	if grid, e := SourceStrategy(u, true); e == nil {
+
 		s, _ := json.Marshal(grid)
 		u.Grids = string(s)
 		PreView(u.ObjectId, u.Grids)

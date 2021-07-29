@@ -67,7 +67,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 	currentGrid := Grid{
 		Id:        1,
 		Price:     currentPrice,
-		Decline:   0,
+		Decline:   arg.Decline,
 		AmountBuy: preTotal,
 		TotalBuy:  decimal.NewFromFloat(arg.FirstBuy),
 	}
@@ -75,7 +75,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 	// 补仓
 	for i := 2; i <= int(u.Number); i++ {
 		// 补仓比例 10
-		decline := arg.Decline + arg.AddRate*float64(i-2) // 当前价格跌幅
+		decline := grids[i-2].Decline + arg.AddRate*0.01*grids[i-2].Decline // 当前价格跌幅
 		price := grids[i-2].Price.Sub(currentPrice.Mul(decimal.NewFromFloat(decline * 0.01)))
 		var TotalBuy decimal.Decimal
 		if arg.IsChange {
@@ -118,6 +118,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 
 // ParseStrategy 解析策略
 func ParseStrategy(u User) *Args {
+
 	var data = map[string]interface{}{}
 	var arg Args
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
@@ -142,10 +143,11 @@ func ParseStrategy(u User) *Args {
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
 	// log.Println(data)
 	if data["allSell"].(float64) == 2 {
-		SellCh <- 1
+		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
 	}
 	if data["one_buy"].(float64) == 2 {
-		arg.OneBuy = true
+		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
+		// arg.OneBuy = true
 	}
 	if data["limit_high"].(float64) == 2 {
 		arg.IsLimit = true
@@ -155,12 +157,14 @@ func ParseStrategy(u User) *Args {
 		arg.FirstDouble = true
 	}
 	if data["stop_buy"].(float64) == 2 {
-		arg.StopBuy = true
+		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 3}
+		// arg.StopBuy = true
 	}
 	if data["order_type"].(float64) == 2 {
 		arg.IsHand = true
 	}
 	// log.Println(fmt.Sprintf("%+v", arg))
+
 	return &arg
 }
 

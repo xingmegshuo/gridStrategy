@@ -222,19 +222,20 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 	}
 }
 
-// GetAccount 获取用户余额
+// GetAccount 获取用户预充值余额
 func GetAccount(uId float64) float64 {
-	var amount float64
-	UserDB.Raw("select `amount` from db_coin_amount where `customer_id` = ? and `coin_id` = ?", uId, 2).Scan(&amount)
-	return amount
+	var amount = map[string]interface{}{}
+	UserDB.Raw("select `meal_amount` from db_customer where id = ?", uId).Scan(&amount)
+	// fmt.Println(amount, "-------")
+	return ParseStringFloat(amount["meal_amount"].(string))
 }
 
 // GetMealAccount 获取预冲账户
-func GetMealAccount(uId float64) float64 {
-	var amount float64
-	UserDB.Raw("select `meal_amount` from db_coin_amount where `customer_id` = ? and `coin_id` = ?", uId, 2).Scan(&amount)
-	return amount
-}
+// func GetMealAccount(uId float64) float64 {
+// 	var amount float64
+// 	UserDB.Raw("select `meal_amount` from db_coin_amount where `customer_id` = ? and `coin_id` = ?", uId, 2).Scan(&amount)
+// 	return amount
+// }
 
 // UpdateStatus 刷新状态
 func UpdateStatus(id uint) (res int64) {

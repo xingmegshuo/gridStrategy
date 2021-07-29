@@ -15,8 +15,13 @@ import (
 
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
-	LogStrategy("火币", "doge", 2, 2, 10, 2, false, 10)
-	var v = map[string]interface{}{}
-	c := UserDB.Raw("select id from db_task_category where name like ?", "火币").Scan(&v)
-	fmt.Println(v, c)
+	// LogStrategy("火币", "doge", 2, 2, 10, 2, false, 10)
+	// var v = map[string]interface{}{}
+	// c := UserDB.Raw("select id from db_task_category where name like ?", "火币").Scan(&v)
+	// fmt.Println(v, c)
+	GotMoney(10, 2)
+
+	// var amount = map[string]interface{}{}
+	// b := UserDB.Raw("select `meal_amount` from db_customer where id = ?", 1).Scan(&amount)
+	// fmt.Println(amount, b)
 }

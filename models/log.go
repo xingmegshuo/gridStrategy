@@ -77,8 +77,8 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	log.Println("同步数据:", amount, price, money)
 	data["hold_num"] = amount
 	data["hold_price"] = price
-	data["hold_amount"] = money         // 持仓金额
-	data["current_num"] = num.(int) + 1 // 当前单数
+	data["hold_amount"] = money // 持仓金额
+	data["current_num"] = num   // 当前单数
 	UpdateOrder(id, data)
 }
 
@@ -197,7 +197,7 @@ func GotMoney(money float64, uId float64) {
 		fmt.Println(fmt.Sprintf("分红金额:%v----用户id:%v", realMoney, u["id"]))
 		baseLevel := u["level"].(uint8)
 		// 修改盈利
-		ChangeAmount(money, &u, tx, false)
+		ChangeAmount(money, &u, tx, true)
 
 		// 扣除分红金额，写日志
 		ownLog := &AmountLog{
@@ -213,9 +213,11 @@ func GotMoney(money float64, uId float64) {
 			Remark:         "盈利扣款",
 		}
 		fmt.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v---vip等级:%v", ownLog.BeforeAmount, ownLog.AfterAmount, baseLevel))
-		// ownLog.Write(UserDB)
-		// tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", uId).Update("meal_amount", ownLog.AfterAmount)
+		ownLog.Write(UserDB)
+		c := tx.Table("db_customer").Where("id = ? ", uId).Update("meal_amount", ownLog.AfterAmount)
+		fmt.Println(c)
 		// 合伙人
+
 		friends := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.2))
 
 		// 级差分红
@@ -227,7 +229,6 @@ func GotMoney(money float64, uId float64) {
 		after := levelMoney
 		for {
 			var myMoney float64
-
 			if u["inviter_id"].(uint32) > 0 {
 				time.Sleep(time.Second)
 				tx.Raw("select `id`,`team_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
@@ -330,8 +331,7 @@ func ChangeAmount(money float64, u *map[string]interface{}, db *gorm.DB, b bool)
 		grade["profit_min_amount"] = ParseStringFloat((*u)["profit_min_amount"].(string)) + money
 	}
 	fmt.Println(fmt.Sprintf("业绩更新:%+v,用户:%v", grade, (*u)["id"]))
-
-	// db.Table("db_customer").Where("id = ?", (*u)["id"]).Updates(&grade)
+	db.Table("db_customer").Where("id = ?", (*u)["id"]).Updates(&grade)
 }
 
 // Write 余额变动日志写入

@@ -47,7 +47,7 @@ func (t *Trader) setupBi(ctx context.Context) {
 		top, _ := price.Sub(low).Div(t.last).Float64()     // 当前回调
 		die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
 		// 输出日志
-		if count%60 == 0 {
+		if count%600 == 0 {
 			log.Println("当前盈利", win*100, "单数:", t.base, "下跌:", die*100, "上次交易:", t.last, "当前价格：",
 				price, "持仓:", t.amount, "最高价:", high, "最低价:", low, "回降比例:", reduce*100, "回调比例:", top*100)
 		}

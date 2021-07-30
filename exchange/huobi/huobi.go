@@ -458,14 +458,15 @@ func (c *Client) SearchOrder(order string) (map[string]string, bool, error) {
 	if err != nil {
 		return nil, false, err
 	} else if response != nil {
-		log.Println("为何出错", response.Data)
-		if response.Data.State == "filled" {
-			data["amount"] = response.Data.FilledAmount
-			data["price"] = response.Data.Price
-			data["fee"] = response.Data.FilledFees
-			return data, true, nil
-		} else if response.Data.State == "submitted" {
-			return nil, true, errors.New("等一会")
+		if response.Data != nil {
+			if response.Data.State == "filled" {
+				data["amount"] = response.Data.FilledAmount
+				data["price"] = response.Data.Price
+				data["fee"] = response.Data.FilledFees
+				return data, true, nil
+			} else if response.Data.State == "submitted" {
+				return nil, true, errors.New("等一会")
+			}
 		}
 	}
 	return data, false, nil

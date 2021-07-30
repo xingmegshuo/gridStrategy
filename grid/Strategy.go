@@ -218,33 +218,33 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 			if count >= 10 {
 				t.OrderOver = false
 				log.Println("开始进场首次买入:---价格", price, "---数量:", t.grids[t.base].AmountBuy, "---money", t.grids[t.base].TotalBuy)
-				err := t.WaitBuy(price)
-				if err != nil {
-					log.Printf("买入错误: %d, err: %s", t.base, err)
-					time.Sleep(time.Second * 5)
-					continue
-				} else {
-					high = price
-					low = price
-					t.last = price
-				}
+				// err := t.WaitBuy(price)
+				// if err != nil {
+				// 	log.Printf("买入错误: %d, err: %s", t.base, err)
+				// 	time.Sleep(time.Second * 5)
+				// 	continue
+				// } else {
+				// 	high = price
+				// 	low = price
+				// 	t.last = price
+				// }
 			}
 		}
 		// 后续买入按照跌幅+回调来下单
 		if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy {
 			if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
 				t.OrderOver = false
-				log.Println(t.base, "买入:", price, t.grids[t.base].AmountBuy, "下降幅度:", die, "价格:", t.grids[t.base].Price, "----------", price.Cmp(t.grids[t.base].Price))
-				err := t.WaitBuy(price)
-				if err != nil {
-					log.Printf("买入错误: %d, err: %s", t.base, err)
-					time.Sleep(time.Second * 5)
-					continue
-				} else {
-					high = price
-					low = price
-					t.last = price
-				}
+				// log.Println(t.base, "买入:", price, t.grids[t.base].AmountBuy, "下降幅度:", die, "价格:", t.grids[t.base].Price, "----------", price.Cmp(t.grids[t.base].Price))
+				// err := t.WaitBuy(price)
+				// if err != nil {
+				// 	log.Printf("买入错误: %d, err: %s", t.base, err)
+				// 	time.Sleep(time.Second * 5)
+				// 	continue
+				// } else {
+				// 	high = price
+				// 	low = price
+				// 	t.last = price
+				// }
 			}
 		}
 
@@ -314,7 +314,8 @@ func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
 
 func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
-	t.amount = t.CountBuy()
+	// t.amount = t.CountBuy()
+	t.amount = t.GetMycoin() // 暂时全部卖出
 	log.Println("卖出数量:", t.amount, t.u.ObjectId)
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
@@ -324,7 +325,7 @@ func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, erro
 }
 
 func (t *Trader) SellAmount(price decimal.Decimal, rate float64, amount decimal.Decimal) (uint64, string, error) {
-	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
+	clientOrderId := fmt.Sprintf("s-%d-%d", len(t.SellOrder)+1, time.Now().Unix())
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
 	log.Println("卖出数量:", amount, t.u.ObjectId)

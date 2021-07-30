@@ -9,15 +9,15 @@ import (
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
 	symbol := model.SymbolCategory{
-		Key:             "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91",
-		Secret:          "f09fba02-a5c1b946-d2b57c4e-04335",
+		Key:             "405a3c54-5dce3618-7yngd7gh5g-326cc",
+		Secret:          "4e59ae57-01e1c38c-cb63e660-d273b",
 		Host:            "https://api.huobi.de.com",
 		BaseCurrency:    "USDT",
-		QuoteCurrency:   "DOGE",
+		QuoteCurrency:   "ETH",
 		AmountPrecision: 2,
 		PricePrecision:  6,
 	}
 	ex := NewEx(&symbol)
 	ex.GetAccount()
-	ex.GetPrice()
+	// ex.GetPrice()
 }

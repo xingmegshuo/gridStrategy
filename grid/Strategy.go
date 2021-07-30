@@ -315,6 +315,7 @@ func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
 func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
 	t.amount = t.CountBuy()
+	log.Println("卖出数量:", t.amount, t.u.ObjectId)
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
 	g := map[string]int{clientOrderId: t.base}
@@ -326,6 +327,7 @@ func (t *Trader) SellAmount(price decimal.Decimal, rate float64, amount decimal.
 	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
+	log.Println("卖出数量:", amount, t.u.ObjectId)
 	g := map[string]int{clientOrderId: len(t.SellOrder) + 1}
 	t.SellOrder = g
 	return orderId, clientOrderId, err

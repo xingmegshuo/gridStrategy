@@ -455,6 +455,7 @@ func (t *Trader) AllSellMy() {
 
 // SearchOrder 查询订单
 func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
+	log.Println("查询订单", client, "依据此查找:", clientOrderId)
 	data, b, err := t.ex.huobi.SearchOrder(clientOrderId)
 	if err == nil {
 		if b {

@@ -9,21 +9,55 @@
 package xhttp
 
 import (
-    "fmt"
-    "net/http"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"zmyjobs/grid"
+	model "zmyjobs/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("啥也没干")
     fmt.Fprintln(w, "hello world")
 }
 
 // GetAccount 获取用户信息
 func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Println(r.Method, r.Form, r.Form.Get("account_id"))
+    // fmt.Println(r.Method, "-----", r.Form, "-----", r.Form.Get("account_id"), "-----", r.FormValue("account_id"))
+    if id := r.FormValue("account_id"); id != "" {
+        category := r.FormValue("category")
+        if category == "" {
+            category = "1"
+        }
+        b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
+        if b {
+            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, Host: "https://api.huobi.de.com"})
+            data, err := c.Ex.GetAccount()
+            if err == nil {
+                var response = map[string]interface{}{}
+                for k, v := range data.SubAccounts {
+                    if v.Amount > 0 {
+                        // s, _ := json.Marshal(&v)
+                        response[k.Symbol] = v
+                    }
+                }
+                b, _ := json.Marshal(&response)
+                fmt.Fprintln(w, string(b))
+            } else {
+                fmt.Fprintln(w, "api 出错或超时")
+            }
+        } else {
+            fmt.Fprintln(w, "用户不正确")
+        }
+    } else {
+        fmt.Fprintln(w, "参数不正确")
+    }
 }
 
 func RunServer() {
+    fmt.Println("服务开启")
     http.HandleFunc("/", IndexHandler)
     http.HandleFunc("/account", GetAccountHandler)
-    http.ListenAndServe("127.0.0.0:8000", nil)
+    go http.ListenAndServe("127.0.0.1:80", nil)
+    // fmt.Println("服务运行")
 }

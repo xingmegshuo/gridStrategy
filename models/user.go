@@ -203,10 +203,13 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 		apiKey string
 		secret string
 	)
+	// fmt.Println(category, memberid, "---")
 	api := StringMap(GetCache("db_task_api"))
 	Category := StringMap(GetCache("db_task_category"))
+	// fmt.Println(category, memberid, "---", api, Category)
 
 	for _, value := range Category {
+		// fmt.Println(value["id"] == category, value["id"], category, reflect.DeepEqual(value["id"], category), fmt.Sprintf("%T %T", value["id"], category))
 		if value["id"] == category {
 			name = value["name"].(string)
 		}
@@ -217,6 +220,7 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 			secret = a["secretkey"].(string)
 		}
 	}
+	// fmt.Println(name, apiKey, secret)
 	if name != "" && apiKey != "" && secret != "" {
 		return true, name, apiKey, secret
 	} else {

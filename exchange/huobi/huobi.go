@@ -458,6 +458,7 @@ func (c *Client) SearchOrder(order string) (map[string]string, bool, error) {
 	if err != nil {
 		return nil, false, err
 	} else if response != nil {
+		log.Println("为何出错", response.Data)
 		if response.Data.State == "filled" {
 			data["amount"] = response.Data.FilledAmount
 			data["price"] = response.Data.Price

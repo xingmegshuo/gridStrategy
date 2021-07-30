@@ -17,19 +17,19 @@ import (
 )
 
 type Cliex struct {
-	ex     goex.API
+	Ex     goex.API
 	symbol *model.SymbolCategory
 }
 
 func NewEx(symbol *model.SymbolCategory) *Cliex {
-	return &Cliex{ex: util.NewApi(&util.Config{APIKey: symbol.Key, Secreet: symbol.Secret, Host: symbol.Host}), symbol: symbol}
+	return &Cliex{Ex: util.NewApi(&util.Config{APIKey: symbol.Key, Secreet: symbol.Secret, Host: symbol.Host}), symbol: symbol}
 }
 
 // GetAccount 获取账户信息验证api正确与否
 func (c *Cliex) GetAccount() {
 	// float64
 	// fmt.Println(c.ex)
-	info, _ := c.ex.GetAccount()
+	info, _ := c.Ex.GetAccount()
 	b := MakeCurrency(c.symbol.BaseCurrency)
 	d := MakeCurrency(c.symbol.QuoteCurrency)
 	fmt.Println(info.SubAccounts[b], info.SubAccounts[d])
@@ -52,11 +52,11 @@ func (c *Cliex) GetPrice() {
 	}
 	fmt.Println(goex.BCC_BTC)
 	fmt.Println(symbol)
-	b, er := c.ex.GetTicker(goex.BTC_USDT)
+	b, er := c.Ex.GetTicker(goex.BTC_USDT)
 	fmt.Println(b, er, b.Last)
-	ticker, err := c.ex.GetDepth(2, symbol)
+	ticker, err := c.Ex.GetDepth(2, symbol)
 	fmt.Println("ticker:", ticker, err)
-	t, e := c.ex.GetTicker(symbol)
+	t, e := c.Ex.GetTicker(symbol)
 	fmt.Println(fmt.Scanf("%+v,%s,%d", t, e, t.Last))
 	// if err != nil {
 	// 	return 0, err

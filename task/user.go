@@ -32,7 +32,7 @@ func LoadUser() {
 	userData()
 	for i := 1; i < 2; i++ {
 		go model.NewUser()
-		// go RunWG()
+		go RunWG()
 	}
 }
 

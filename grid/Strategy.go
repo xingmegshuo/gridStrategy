@@ -324,12 +324,12 @@ func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, erro
 	return orderId, clientOrderId, err
 }
 
-func (t *Trader) SellAmount(price decimal.Decimal, rate float64, amount decimal.Decimal) (uint64, string, error) {
+func (t *Trader) SellAmount(price decimal.Decimal, rate float64, amount decimal.Decimal, n int) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("s-%d-%d", len(t.SellOrder)+1, time.Now().Unix())
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
 	log.Println("卖出数量:", amount, t.u.ObjectId)
-	g := map[string]int{clientOrderId: len(t.SellOrder) + 1}
+	g := map[string]int{clientOrderId: n}
 	t.SellOrder = g
 	return orderId, clientOrderId, err
 }
@@ -398,9 +398,9 @@ func (t *Trader) WaitSell(price decimal.Decimal, rate float64) error {
 }
 
 // WaitSellLimit 指定卖出数量
-func (t *Trader) WaitSellLimit(price decimal.Decimal, rate float64, amount decimal.Decimal) error {
+func (t *Trader) WaitSellLimit(price decimal.Decimal, rate float64, amount decimal.Decimal, n int) error {
 	t.OrderOver = false
-	orderId, clientOrder, err := t.SellAmount(price, rate, amount)
+	orderId, clientOrder, err := t.SellAmount(price, rate, amount, n)
 	if err != nil {
 		log.Printf("卖出错误: %d, err: %s", t.base, err)
 		return err

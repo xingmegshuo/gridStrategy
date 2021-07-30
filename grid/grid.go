@@ -296,9 +296,11 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		t.RealGrids[b-1].AmountSell = t.SellMoney.Abs()
 		hold := t.GetMycoin()
 		model.RebotUpdateBy(trade.ClientOrder, trade.Price, trade.Volume.Abs(), trade.TransactFee, t.SellMoney.Abs(), t.hold, "成功")
-		model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price), t.base)
 		if b == t.base {
 			t.over = true
+			model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price), 0)
+		} else {
+			model.AsyncData(t.u.ObjectId, hold, trade.Price, hold.Mul(trade.Price), b-1)
 		}
 	} else {
 		t.TradeGrid()

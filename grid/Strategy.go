@@ -130,6 +130,7 @@ func (t *Trader) Trade(ctx context.Context) {
 						model.RunOver(t.u.ObjectId, t.u.BasePrice)
 						model.LogStrategy(t.symbol.Category, t.symbol.QuoteCurrency, t.u.ObjectId,
 							t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+						t.u.RealGrids = "***"
 						t.u.Update()
 						GridDone <- 1
 					}
@@ -421,7 +422,7 @@ func (t *Trader) WaitSellLimit(price decimal.Decimal, rate float64, amount decim
 
 // GetLastPrice 获取上次交易价格
 func (t *Trader) GetLastPrice() {
-	if len(t.u.RealGrids) > 0 {
+	if len(t.u.RealGrids) > 0 && t.base > 1 {
 		t.last = t.RealGrids[t.base-1].Price
 	} else {
 		t.last = t.grids[0].Price

@@ -118,7 +118,6 @@ func NewUser() {
 							u = UpdateUser(u)
 							u.Update()
 						}
-
 						if u.IsRun == -10 {
 							StrategyError(u.ObjectId, u.Error)
 						}

@@ -16,9 +16,9 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
-	"zmyjobs/logs"
-	job "zmyjobs/task"
-	"zmyjobs/xhttp"
+	"zmyjobs/corn/logs"
+	job "zmyjobs/corn/task"
+	"zmyjobs/corn/xhttp"
 )
 
 var exitChan chan os.Signal

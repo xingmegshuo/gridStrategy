@@ -107,15 +107,12 @@ func (t *Trader) ReBalance(ctx context.Context) error {
 	}
 	moneyNeed := decimal.NewFromInt(int64(t.arg.NeedMoney)) // 策略需要总金额
 	t.cost = price
-
 	for i := 0; i < len(t.grids); i++ {
-		if i < t.base {
-
-			t.cost = t.RealGrids[i].Price.Add(t.cost)
-		} else {
+		if i >= t.base {
 			moneyNeed = moneyNeed.Add(t.grids[i].TotalBuy)
 		}
 	}
+	t.amount = t.CountBuy()
 	if t.base > 0 {
 		t.cost = t.cost.Div(decimal.NewFromInt(int64(t.base))) // 持仓均价
 	}
@@ -129,9 +126,8 @@ func (t *Trader) ReBalance(ctx context.Context) error {
 	moneyHeld := balance[t.symbol.QuoteCurrency]
 	coinHeld := balance[t.symbol.BaseCurrency]
 	log.Printf("account has money %s, coin %s,orderFor %d", moneyHeld, coinHeld, t.u.ObjectId)
-	t.amount, _ = decimal.NewFromString(t.u.Total) // 当前持仓
-	log.Println("资产:", moneyNeed, moneyHeld, balance)
-	if moneyNeed.Cmp(moneyHeld) == 1 && t.base == 0 {
+	// t.amount, _ = decimal.NewFromString(t.u.Total) // 当前持仓
+	if moneyNeed.Cmp(moneyHeld) == 1 {
 		return errors.New("no enough money")
 	}
 	return nil
@@ -335,6 +331,7 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 		Id: t.base + 1,
 		// Price:   price,
 		Decline: rate,
+		Order:   orderId,
 	})
 	return orderId, err
 }

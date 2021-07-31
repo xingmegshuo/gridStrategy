@@ -252,12 +252,16 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
 			if t.setupBi(win, reduce, price) != nil {
 				continue
+			} else {
+				t.Tupdate()
 			}
 		}
 		// 智多元
 		if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
 			if t.SetupBeMutiple(price, reduce, win) != nil {
 				continue
+			} else {
+				t.Tupdate()
 			}
 		}
 

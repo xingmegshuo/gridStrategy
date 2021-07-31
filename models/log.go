@@ -185,7 +185,6 @@ func AddModelLog(r *RebotLog, m float64) {
 // GotMoney 盈利分红
 func GotMoney(money float64, uId float64) {
 	realMoney := money * 0.2 // 分红盈利
-
 	fmt.Println("盈利金额:", money, "账户余额:", GetAccount(uId))
 	if money > 0 && GetAccount(uId) > realMoney { // 盈利
 		var (

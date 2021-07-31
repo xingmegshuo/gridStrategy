@@ -116,7 +116,7 @@ func RunOver(id interface{}, b interface{}) {
 	}
 	if b.(float64) > 0 {
 		data["total_profit"] = b
-		GotMoney(b.(float64), id.(float64))
+		GotMoney(b.(float64), float64(id.(int32)))
 	}
 	log.Println("修改盈利-----")
 	UpdateOrder(id, data)

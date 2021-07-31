@@ -44,12 +44,7 @@ func MakeCurrency(name string) goex.Currency {
 // GetPrice 获取价格
 func (c *Cliex) GetPrice() {
 	// (decimal.Decimal, error)
-	symbol := goex.CurrencyPair{
-		CurrencyA:      MakeCurrency(c.symbol.QuoteCurrency),
-		CurrencyB:      MakeCurrency(c.symbol.BaseCurrency),
-		AmountTickSize: int(c.symbol.AmountPrecision),
-		PriceTickSize:  int(c.symbol.PricePrecision),
-	}
+	symbol := c.MakePair()
 	fmt.Println(goex.BCC_BTC)
 	fmt.Println(symbol)
 	b, er := c.Ex.GetTicker(goex.BTC_USDT)
@@ -62,4 +57,13 @@ func (c *Cliex) GetPrice() {
 	// 	return 0, err
 	// }
 	// return ticker
+}
+
+func (c *Cliex) MakePair() goex.CurrencyPair {
+	return goex.CurrencyPair{
+		CurrencyA:      MakeCurrency(c.symbol.QuoteCurrency),
+		CurrencyB:      MakeCurrency(c.symbol.BaseCurrency),
+		AmountTickSize: int(c.symbol.AmountPrecision),
+		PriceTickSize:  int(c.symbol.PricePrecision),
+	}
 }

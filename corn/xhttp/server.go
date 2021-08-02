@@ -9,12 +9,12 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +31,7 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
             category = "1"
         }
         b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
+        fmt.Println(b,name,key)
         if b {
             c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, Host: "https://api.huobi.de.com"})
             data, err := c.Ex.GetAccount()

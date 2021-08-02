@@ -25,14 +25,11 @@ func Run(ctx context.Context, u model.User) {
 			return
 		default:
 		}
-		// time.Sleep(time.Second * 3)
-		// log.Println("i am run", status)
 		for i := 0; i < 1; i++ {
 			if status == 0 {
 				status = 1
 				log.Println("尝试获取用户账户数据，校验余额，api 等信息正确性---", u.ObjectId)
 				g, e := NewGrid(u)
-				// g.Locks.Lock()
 				if e != nil || len(g.grids) != int(u.Number) {
 					u.IsRun = -10
 					u.Error = "api 请求超时，或api接口更改"
@@ -40,7 +37,7 @@ func Run(ctx context.Context, u model.User) {
 					GridDone <- 1
 				} else {
 					g.u = u
-					// go g.Trade(ctx)
+					go g.Trade(ctx)
 				}
 			}
 		}

@@ -114,10 +114,10 @@ func NewUser() {
 				} else {
 					if u.Status == 2 {
 						if u.IsRun == 2 {
-							log.Println("从暂停中恢复的用户:", u.ObjectId)
 							u.IsRun = -1
 							u = UpdateUser(u)
 							u.Update()
+							log.Println("从暂停中恢复的用户:", u.ObjectId)
 						}
 						if u.IsRun == -10 {
 							StrategyError(u.ObjectId, u.Error)
@@ -128,9 +128,9 @@ func NewUser() {
 				if u.Strategy != parseInput(order) {
 					log.Println("修改参数")
 					u.Strategy = parseInput(order)
-					if u.IsRun == 10 && order["stop_buy"].(float64) == 1 {
-						OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
-					}
+					// if u.IsRun == 10 && order["stop_buy"].(float64) == 1 {
+					// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+					// }
 					u = UpdateUser(u)
 					u.Update()
 				}

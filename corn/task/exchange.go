@@ -56,7 +56,6 @@ func RunWG() {
 				u.RunCount++
 				u.Update()
 				model.AddRun(u.ObjectId, u.RunCount)
-				// model.RunOver(u.ObjectId, u.BasePrice)
 				time.Sleep(time.Second * 60)
 				u.IsRun = -1
 				u = model.UpdateUser(u)
@@ -91,7 +90,6 @@ OuterLoop:
 		}
 		// 执行任务不是一次执行
 		if model.UpdateStatus(u.ID) == -1 {
-			// log.Println("what 1")
 			u.IsRun = 10
 			u.Update()
 			for i := 0; i < 1; i++ {

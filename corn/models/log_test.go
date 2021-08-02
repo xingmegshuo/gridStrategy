@@ -24,5 +24,6 @@ func TestGetMoney(t *testing.T) {
 	// var amount = map[string]interface{}{}
 	// b := UserDB.Raw("select `meal_amount` from db_customer where id = ?", 1).Scan(&amount)
 	// fmt.Println(amount, b)
-	GetAccount(float64(13))
+	a := GetAccount(float64(13))
+	fmt.Println(a)
 }

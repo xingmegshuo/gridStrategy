@@ -9,11 +9,11 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +58,6 @@ func RunServer() {
     fmt.Println("服务开启")
     http.HandleFunc("/", IndexHandler)
     http.HandleFunc("/account", GetAccountHandler)
-    go http.ListenAndServe("127.0.0.1:8000", nil)
+    go http.ListenAndServe("127.0.0.1:80", nil)
     // fmt.Println("服务运行")
 }

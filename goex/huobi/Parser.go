@@ -1,11 +1,11 @@
 package huobi
 
 import (
-	goex "zmyjobs/goex"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"sort"
 	"strings"
+	goex "zmyjobs/goex"
+	"zmyjobs/goex/internal/logger"
 )
 
 func ParseDepthFromResponse(r DepthResponse) goex.Depth {

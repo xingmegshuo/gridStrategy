@@ -460,6 +460,8 @@ type queryOrdersParams struct {
 	pair CurrencyPair
 }
 
+
+
 func (hbpro *HuoBiPro) getOrders(pair CurrencyPair, optional ...OptionalParameter) ([]Order, error) {
 	path := "/v1/order/orders"
 	params := url.Values{}

@@ -9,10 +9,11 @@
 package grid
 
 import (
-	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/util"
 	"zmyjobs/goex"
+
+	"github.com/shopspring/decimal"
 )
 
 type Cliex struct {
@@ -21,44 +22,35 @@ type Cliex struct {
 }
 
 func NewEx(symbol *model.SymbolCategory) *Cliex {
-	return &Cliex{Ex: util.NewApi(&util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret, Host: symbol.Host}), symbol: symbol}
+	return &Cliex{Ex: util.NewApi(&util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
+		Host: symbol.Host, ClientID: symbol.Label}), symbol: symbol}
 }
 
 // GetAccount 获取账户信息验证api正确与否
-func (c *Cliex) GetAccount() {
-	// float64
-	// fmt.Println(c.ex)
+func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decimal) {
 	info, err := c.Ex.GetAccount()
-	// b := MakeCurrency(c.symbol.BaseCurrency)
-	// d := MakeCurrency(c.symbol.QuoteCurrency)
-	// fmt.Println(info.SubAccounts[b], info.SubAccounts[d],info)
-	fmt.Println(info, err)
-	// return info.SubAccounts[b].Amount
-}
-
-// MakeCurrency 创造一个currency
-func MakeCurrency(name string) goex.Currency {
-	return goex.Currency{Symbol: name, Desc: ""}
+	b := MakeCurrency(c.symbol.BaseCurrency)
+	d := MakeCurrency(c.symbol.QuoteCurrency)
+	r = false
+	if err == nil {
+		r = true
+		money = decimal.NewFromFloat(info.SubAccounts[b].Amount)
+		coin = decimal.NewFromFloat(info.SubAccounts[d].Amount)
+	}
+	return
 }
 
 // GetPrice 获取价格
-func (c *Cliex) GetPrice() {
-	// (decimal.Decimal, error)
+func (c *Cliex) GetPrice() (price decimal.Decimal, err error) {
 	symbol := c.MakePair()
-	// fmt.Println(goex.BCC_BTC)
-	fmt.Println(symbol)
-	// b, er := c.Ex.GetTicker(goex.BTC_USDT)
-	// fmt.Println(b, er, b.Last)
-	ticker, err := c.Ex.GetDepth(5, symbol)
-	fmt.Println(fmt.Sprintf("%+v", ticker), err)
-	// t, e := c.Ex.GetTicker(symbol)
-	// fmt.Println(fmt.Scanf("%+v,%s,%d", t, e, t.Last))
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return ticker
+	b, err := c.Ex.GetTicker(symbol)
+	if err == nil {
+		price = decimal.NewFromFloat(b.Last)
+	}
+	return
 }
 
+// MakePair 交易对
 func (c *Cliex) MakePair() goex.CurrencyPair {
 	return goex.CurrencyPair{
 		CurrencyA:      MakeCurrency(c.symbol.QuoteCurrency),
@@ -66,4 +58,9 @@ func (c *Cliex) MakePair() goex.CurrencyPair {
 		AmountTickSize: int(c.symbol.AmountPrecision),
 		PriceTickSize:  int(c.symbol.PricePrecision),
 	}
+}
+
+// MakeCurrency 创造一个currency
+func MakeCurrency(name string) goex.Currency {
+	return goex.Currency{Symbol: name, Desc: ""}
 }

@@ -1,11 +1,11 @@
 package huobi
 
 import (
-	"zmyjobs/goex/internal/logger"
 	"testing"
 	"time"
+	"zmyjobs/goex/internal/logger"
 
-	"github.com/nntaoli-project/goex"
+	"zmyjobs/goex"
 )
 
 func TestNewHbdmSwapWs(t *testing.T) {
@@ -25,7 +25,7 @@ func TestNewHbdmSwapWs(t *testing.T) {
 
 	//t.Log(ws.SubscribeDepth(goex.BTC_USD, goex.SWAP_CONTRACT))
 	//t.Log(ws.SubscribeTicker(goex.BTC_USD, goex.SWAP_CONTRACT))
-	t.Log(ws.SubscribeTrade(goex.BTC_USD , goex.SWAP_CONTRACT))
-	
+	t.Log(ws.SubscribeTrade(goex.BTC_USD, goex.SWAP_CONTRACT))
+
 	time.Sleep(time.Minute)
 }

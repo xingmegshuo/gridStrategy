@@ -1,10 +1,10 @@
 package huobi
 
 import (
-	goex "zmyjobs/goex"
 	"log"
 	"testing"
 	"time"
+	goex "zmyjobs/goex"
 )
 
 func TestNewHbdmWs(t *testing.T) {

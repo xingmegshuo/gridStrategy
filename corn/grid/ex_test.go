@@ -9,30 +9,32 @@ import (
 
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
-	// huobi := model.SymbolCategory{
-	// 	Key:             "405a3c54-5dce3618-7yngd7gh5g-326cc",
-	// 	Secret:          "4e59ae57-01e1c38c-cb63e660-d273b",
-	// 	Host:            "https://api.huobi.de.com",
-	// 	BaseCurrency:    "USDT",
-	// 	QuoteCurrency:   "ETH",
-	// 	AmountPrecision: 2,
-	// 	PricePrecision:  6,
-	// }
-
-	bian := model.SymbolCategory{
-		Key:    "l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
-		Secret: "EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR",
-		// Host:            "https://fapi.binace.com",
+	huobi := model.SymbolCategory{
+		Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc",
+		Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
+		// Host:            "https://api.huobi.de.com",
 		BaseCurrency:    "USDT",
 		QuoteCurrency:   "DOGE",
 		AmountPrecision: 2,
 		PricePrecision:  6,
-		Category:        "币安",
 	}
 
-	ex := NewEx(&bian)
-	ex.GetAccount()
-	ex.GetPrice()
+	// bian := model.SymbolCategory{
+	// 	Key:    "l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
+	// 	Secret: "EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR",
+	// 	// Host:            "https://fapi.binace.com",
+	// 	BaseCurrency:    "USDT",
+	// 	QuoteCurrency:   "DOGE",
+	// 	AmountPrecision: 2,
+	// 	PricePrecision:  6,
+	// 	Category:        "币安",
+	// 	Label:           "u20",
+	// }
+
+	ex := NewEx(&huobi)
+	// ex.GetAccount()
+	price, err := ex.GetPrice()
+	fmt.Println(price, err)
 	// goex.LimitOrderOptionalParameter
 	// c, e := ex.Ex.LimitSell("0.025", "2400.00", ex.MakePair(), 332301627399393)
 	// fmt.Println(c, e)

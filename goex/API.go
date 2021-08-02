@@ -19,5 +19,7 @@ type API interface {
 	//非个人，整个交易所的交易记录
 	GetTrades(currencyPair CurrencyPair, since int64) ([]Trade, error)
 
+	// 获取交易对当前价格
+	// GetPrice(currencyPair CurrencyPair) (decimal.Decimal, error)
 	GetExchangeName() string
 }

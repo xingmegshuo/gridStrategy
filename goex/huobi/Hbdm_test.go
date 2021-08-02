@@ -1,9 +1,9 @@
 package huobi
 
 import (
-	goex "zmyjobs/goex"
 	"testing"
 	"time"
+	goex "zmyjobs/goex"
 )
 
 var dm = NewHbdm(&goex.APIConfig{

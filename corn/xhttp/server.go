@@ -9,12 +9,13 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
+    "strings"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,44 +23,93 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "hello world")
 }
 
+// GetPrice 当前价格
+func GetPrice(w http.ResponseWriter, r *http.Request) {
+    var (
+        res  = map[string]interface{}{}
+        data = map[string]interface{}{}
+    )
+    res["status"] = "error"
+    res["msg"] = "获取当前价格"
+    res["data"] = "none"
+
+    if id := r.FormValue("coin_id"); id != "" {
+        model.UserDB.Raw("select name,category_id from db_task_coin where id = ?", id).Scan(&data)
+        if data["name"] != nil {
+            // 目前获取火币价格
+            symbol := model.SymbolCategory{}
+            symbol.QuoteCurrency, symbol.BaseCurrency = SplitString(data["name"].(string))
+            ex := grid.NewEx(&symbol)
+            price, err := ex.GetPrice()
+            if err == nil {
+                res["status"] = "success"
+                res["data"] = price
+            } else {
+                res["msg"] = err.Error()
+            }
+        } else {
+            res["msg"] = "获取信息出错"
+        }
+    } else {
+        res["msg"] = "参数解析出错"
+    }
+    b, _ := json.Marshal(&res)
+    fmt.Fprintln(w, string(b))
+}
+
 // GetAccount 获取用户信息
 func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
-    // fmt.Println(r.Method, "-----", r.Form, "-----", r.Form.Get("account_id"), "-----", r.FormValue("account_id"))
+    var (
+        response = map[string]interface{}{}
+        res      = map[string]interface{}{}
+    )
+    response["status"] = "error"
+    response["msg"] = "获取用户账户资金"
+    response["data"] = "none"
+
     if id := r.FormValue("account_id"); id != "" {
         category := r.FormValue("category")
         if category == "" {
             category = "1"
         }
         b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
-        fmt.Println(b,name,key)
+        // fmt.Println(b, name, key)
         if b {
-            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, Host: "https://api.huobi.de.com"})
+            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret})
             data, err := c.Ex.GetAccount()
             if err == nil {
-                var response = map[string]interface{}{}
+                response["status"] = "success"
                 for k, v := range data.SubAccounts {
                     if v.Amount > 0 {
                         // s, _ := json.Marshal(&v)
-                        response[k.Symbol] = v
+                        res[k.Symbol] = v
                     }
                 }
-                b, _ := json.Marshal(&response)
-                fmt.Fprintln(w, string(b))
+                response["data"] = res
             } else {
-                fmt.Fprintln(w, "api 出错或超时")
+                response["msg"] = err.Error()
             }
         } else {
-            fmt.Fprintln(w, "用户不正确")
+            response["msg"] = "获取信息出错"
         }
     } else {
-        fmt.Fprintln(w, "参数不正确")
+        response["msg"] = "参数解析出错"
     }
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
 }
 
 func RunServer() {
     log.Println("服务开启")
     http.HandleFunc("/", IndexHandler)
     http.HandleFunc("/account", GetAccountHandler)
+    http.HandleFunc("/price", GetPrice)
     go http.ListenAndServe(":80", nil)
     // fmt.Println("服务运行")
+}
+
+// SplitString 交易对
+func SplitString(name string) (base string, quote string) {
+    stringSlince := strings.Split(name, "/")
+    return stringSlince[0], stringSlince[1]
 }

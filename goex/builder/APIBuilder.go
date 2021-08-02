@@ -3,7 +3,9 @@ package builder
 import (
 	"context"
 	"errors"
+	"fmt"
 	. "zmyjobs/goex"
+	"zmyjobs/goex/atop"
 	"zmyjobs/goex/bigone"
 	"zmyjobs/goex/binance"
 	"zmyjobs/goex/bitfinex"
@@ -12,24 +14,22 @@ import (
 	"zmyjobs/goex/bitstamp"
 	"zmyjobs/goex/bittrex"
 	"zmyjobs/goex/coinbene"
+	"zmyjobs/goex/coinex"
+	"zmyjobs/goex/gdax"
+	"zmyjobs/goex/hitbtc"
+	"zmyjobs/goex/kraken"
 	"zmyjobs/goex/kucoin"
-	"fmt"
+	"zmyjobs/goex/poloniex"
+	"zmyjobs/goex/zb"
 
-	"zmyjobs/goex/atop"
 	//"zmyjobs/goex/coin58"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
 
-	"zmyjobs/goex/coinex"
-	"zmyjobs/goex/gdax"
-	"zmyjobs/goex/hitbtc"
 	"zmyjobs/goex/huobi"
-	"zmyjobs/goex/kraken"
 	"zmyjobs/goex/okex"
-	"zmyjobs/goex/poloniex"
-	"zmyjobs/goex/zb"
 )
 
 type APIBuilder struct {
@@ -195,6 +195,7 @@ func (builder *APIBuilder) FuturesLever(lever float64) (_builder *APIBuilder) {
 func (builder *APIBuilder) Build(exName string) (api API) {
 	var _api API
 	switch exName {
+
 	case KUCOIN:
 		_api = kucoin.New(builder.apiKey, builder.secretkey, builder.apiPassphrase)
 	//case OKCOIN_CN:
@@ -205,13 +206,7 @@ func (builder *APIBuilder) Build(exName string) (api API) {
 	//	_api = okcoin.NewCOM(builder.client, builder.apiKey, builder.secretkey)
 	case BITSTAMP:
 		_api = bitstamp.NewBitstamp(builder.client, builder.apiKey, builder.secretkey, builder.clientId)
-	case HUOBI_PRO:
-		//_api = huobi.NewHuoBiProSpot(builder.client, builder.apiKey, builder.secretkey)
-		_api = huobi.NewHuobiWithConfig(&APIConfig{
-			HttpClient:   builder.client,
-			Endpoint:     builder.endPoint,
-			ApiKey:       builder.apiKey,
-			ApiSecretKey: builder.secretkey})
+
 	case OKEX_V3, OKEX:
 		_api = okex.NewOKEx(&APIConfig{
 			HttpClient:    builder.client,
@@ -247,6 +242,14 @@ func (builder *APIBuilder) Build(exName string) (api API) {
 		_api = hitbtc.New(builder.client, builder.apiKey, builder.secretkey)
 	case ATOP:
 		_api = atop.New(builder.client, builder.apiKey, builder.secretkey)
+
+	case HUOBI_PRO:
+		//_api = huobi.NewHuoBiProSpot(builder.client, builder.apiKey, builder.secretkey)
+		_api = huobi.NewHuobiWithConfig(&APIConfig{
+			HttpClient:   builder.client,
+			Endpoint:     builder.endPoint,
+			ApiKey:       builder.apiKey,
+			ApiSecretKey: builder.secretkey})
 	default:
 		println("exchange name error [" + exName + "].")
 

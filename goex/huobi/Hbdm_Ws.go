@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+	. "zmyjobs/goex"
+	"zmyjobs/goex/internal/logger"
 )
 
 type WsResponse struct {

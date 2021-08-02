@@ -18,13 +18,23 @@ import (
     model "zmyjobs/corn/models"
 )
 
+func Handler(w http.ResponseWriter) http.ResponseWriter {
+    w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域
+    w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
+    w.Header().Set("content-type", "application/json")
+    return w
+}
+
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
     // fmt.Println("啥也没干")
     fmt.Fprintln(w, "hello world")
 }
 
 // GetPrice 当前价格
 func GetPrice(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+
     var (
         res  = map[string]interface{}{}
         data = map[string]interface{}{}
@@ -59,6 +69,8 @@ func GetPrice(w http.ResponseWriter, r *http.Request) {
 
 // GetAccount 获取用户信息
 func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+
     var (
         response = map[string]interface{}{}
         res      = map[string]interface{}{}
@@ -101,10 +113,12 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 func RunServer() {
     log.Println("服务开启")
+
     http.HandleFunc("/", IndexHandler)
     http.HandleFunc("/account", GetAccountHandler)
     http.HandleFunc("/price", GetPrice)
     go http.ListenAndServe(":80", nil)
+
     // fmt.Println("服务运行")
 }
 

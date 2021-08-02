@@ -9,15 +9,15 @@
 package util
 
 import (
-    "fmt"
-    "net/http"
-    "os"
-    "time"
+	"fmt"
+	"net/http"
+	"os"
+	"time"
 
-    "zmyjobs/goex"
-    "zmyjobs/goex/builder"
+	"zmyjobs/goex"
+	"zmyjobs/goex/builder"
 
-    "golang.org/x/net/proxy"
+	"golang.org/x/net/proxy"
 )
 
 type Config struct {
@@ -30,10 +30,10 @@ type Config struct {
 
 // NewApi 现货api  目前火币
 func NewApi(c *Config) goex.API {
-    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-    //     Endpoint(c.Host).ClientID("u10").HttpTimeout(time.Second * 3)
-    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).
-        Endpoint(c.Host).ClientID("u10")
+    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+        Endpoint(c.Host).ClientID("u10").HttpTimeout(time.Second * 3)
+    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).
+    //     Endpoint(c.Host).ClientID("u10")
     // fmt.Println(fmt.Sprintf("%+v", api), api.GetHttpClient())
     var cli goex.API
     switch c.Name {

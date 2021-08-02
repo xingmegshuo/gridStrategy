@@ -114,6 +114,7 @@ func NewUser() {
 				} else {
 					if u.Status == 2 {
 						if u.IsRun == 2 {
+							log.Println("从暂停中恢复的用户:", u.ObjectId)
 							u.IsRun = -1
 							u = UpdateUser(u)
 							u.Update()

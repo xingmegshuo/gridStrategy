@@ -40,7 +40,7 @@ func Run(ctx context.Context, u model.User) {
 					GridDone <- 1
 				} else {
 					g.u = u
-					go g.Trade(ctx)
+					// go g.Trade(ctx)
 				}
 			}
 		}

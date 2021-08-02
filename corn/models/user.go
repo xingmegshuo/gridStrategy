@@ -235,12 +235,7 @@ func GetAccount(uId float64) float64 {
 	return ParseStringFloat(amount["meal_amount"].(string))
 }
 
-// GetMealAccount 获取预冲账户
-// func GetMealAccount(uId float64) float64 {
-// 	var amount float64
-// 	UserDB.Raw("select `meal_amount` from db_coin_amount where `customer_id` = ? and `coin_id` = ?", uId, 2).Scan(&amount)
-// 	return amount
-// }
+
 
 // UpdateStatus 刷新状态
 func UpdateStatus(id uint) (res int64) {

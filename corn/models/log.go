@@ -79,6 +79,9 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	data["hold_price"] = price
 	data["hold_amount"] = money // 持仓金额
 	data["current_num"] = num   // 当前单数
+	if num == 0 {
+		UserDB.Exec("update db_task_order set current_num = 0 where id = ? ", id)
+	}
 	UpdateOrder(id, data)
 }
 

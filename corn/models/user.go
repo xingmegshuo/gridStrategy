@@ -231,7 +231,7 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 func GetAccount(uId float64) float64 {
 	var amount = map[string]interface{}{}
 	UserDB.Raw("select `meal_amount` from db_customer where id = ?", uId).Scan(&amount)
-	log.Println(amount, "-------预充值金额")
+	log.Println(amount, "-------预充值金额", uId)
 	if amount["meal_amount"] != nil {
 		return ParseStringFloat(amount["meal_amount"].(string))
 	}

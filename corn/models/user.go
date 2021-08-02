@@ -11,7 +11,6 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -206,7 +205,7 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 	// fmt.Println(category, memberid, "---")
 	api := StringMap(GetCache("db_task_api"))
 	Category := StringMap(GetCache("db_task_category"))
-	fmt.Println(category, memberid, "---")
+	// fmt.Println(category, memberid, "---")
 
 	for _, value := range Category {
 		// fmt.Println(value["id"] == category, value["id"], category, reflect.DeepEqual(value["id"], category), fmt.Sprintf("%T %T", value["id"], category))

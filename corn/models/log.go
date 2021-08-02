@@ -185,7 +185,7 @@ func AddModelLog(r *RebotLog, m float64) {
 // GotMoney 盈利分红
 func GotMoney(money float64, uId float64) {
 	realMoney := money * 0.2 // 分红盈利
-	fmt.Println("盈利金额:", money, "账户余额:", GetAccount(uId))
+	log.Println("盈利金额:", money, "账户余额:", GetAccount(uId))
 	if money > 0 && GetAccount(uId) > realMoney { // 盈利
 		var (
 			u         = map[string]interface{}{}
@@ -193,7 +193,7 @@ func GotMoney(money float64, uId float64) {
 		)
 		tx := UserDB                                                                                                                               // 使用事务
 		tx.Raw("select `id`,`profit_min_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", uId).Scan(&u) // 获取用户
-		fmt.Println(fmt.Sprintf("分红金额:%v----用户id:%v", realMoney, u["id"]))
+		log.Println(fmt.Sprintf("分红金额:%v----用户id:%v", realMoney, u["id"]))
 		baseLevel := u["level"].(uint8)
 		// 修改盈利
 		ChangeAmount(money, &u, tx, true)
@@ -211,19 +211,19 @@ func GotMoney(money float64, uId float64) {
 			Hash:           "000",
 			Remark:         "盈利扣款",
 		}
-		fmt.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v---vip等级:%v", ownLog.BeforeAmount, ownLog.AfterAmount, baseLevel))
+		log.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v---vip等级:%v", ownLog.BeforeAmount, ownLog.AfterAmount, baseLevel))
 		ownLog.Write(UserDB)
-		c := tx.Table("db_customer").Where("id = ? ", uId).Update("meal_amount", ownLog.AfterAmount)
-		fmt.Println(c)
+		tx.Table("db_customer").Where("id = ? ", uId).Update("meal_amount", ownLog.AfterAmount)
+
 		// 合伙人
 
 		friends := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.2))
 
 		// 级差分红
 		levelMoney := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.8))
-		fmt.Println("级差分红金额:", levelMoney, "合伙人分红:", friends, "平台收入:", realMoney*0.2)
+		log.Println("级差分红金额:", levelMoney, "合伙人分红:", friends, "平台收入:", realMoney*0.2)
 
-		fmt.Println("--------------")
+		log.Println("--------------")
 		f := true
 		after := levelMoney
 		for {
@@ -281,7 +281,7 @@ func GotMoney(money float64, uId float64) {
 						}
 					}
 					if thisLevel == 6 {
-						fmt.Println(thisLevel, baseLevel)
+						log.Println(thisLevel, baseLevel)
 						// l.Println("我要60%")
 						if f {
 							if thisLevel-baseLevel == 1 {
@@ -300,13 +300,13 @@ func GotMoney(money float64, uId float64) {
 							myMoney = levelMoney * 0.06 //平级
 						}
 					}
-					fmt.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v", myMoney, u["id"], thisLevel))
+					log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v", myMoney, u["id"], thisLevel))
 
 					// levelMoney -= myMoney
 					thisLog.Amount = myMoney
 					thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
-					fmt.Println(fmt.Sprintf("之前余额:%v---之后余额:%v----用户:%v", thisLog.BeforeAmount, thisLog.AfterAmount, u["id"]))
-					fmt.Println("--------------")
+					log.Println(fmt.Sprintf("之前余额:%v---之后余额:%v----用户:%v", thisLog.BeforeAmount, thisLog.AfterAmount, u["id"]))
+					log.Println("--------------")
 					// thisLog.Write(UserDB)
 					// tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
 					if myMoney > 0 {
@@ -318,7 +318,7 @@ func GotMoney(money float64, uId float64) {
 				break
 			}
 		}
-		fmt.Println(fmt.Sprintf("级差分红剩余金额:%v--- 合伙人分红剩余:%v---- 平台收入:%2f", after, friends, realMoney*0.2+after+friends))
+		log.Println(fmt.Sprintf("级差分红剩余金额:%v--- 合伙人分红剩余:%v---- 平台收入:%2f", after, friends, realMoney*0.2+after+friends))
 	}
 }
 
@@ -329,7 +329,7 @@ func ChangeAmount(money float64, u *map[string]interface{}, db *gorm.DB, b bool)
 	if b {
 		grade["profit_min_amount"] = ParseStringFloat((*u)["profit_min_amount"].(string)) + money
 	}
-	fmt.Println(fmt.Sprintf("业绩更新:%+v,用户:%v", grade, (*u)["id"]))
+	log.Println(fmt.Sprintf("业绩更新:%+v,用户:%v", grade, (*u)["id"]))
 	db.Table("db_customer").Where("id = ?", (*u)["id"]).Updates(&grade)
 }
 

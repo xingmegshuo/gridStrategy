@@ -11,6 +11,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -231,7 +232,7 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 func GetAccount(uId float64) float64 {
 	var amount = map[string]interface{}{}
 	UserDB.Raw("select `meal_amount` from db_customer where id = ?", uId).Scan(&amount)
-	// fmt.Println(amount, "-------")
+	fmt.Println(amount, "-------")
 	return ParseStringFloat(amount["meal_amount"].(string))
 }
 

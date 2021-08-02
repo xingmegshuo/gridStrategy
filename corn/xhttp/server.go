@@ -16,6 +16,8 @@ import (
     "strings"
     grid "zmyjobs/corn/grid"
     model "zmyjobs/corn/models"
+
+    "github.com/shopspring/decimal"
 )
 
 func Handler(w http.ResponseWriter) http.ResponseWriter {
@@ -74,6 +76,8 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
     var (
         response = map[string]interface{}{}
         res      = map[string]interface{}{}
+        list     = []map[string]interface{}{}
+        sumMoney decimal.Decimal
     )
     response["status"] = "error"
     response["msg"] = "获取用户账户资金"
@@ -87,16 +91,39 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
         b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
         // fmt.Println(b, name, key)
         if b {
-            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret})
+            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"})
             data, err := c.Ex.GetAccount()
             if err == nil {
                 response["status"] = "success"
                 for k, v := range data.SubAccounts {
                     if v.Amount > 0 {
-                        // s, _ := json.Marshal(&v)
-                        res[k.Symbol] = v
+                        one := map[string]interface{}{}
+                        one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
+                        symbol := model.SymbolCategory{BaseCurrency: "USDT", QuoteCurrency: k.Symbol, Category: name, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"}
+                        cli := grid.NewEx(&symbol)
+                        price, _ := cli.GetPrice()
+                        if k.Symbol == "USDT" {
+                            one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
+                        } else {
+                            one["money"] = price.Mul(decimal.NewFromFloat(v.Amount)).Round(8)
+                        }
+                        one["symbol"] = k.Symbol
+                        list = append(list, one)
                     }
                 }
+                for _, v := range list {
+                    sumMoney = sumMoney.Add(v["money"].(decimal.Decimal))
+                }
+                // fmt.Println(sumMoney)
+                for _, v := range list {
+                    // fmt.Println(fmt.Sprintf("%T", v["money"]))
+                    rate := decimal.NewFromInt(100)
+                    m := v["money"].(decimal.Decimal)
+                    value := m.Div(sumMoney).Mul(rate)
+                    v["position"] = value.Round(4)
+                }
+                res["list"] = list
+                res["sum"] = sumMoney
                 response["data"] = res
             } else {
                 response["msg"] = err.Error()

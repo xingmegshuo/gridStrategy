@@ -9,15 +9,15 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func Handler(w http.ResponseWriter) http.ResponseWriter {
@@ -50,7 +50,7 @@ func GetPrice(w http.ResponseWriter, r *http.Request) {
         if data["name"] != nil {
             // 目前获取火币价格
             symbol := model.SymbolCategory{}
-            symbol.QuoteCurrency, symbol.BaseCurrency = SplitString(data["name"].(string))
+            symbol.BaseCurrency, symbol.QuoteCurrency = SplitString(data["name"].(string))
             ex := grid.NewEx(&symbol)
             price, err := ex.GetPrice()
             if err == nil {

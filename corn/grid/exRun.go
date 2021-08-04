@@ -277,7 +277,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         }
 
         // 立即买入
-        if t.arg.OneBuy {
+        if t.arg.OneBuy && t.base < len(t.grids)-1 {
             log.Printf("%v用户一键补仓", t.u.ObjectId)
             t.arg.OneBuy = false
             // model.OneBuy(t.u.ObjectId)

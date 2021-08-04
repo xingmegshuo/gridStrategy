@@ -299,7 +299,7 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
 		t.amount = t.amount.Add(trade.Volume).Sub(trade.TransactFee)
 		t.cost = t.pay.Div(t.amount)
-		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base)
+		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 		tradeTotal := trade.Volume.Mul(trade.Price)
 		newTotal := oldTotal.Add(tradeTotal)
 		t.cost = newTotal.Div(t.amount)

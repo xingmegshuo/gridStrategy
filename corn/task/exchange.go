@@ -93,6 +93,7 @@ OuterLoop:
 			u.IsRun = 10
 			u.Update()
 			for i := 0; i < 1; i++ {
+				// go grid.RunEx(ctx, u) //goex
 				go grid.Run(ctx, u)
 			}
 		}

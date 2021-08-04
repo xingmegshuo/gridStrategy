@@ -130,9 +130,10 @@ func xhttpCraw(url string) {
 					if raf < 0 {
 						base = ""
 					}
+					dayAmount := fmt.Sprintf("%2f", s["amount"].(float64)*s["close"].(float64)/100000000)
 					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
 					model.UserDB.Table("db_task_coin").Where("id = ?", d["id"]).Update("price_usd", s["close"].(float64)).
-						Update("price", s["close"].(float64)*6.5).Update("day_amount", s["amount"]).Update("raf", base+r+"%")
+						Update("price", s["close"].(float64)*6.5).Update("day_amount", dayAmount).Update("raf", base+r+"%")
 				}
 			}
 		}

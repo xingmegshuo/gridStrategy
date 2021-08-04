@@ -8,7 +8,7 @@ import (
 
 type Operate struct {
 	Id float64
-	Op int // 1 全部卖出 2 立即补仓 3. 停止买入
+	Op int // 1 全部卖出 2 立即补仓 3. 停止买入 4. 恢复买入
 }
 
 var OperateCh = make(chan Operate) // 立即补仓
@@ -46,7 +46,7 @@ type Args struct {
 	AddMoney     float64 // 补仓金额
 	Decline      float64 // 跌幅比例
 	Out          bool    // 出局方式
-	OrderType    int64   // 市价/限价
+	OrderType    int64   // 1 限价 2 市价
 	IsLimit      bool    // 是否限高
 	LimitHigh    float64 // 限高价格
 	StrategyType int64   // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市

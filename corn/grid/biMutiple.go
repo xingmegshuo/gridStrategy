@@ -28,3 +28,18 @@ func (t *Trader) SetupBeMutiple(price decimal.Decimal, reduce float64, rate floa
 	}
 	return nil
 }
+
+func (t *ExTrader) SetupBeMutiple(price decimal.Decimal, reduce float64, rate float64) error {
+	for _, g := range t.RealGrids {
+		win, _ := g.AmountBuy.Mul(price).Sub(g.TotalBuy).Div(g.TotalBuy).Float64()
+		if win*100 > t.arg.Stop && reduce*100 > t.arg.Callback && g.AmountSell.Cmp(decimal.Decimal{}) != 1 {
+			err := t.WaitSell(price, g.AmountBuy, rate*100, g.Id)
+			if err != nil {
+				log.Printf("一单一单卖出, grid number: %d, err: %s", g.Id, err)
+				time.Sleep(time.Second * 5)
+				return err
+			}
+		}
+	}
+	return nil
+}

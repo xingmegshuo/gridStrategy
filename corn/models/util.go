@@ -11,6 +11,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"zmyjobs/corn/exchange/huobi"
 
@@ -52,6 +53,7 @@ func NewSymbol(u User) *SymbolCategory {
 		MinAmount:       decimal.NewFromFloat(minAmount),
 		BaseCurrency:    baseCurrency,
 		QuoteCurrency:   quoteCurrency,
+		Label:           "goex-" + u.Category + "-" + u.Name + "-" + strconv.Itoa(int(u.ObjectId)),
 	}
 }
 
@@ -118,7 +120,6 @@ func MakeStrategy(u User) (*[]Grid, error) {
 
 // ParseStrategy 解析策略
 func ParseStrategy(u User) *Args {
-
 	var data = map[string]interface{}{}
 	var arg Args
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
@@ -141,7 +142,6 @@ func ParseStrategy(u User) *Args {
 	}
 	// log.Println(data)
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
-	// log.Println(data)
 	if data["allSell"].(float64) == 2 {
 		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
 	}
@@ -158,12 +158,13 @@ func ParseStrategy(u User) *Args {
 	}
 	if data["stop_buy"].(float64) == 2 {
 		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 3}
-		// arg.StopBuy = true
 	}
 	if data["order_type"].(float64) == 2 {
 		arg.IsHand = true
 	}
-	// log.Println(fmt.Sprintf("%+v", arg))
+	if arg.StrategyType == 3 || arg.StrategyType == 4 {
+		arg.OrderType = 2
+	}
 
 	return &arg
 }

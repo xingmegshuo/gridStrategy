@@ -27,9 +27,9 @@ type RebotLog struct {
 	Types        string  // 市价或限价
 	UserID       uint    // 哪个任务
 	AddNum       int     // 当前补单数量
-	HoldNum      float64 // 当前持有币种数量
-	HoldMoney    float64 // 当前价值美金
-	PayMoney     float64 // 当前投入金额
+	HoldNum      float64 // 币种数量
+	HoldMoney    float64 // 交易美金
+	PayMoney     float64 // 投入金额
 	AddRate      float64 // 当前补仓比例
 	TransactFee  float64 // 手续费
 	Status       string  // 订单状态
@@ -61,9 +61,8 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string) {
 	log.Println(orderId, "------订单成功")
 	money, _ := m.Float64()
-	// hold_moeny, _ := hold_m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
-		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", hold_m).Update("pay_money", hold_m)
+		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Abs().Sub(transactFee)).Update("pay_money", hold_m)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
 	AddModelLog(&r, money)
@@ -74,7 +73,7 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	//  同步当前task_order
 	var data = map[string]interface{}{}
 	// UserDB.Raw("select * from db_task_order where `id` = ?", id).Scan(&data)
-	log.Println("同步数据:", amount, price, money)
+	log.Println("同步数据:", amount, price, money, num)
 	data["hold_num"] = amount
 	data["hold_price"] = price
 	data["hold_amount"] = money // 持仓金额
@@ -155,6 +154,7 @@ func AddModelLog(r *RebotLog, m float64) {
 	log.Println("add trade-----", r.Price, r.HoldMoney)
 	var data = map[string]interface{}{}
 	var coin = map[string]interface{}{}
+	var mes string
 	UserDB.Raw("select id,name from db_task_coin where en_name like ?", r.GetCoin).Scan(&coin)
 	data["order_sn"] = r.OrderId // 订单号
 	data["category_id"] = 2      // 平台
@@ -162,11 +162,20 @@ func AddModelLog(r *RebotLog, m float64) {
 	data["buyer_id"] = r.Custom  // 会员
 	if r.BuyOrSell == "买入" {
 		data["type"] = 0 // 买入还是卖出
-		data["remark"] = fmt.Sprintf("当前第%d单", r.AddNum+1)
+		if r.AddNum+1 == 1 {
+			mes = fmt.Sprintf("首单买入,开仓---")
+		} else {
+			mes = fmt.Sprintf("当前第%d买入,跌幅:%f", r.AddNum+1, r.AddRate)
+		}
 	} else {
 		data["type"] = 1
-		data["remark"] = "卖出了"
+		if r.AddNum+1 == 0 {
+			mes = fmt.Sprintf("清仓操作----,盈利%f", r.AddRate)
+		} else {
+			mes = fmt.Sprintf("当前第%d次卖出,跌幅:%f", r.AddNum+1, r.AddRate)
+		}
 	}
+	data["remark"] = mes
 	data["jy_coin_id"] = 1
 	data["js_coin_id"] = 1
 	data["coin_name"] = "币币交易"                    // 币种名字

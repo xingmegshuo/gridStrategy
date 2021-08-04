@@ -16,21 +16,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type SymbolCategory struct {
-	Category        string
-	Symbol          string
-	AmountPrecision int32
-	PricePrecision  int32
-	Label           string
-	Key             string
-	Secret          string
-	Host            string
-	MinTotal        decimal.Decimal
-	MinAmount       decimal.Decimal
-	BaseCurrency    string
-	QuoteCurrency   string
-}
-
 var GridDone = make(chan int) // 停止策略
 
 var log = logs.Log
@@ -58,6 +43,7 @@ type Trader struct {
 	SellOrder map[string]int        // 卖出订单号
 	SellMoney decimal.Decimal       // 卖出金额
 	OrderOver bool                  // 一次订单是否结束
+	goex      *Cliex                // goex
 }
 
 // log 交易日志
@@ -101,21 +87,25 @@ func (t *Trader) log(orderId string, price decimal.Decimal, ty string, num int,
 
 func (t *Trader) ReBalance(ctx context.Context) error {
 	t.base = t.u.Base // 从暂停中恢复
+
+	// **
 	price, err := t.ex.huobi.GetPrice(t.symbol.Symbol)
 	if err != nil {
 		return err
 	}
-	moneyNeed := decimal.NewFromInt(int64(t.arg.NeedMoney)) // 策略需要总金额
 	t.cost = price
+	if t.base > 0 {
+		t.cost = t.cost.Div(decimal.NewFromInt(int64(t.base))) // 持仓均价
+	}
+
+	moneyNeed := decimal.NewFromInt(int64(t.arg.NeedMoney)) // 策略需要总金额
 	for i := 0; i < len(t.grids); i++ {
 		if i >= t.base {
 			moneyNeed = moneyNeed.Add(t.grids[i].TotalBuy)
 		}
 	}
 	t.amount = t.CountBuy()
-	if t.base > 0 {
-		t.cost = t.cost.Div(decimal.NewFromInt(int64(t.base))) // 持仓均价
-	}
+
 	// coinNeed := decimal.NewFromInt(0)
 
 	balance, err := t.ex.huobi.GetSpotBalance()
@@ -134,13 +124,14 @@ func (t *Trader) ReBalance(ctx context.Context) error {
 }
 
 func (t *Trader) GetMoeny() {
+	// **
 	balance, err := t.ex.huobi.GetSpotBalance()
 	if err != nil {
 		t.ErrString = fmt.Sprintf("error when get balance in rebalance: %s", err)
 	}
 	moneyHeld := balance[t.symbol.QuoteCurrency]
 	t.hold = moneyHeld
-	// t.amount = balance[t.symbol.BaseCurrency]
+
 }
 
 func (t *Trader) GetMycoin() decimal.Decimal {
@@ -307,6 +298,7 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, trade.TransactFee, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 		t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
 		t.amount = t.amount.Add(trade.Volume).Sub(trade.TransactFee)
+		t.cost = t.pay.Div(t.amount)
 		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base)
 		tradeTotal := trade.Volume.Mul(trade.Price)
 		newTotal := oldTotal.Add(tradeTotal)

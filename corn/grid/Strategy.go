@@ -52,6 +52,8 @@ func NewGrid(u model.User) (*Trader, error) {
 	var realGrid []model.Grid
 
 	_ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
+
+	// **准备丢弃
 	var cli *Cli
 	var err error
 	switch symbol.Category {
@@ -63,12 +65,14 @@ func NewGrid(u model.User) (*Trader, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Trader{
 		grids:     *grid,
-		ex:        cli,
-		symbol:    &symbol,
+		ex:        cli,     //**
+		symbol:    &symbol, //**
 		arg:       &arg,
 		RealGrids: realGrid,
+		goex:      NewEx(&symbol),
 	}, nil
 }
 
@@ -87,9 +91,11 @@ func (t *Trader) Trade(ctx context.Context) {
 		for i := 0; i < 1; i++ {
 			if c == 0 {
 				c = 1
+				// **不必开启websocket
 				log.Println("开启websocket--------", t.u.ObjectId)
 				go t.ex.huobi.SubscribeOrder(ctx, t.symbol.Symbol, clientId, t.OrderUpdateHandler)
 				go t.ex.huobi.SubscribeTradeClear(ctx, t.symbol.Symbol, clientId, t.TradeClearHandler)
+
 				if err := t.ReBalance(ctx); err != nil {
 					log.Println("校验账户余额不足够，策略不开始----", t.u.ObjectId)
 					t.u.IsRun = -10
@@ -155,7 +161,6 @@ func (t *Trader) cancel(order uint64, order_id string) {
 
 // setupGridOrders 测试
 func (t *Trader) setupGridOrders(ctx context.Context) {
-
 	count := 0
 	t.GetLastPrice()
 	log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "---------策略开始", "用户:", t.u.ObjectId)
@@ -163,7 +168,6 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		low  = t.last
 		high = t.last
 	)
-
 	for {
 		count++
 		time.Sleep(time.Millisecond * 500)                 // 间隔0.5秒查询
@@ -291,7 +295,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 			}
 		}
 		// 立即买入
-		if t.arg.OneBuy {
+		if t.arg.OneBuy && t.base < len(t.grids)-1 {
 			log.Println("一键补仓")
 			t.arg.OneBuy = false
 			model.OneBuy(t.u.ObjectId)
@@ -307,7 +311,6 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 			}
 		}
 	}
-
 }
 
 func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {

@@ -168,6 +168,8 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		low  = t.last
 		high = t.last
 	)
+	t.amount = t.CountHold()
+	t.pay = t.CountPay()
 	for {
 		count++
 		time.Sleep(time.Millisecond * 500)                 // 间隔0.5秒查询

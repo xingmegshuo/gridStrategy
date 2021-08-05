@@ -62,7 +62,7 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 	log.Println(orderId, "------订单成功")
 	money, _ := m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
-		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Abs().Sub(transactFee)).Update("pay_money", hold_m)
+		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Sub(transactFee)).Update("pay_money", hold_m)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
 	AddModelLog(&r, money)
@@ -112,13 +112,13 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}, b interface{}) {
+func RunOver(id interface{}, b float64) {
 	var data = map[string]interface{}{
 		"status": 2,
 	}
-	if b.(float64) > 0 {
+	if b > 0 {
 		data["total_profit"] = b
-		GotMoney(b.(float64), float64(id.(int32)))
+		GotMoney(b, float64(id.(int32)))
 	}
 	log.Println("修改盈利-----")
 	UpdateOrder(id, data)
@@ -165,14 +165,14 @@ func AddModelLog(r *RebotLog, m float64) {
 		if r.AddNum+1 == 1 {
 			mes = fmt.Sprintf("首单买入,开仓---")
 		} else {
-			mes = fmt.Sprintf("当前第%d买入,跌幅:%f", r.AddNum+1, r.AddRate)
+			mes = fmt.Sprintf("当前第%d买入,跌幅:%f", r.AddNum+1, r.AddRate) + "%"
 		}
 	} else {
 		data["type"] = 1
-		if r.AddNum+1 == 0 {
-			mes = fmt.Sprintf("清仓操作----,盈利%f", r.AddRate)
+		if r.AddNum == 0 {
+			mes = fmt.Sprintf("清仓操作----,盈利%f", r.AddRate) + "%"
 		} else {
-			mes = fmt.Sprintf("当前第%d次卖出,跌幅:%f", r.AddNum+1, r.AddRate)
+			mes = fmt.Sprintf("当前第%d单卖出,盈利:%f", r.AddNum, r.AddRate) + "%"
 		}
 	}
 	data["remark"] = mes

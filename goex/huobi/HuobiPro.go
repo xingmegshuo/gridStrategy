@@ -62,9 +62,11 @@ type HuoBiProSymbol struct {
 }
 
 func NewHuobiWithConfig(config *APIConfig) *HuoBiPro {
+	start := time.Now()
 	hbpro := new(HuoBiPro)
 	if config.Endpoint == "" {
-		hbpro.baseUrl = "https://api.huobi.pro"
+		hbpro.baseUrl = "https://api.huobi.de.com"
+		// "https://api.huobi.pro"
 	} else {
 		hbpro.baseUrl = config.Endpoint
 	}
@@ -84,11 +86,12 @@ func NewHuobiWithConfig(config *APIConfig) *HuoBiPro {
 		}
 	}
 
-	hbpro.Symbols = make(map[string]HuoBiProSymbol, 100)
-	_, err := hbpro.GetCurrenciesPrecision()
-	if err != nil {
-		Log.Panic("GetCurrenciesPrecision Error=", err)
-	}
+	// hbpro.Symbols = make(map[string]HuoBiProSymbol, 100)
+	// _, err := hbpro.GetCurrenciesPrecision()
+	// if err != nil {
+	// 	Log.Panic("GetCurrenciesPrecision Error=", err)
+	// }
+	fmt.Println("新建客户端用时:", time.Since(start))
 	return hbpro
 }
 
@@ -178,8 +181,10 @@ func (hbpro *HuoBiPro) GetAccount() (*Account, error) {
 
 	urlStr := hbpro.baseUrl + path + "?" + params.Encode()
 	//println(urlStr)
+	start := time.Now()
+	fmt.Println(start, "请求开始时间")
 	respmap, err := HttpGet(hbpro.httpClient, urlStr)
-
+	fmt.Println(time.Since(start), "请求结束时间", time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +247,6 @@ func (hbpro *HuoBiPro) placeOrder(amount, price string, pair CurrencyPair, order
 	case "buy-limit", "sell-limit":
 		params.Set("price", FloatToString(ToFloat64(price), int(symbol.PricePrecision)))
 	}
-
 	hbpro.buildPostForm("POST", path, &params)
 
 	resp, err := HttpPostForm3(hbpro.httpClient, hbpro.baseUrl+path+"?"+params.Encode(), hbpro.toJson(params),
@@ -256,6 +260,7 @@ func (hbpro *HuoBiPro) placeOrder(amount, price string, pair CurrencyPair, order
 	if err != nil {
 		return "", err
 	}
+	// fmt.Println(fmt.Sprintf("%+v", respmap))
 
 	if respmap["status"].(string) != "ok" {
 		return "", errors.New(respmap["err-code"].(string))
@@ -279,6 +284,7 @@ func (hbpro *HuoBiPro) LimitBuy(amount, price string, currency CurrencyPair, opt
 		}
 	}
 	orderId, err := hbpro.placeOrder(amount, price, currency, orderTy)
+
 	if err != nil {
 		return nil, err
 	}
@@ -460,8 +466,6 @@ type queryOrdersParams struct {
 	pair CurrencyPair
 }
 
-
-
 func (hbpro *HuoBiPro) getOrders(pair CurrencyPair, optional ...OptionalParameter) ([]Order, error) {
 	path := "/v1/order/orders"
 	params := url.Values{}
@@ -493,6 +497,7 @@ func (hbpro *HuoBiPro) getOrders(pair CurrencyPair, optional ...OptionalParamete
 func (hbpro *HuoBiPro) GetTicker(currencyPair CurrencyPair) (*Ticker, error) {
 	pair := currencyPair.AdaptUsdToUsdt()
 	url := hbpro.baseUrl + "/market/detail/merged?symbol=" + strings.ToLower(pair.ToSymbol(""))
+	// fmt.Println(url)
 	respmap, err := HttpGet(hbpro.httpClient, url)
 	if err != nil {
 		return nil, err

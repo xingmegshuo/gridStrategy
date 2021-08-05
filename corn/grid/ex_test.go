@@ -91,17 +91,18 @@ func TestGetMoney(t *testing.T) {
 	}
 	symbol := model.StringSymobol(u.Symbol)
 	cli := NewEx(&symbol)
-	for i := 1; i < 11; i++ {
+	for i := 1; i < 31; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		u.ObjectId = int32(i)
 		// time.Sleep(time.Second * 2)
 		// for i := 1; i < 2; i++ {
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Second * 2)
+		fmt.Println("进入", i)
 		go RunEx(ctx, u, cli)
 		// }
 	}
 	for {
-
+		;
 	}
 }

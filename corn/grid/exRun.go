@@ -1,14 +1,14 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"encoding/json"
+	"fmt"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User, cli *Cliex) {
@@ -71,6 +71,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
             c = 1
             log.Printf("尝试获取%v用户账户数据，校验余额，api 等信息正确性", t.u.ObjectId)
             start := time.Now()
+            fmt.Println("i am start----", start, t.u.ObjectId)
             if err := t.ReBalance(ctx); err != nil {
                 log.Printf("校验%v账户余额不足够，策略不开始----", t.u.ObjectId)
                 t.u.IsRun = -10
@@ -80,7 +81,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                 // 执行报错就关闭
                 // GridDone <- 1
             } else {
-                fmt.Println(time.Since(start), "获取账户信息用时 ", t.u.ObjectId)
+                fmt.Println(time.Since(start), "获取账户信息用时 ", t.u.ObjectId, "当前时间", time.Now())
                 t.setupGridOrders(ctx)
                 if t.ErrString != "" {
                     log.Println("网络链接问题：", t.u.ObjectId)
@@ -125,9 +126,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
     for {
         count++
         time.Sleep(time.Millisecond * 500) // 间隔0.5秒查询
-        start := time.Now()
+        // start := time.Now()
         price, err := t.goex.GetPrice() // 获取当前价格
-        fmt.Println("价格用时---", time.Since(start), t.u.ObjectId)
+        // fmt.Println("价格用时---", time.Since(start), t.u.ObjectId)
         if err != nil {
             t.ErrString = err.Error()
             log.Println(err, t.u.ObjectId)

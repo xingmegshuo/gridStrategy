@@ -158,7 +158,6 @@ const (
 	COINBENE        = "coinbene.com"
 	ATOP            = "a.top"
 	BITGET_SWAP     = "bitget_swap"
-	HUOBI_DE        = "huobi.de.com"
 )
 
 const (

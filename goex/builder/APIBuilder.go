@@ -81,7 +81,7 @@ var (
 	DefaultHttpClientConfig = &HttpClientConfig{
 		Proxy:        nil,
 		HttpTimeout:  5 * time.Second,
-		MaxIdleConns: 10}
+		MaxIdleConns: 1000}
 	DefaultAPIBuilder = NewAPIBuilder()
 )
 
@@ -244,7 +244,7 @@ func (builder *APIBuilder) Build(exName string) (api API) {
 		_api = atop.New(builder.client, builder.apiKey, builder.secretkey)
 
 	case HUOBI_PRO:
-		//_api = huobi.NewHuoBiProSpot(builder.client, builder.apiKey, builder.secretkey)
+		// _api = huobi.NewHuoBiProSpot(builder.client, builder.apiKey, builder.secretkey)
 		_api = huobi.NewHuobiWithConfig(&APIConfig{
 			HttpClient:   builder.client,
 			Endpoint:     builder.endPoint,
@@ -333,7 +333,7 @@ func (builder *APIBuilder) BuildFuture(exName string) (api FutureRestAPI) {
 			Lever:        builder.futuresLever,
 		})
 	default:
-		println(fmt.Sprintf("%s not support future", exName))
+		// println(fmt.Sprintf("%s not support future", exName))
 		return nil
 	}
 }

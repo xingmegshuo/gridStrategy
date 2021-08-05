@@ -1,12 +1,12 @@
 package binance
 
 import (
-	goex "zmyjobs/goex"
 	"net"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
+	goex "zmyjobs/goex"
 )
 
 var bs = NewBinanceSwap(&goex.APIConfig{

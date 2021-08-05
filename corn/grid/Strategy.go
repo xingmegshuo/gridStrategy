@@ -79,7 +79,7 @@ func NewGrid(u model.User) (*Trader, error) {
 // Trade 创建websocket 并执行策略中的交易任务
 func (t *Trader) Trade(ctx context.Context) {
 	//_ = t.Print()
-	clientId := fmt.Sprintf("%d", time.Now().Unix())
+	// clientId := fmt.Sprintf("%d", time.Now().Unix())
 	c := 0
 	for {
 		select {
@@ -93,8 +93,8 @@ func (t *Trader) Trade(ctx context.Context) {
 				c = 1
 				// **不必开启websocket
 				log.Println("开启websocket--------", t.u.ObjectId)
-				go t.ex.huobi.SubscribeOrder(ctx, t.symbol.Symbol, clientId, t.OrderUpdateHandler)
-				go t.ex.huobi.SubscribeTradeClear(ctx, t.symbol.Symbol, clientId, t.TradeClearHandler)
+				// go t.ex.huobi.SubscribeOrder(ctx, t.symbol.Symbol, clientId, t.OrderUpdateHandler)
+				// go t.ex.huobi.SubscribeTradeClear(ctx, t.symbol.Symbol, clientId, t.TradeClearHandler)
 
 				if err := t.ReBalance(ctx); err != nil {
 					log.Println("校验账户余额不足够，策略不开始----", t.u.ObjectId)
@@ -319,21 +319,22 @@ func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
 	return orderId, clientOrderId, err
 }
 
-func (t *Trader) Sell(price decimal.Decimal, rate float64) (uint64, string, error) {
+func (t *Trader) Sell(price decimal.Decimal, rate float64, n int) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
 	t.amount = t.CountBuy()
-	// t.amount = t.GetMycoin() // 暂时全部卖出
 	log.Println("卖出数量:", t.amount, t.u.ObjectId)
-	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
+	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate, n)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
-	g := map[string]int{clientOrderId: t.base}
+
+	g := map[string]int{clientOrderId: 1}
 	t.SellOrder = g
+
 	return orderId, clientOrderId, err
 }
 
 func (t *Trader) SellAmount(price decimal.Decimal, rate float64, amount decimal.Decimal, n int) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("s-%d-%d", len(t.SellOrder)+1, time.Now().Unix())
-	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate)
+	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate, n)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))
 	log.Println("卖出数量:", amount, t.u.ObjectId)
 	g := map[string]int{clientOrderId: n}
@@ -389,7 +390,7 @@ func (t *Trader) WaitBuy(price decimal.Decimal) error {
 // WaitSell 卖出等待
 func (t *Trader) WaitSell(price decimal.Decimal, rate float64) error {
 	t.OrderOver = false
-	orderId, clientOrder, err := t.Sell(price, rate)
+	orderId, clientOrder, err := t.Sell(price, rate, t.base)
 	if err != nil {
 		log.Printf("卖出错误: %d, err: %s", t.base, err)
 		return err
@@ -471,30 +472,29 @@ func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
 				amount, _ := decimal.NewFromString(data["amount"])
 				price, _ := decimal.NewFromString(data["price"])
 				transact, _ := decimal.NewFromString(data["fee"])
-				oldTotal := t.amount.Mul(t.cost)
 				t.GetMoeny()
 				if b, ok := t.SellOrder[client]; ok {
-					t.SellMoney = t.SellMoney.Add(price.Mul(amount)).Abs().Sub(transact)
-					t.RealGrids[b-1].AmountSell = t.SellMoney
-					hold := t.GetMycoin()
-					model.RebotUpdateBy(client, t.RealGrids[t.base-1].Price, amount.Abs(), transact, t.RealGrids[b-1].AmountSell, t.hold, "成功")
+					sellMoney := price.Mul(amount).Abs().Sub(transact)
+					t.SellMoney = t.SellMoney.Add(sellMoney)  // 卖出钱
+					t.RealGrids[b-1].AmountSell = t.SellMoney // 修改卖出
+					model.RebotUpdateBy(client, price, amount.Abs(), transact, t.RealGrids[b-1].TotalBuy, t.hold, "成功")
+					t.amount = t.CountHold()
+					t.pay = t.CountPay()
+					t.cost = t.pay.Div(t.amount)
 					if b == t.base {
 						t.over = true
-						model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price), 0)
+						model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
 					} else {
-						model.AsyncData(t.u.ObjectId, hold, price, hold.Mul(price), b-1)
+						model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.CountNum())
 					}
 				} else {
-					t.amount = t.amount.Add(amount).Sub(transact)
-					tradeTotal := amount.Mul(price)
-					newTotal := oldTotal.Add(tradeTotal)
-					t.cost = newTotal.Div(t.amount)
-					t.TradeGrid()
 					t.RealGrids[t.base].AmountBuy = amount.Sub(transact)
 					t.RealGrids[t.base].Price = price
-					t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(amount)
-					model.RebotUpdateBy(client, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
-					t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
+					t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(transact))
+					t.amount = t.CountHold()
+					t.pay = t.CountPay()
+					t.cost = t.pay.Div(t.amount)
+					model.RebotUpdateBy(client, price, amount.Sub(transact), transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 				}
 				return true
@@ -502,6 +502,26 @@ func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
 		}
 	}
 	return false
+}
+
+// 获取当前持仓数量
+func (t *Trader) CountHold() (amount decimal.Decimal) {
+	for _, g := range t.RealGrids {
+		if g.AmountSell.Cmp(decimal.Decimal{}) < 1 {
+			amount = amount.Add(g.AmountBuy)
+		}
+	}
+	return
+}
+
+// 获取当前投入金额
+func (t *Trader) CountPay() (pay decimal.Decimal) {
+	for _, g := range t.RealGrids {
+		if g.AmountSell.Cmp(decimal.Decimal{}) < 1 {
+			pay = pay.Add(g.TotalBuy)
+		}
+	}
+	return
 }
 
 // CalCulateProfit 计算盈利
@@ -528,4 +548,15 @@ func (t *Trader) TradeGrid() {
 	if len(t.RealGrids) < t.base+1 {
 		t.RealGrids = append(t.RealGrids, model.Grid{Id: t.base + 1})
 	}
+}
+
+// 持仓单数
+func (t *Trader) CountNum() int {
+	var n = 0
+	for _, b := range t.RealGrids {
+		if b.AmountSell.Cmp(decimal.Decimal{}) < 1 {
+			n++
+		}
+	}
+	return n
 }

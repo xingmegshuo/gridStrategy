@@ -66,8 +66,8 @@ type Account struct {
 type Ticker struct {
 	Pair CurrencyPair `json:"omitempty"`
 	Last float64      `json:"last,string"` // 最新价
-	Buy  float64      `json:"buy,string"`
-	Sell float64      `json:"sell,string"`
+	Buy  float64      `json:"buy,string"`  // 买入价
+	Sell float64      `json:"sell,string"` // 卖出价
 	High float64      `json:"high,string"`
 	Low  float64      `json:"low,string"`
 	Vol  float64      `json:"vol,string"`

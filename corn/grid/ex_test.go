@@ -72,9 +72,9 @@ func TestGetMoney(t *testing.T) {
 
 	// 稳定测试
 	u := model.User{
-		Symbol: `{"Category":"火币","Symbol":"dogeusdt","AmountPrecision":2,
-			"PricePrecision":6,"Label":"goex-火币-dogeusdt-33","Key":"7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91",
-			"Secret":"f09fba02-a5c1b946-d2b57c4e-04335","Host":"api.huobi.de.com","MinTotal":"5","MinAmount":"1",
+		Symbol: `{"Category":"币安","Symbol":"dogeusdt","AmountPrecision":2,
+			"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
+			"Secret":"EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR","Host":"","MinTotal":"5","MinAmount":"1",
 			"BaseCurrency":"doge","QuoteCurrency":"usdt"}`,
 		Arg: `{"FirstBuy": 6, "FirstDouble": false, "Price": 0.196562, "IsChange": false, "Rate": 20,
 				"MinBuy": 6, "AddRate": 50, "NeedMoney": 0, "MinPrice": 0, "Callback": 0.2, "Reduce": 0.2, "Stop": 5,
@@ -90,19 +90,26 @@ func TestGetMoney(t *testing.T) {
 		Base:   0,
 	}
 	symbol := model.StringSymobol(u.Symbol)
-	cli := NewEx(&symbol)
-	for i := 1; i < 31; i++ {
+
+	o := false
+	var v = []map[time.Duration]bool{}
+	for i := 1; i < 2; i++ {
+		fmt.Println("bbb")
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		u.ObjectId = int32(i)
-		// time.Sleep(time.Second * 2)
-		// for i := 1; i < 2; i++ {
-		time.Sleep(time.Second * 2)
-		fmt.Println("进入", i)
+		cli := NewEx(&symbol)
+		fmt.Println("bbb1")
+		time.Sleep(time.Millisecond * 500)
 		go RunEx(ctx, u, cli)
-		// }
 	}
+
 	for {
-		;
+		if len(v) == 200 {
+			o = true
+		}
+		if o {
+			break
+		}
 	}
 }

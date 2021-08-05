@@ -88,15 +88,23 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
             t.SellMoney = t.SellMoney.Add(t.RealGrids[i].AmountSell)
         }
     }
+    moneyNeed = decimal.Decimal{}
     b, moneyHeld, coinHeld := t.goex.GetAccount()
-
     if b {
         log.Printf("账户余额: %s, 币种:  %s,orderFor %d", moneyHeld, coinHeld, t.u.ObjectId)
         if moneyNeed.Cmp(moneyHeld) == 1 {
             return errors.New("no enough money")
         }
     } else {
-        return errors.New("account error")
+        b, moneyHeld, coinHeld = t.goex.GetAccount()
+        if b {
+            log.Printf("账户余额: %s, 币种:  %s,orderFor %d", moneyHeld, coinHeld, t.u.ObjectId)
+            if moneyNeed.Cmp(moneyHeld) == 1 {
+                return errors.New("no enough money")
+            }
+        } else {
+            return errors.New("account or api error")
+        }
     }
     return nil
 }

@@ -32,7 +32,7 @@ type Config struct {
 // NewApi 现货api  目前火币
 func NewApi(c *Config) (cli goex.API) {
     api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 5)
+    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
     // fmt.Println(fmt.Sprintf("%+v", api), api.GetHttpClient())
     switch c.Name {
     case "币安":
@@ -67,9 +67,9 @@ func ProxySock() *builder.APIBuilder {
     // setup a http client
     httpTransport := &http.Transport{}
     httpTransport.Dial = dialer.Dial
-    httpClient := &http.Client{Transport: httpTransport, Timeout: time.Second * 3}
+
     // set our socks5 as the dialer
-    cli := builder.NewCustomAPIBuilder(httpClient)
+    cli := builder.NewCustomAPIBuilder(&http.Client{Transport: httpTransport, Timeout: time.Second * 60})
     return cli
 }
 

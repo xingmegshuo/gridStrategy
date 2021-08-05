@@ -3,7 +3,6 @@ package grid
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"runtime"
 	"time"
 	model "zmyjobs/corn/models"
@@ -70,27 +69,24 @@ func (t *ExTrader) Trade(ctx context.Context) {
         if c == 0 {
             c = 1
             log.Printf("尝试获取%v用户账户数据，校验余额，api 等信息正确性", t.u.ObjectId)
-            start := time.Now()
-            fmt.Println("i am start----", start, t.u.ObjectId)
             if err := t.ReBalance(ctx); err != nil {
                 log.Printf("校验%v账户余额不足够，策略不开始----", t.u.ObjectId)
                 t.u.IsRun = -10
                 t.u.Error = err.Error()
                 log.Println(err, t.u.ObjectId)
-                // t.u.Update()
+                t.u.Update()
                 // 执行报错就关闭
-                // GridDone <- 1
+                GridDone <- 1
             } else {
-                fmt.Println(time.Since(start), "获取账户信息用时 ", t.u.ObjectId, "当前时间", time.Now())
                 t.setupGridOrders(ctx)
                 if t.ErrString != "" {
                     log.Println("网络链接问题：", t.u.ObjectId)
                     t.u.IsRun = -10
                     t.u.Error = t.ErrString
-                    // t.u.Update()
-                    // model.StrategyError(t.u.ObjectId, t.ErrString)
+                    t.u.Update()
+                    model.StrategyError(t.u.ObjectId, t.ErrString)
                     // 执行报错就关闭
-                    // GridDone <- 1
+                    GridDone <- 1
                 }
                 if t.over {
                     // 策略执行完毕 to do 计算盈利
@@ -99,14 +95,14 @@ func (t *ExTrader) Trade(ctx context.Context) {
                     // 盈利ctx
                     t.u.IsRun = 1
                     t.u.BasePrice = p
-                    // model.RunOver(t.u.Custom, t.u.BasePrice)
-                    // model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
-                    // t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+                    model.RunOver(t.u.Custom, t.u.BasePrice)
+                    model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
+                        t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
                     t.u.RealGrids = "***"
                     t.u.Base = 0
-                    // t.u.Update()
-                    // model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
-                    // GridDone <- 1
+                    t.u.Update()
+                    model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
+                    GridDone <- 1
                 }
                 // }
             }
@@ -118,7 +114,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 func (t *ExTrader) setupGridOrders(ctx context.Context) {
     count := 0
     t.GetLastPrice()
-    log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "---------策略开始", "用户:", t.u.ObjectId)
+    log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "策略开始", "用户:", t.u.ObjectId)
     var (
         low  = t.last
         high = t.last
@@ -126,9 +122,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
     for {
         count++
         time.Sleep(time.Millisecond * 500) // 间隔0.5秒查询
-        // start := time.Now()
-        price, err := t.goex.GetPrice() // 获取当前价格
-        // fmt.Println("价格用时---", time.Since(start), t.u.ObjectId)
+        price, err := t.goex.GetPrice()    // 获取当前价格
         if err != nil {
             t.ErrString = err.Error()
             log.Println(err, t.u.ObjectId)
@@ -293,9 +287,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             //     t.last = price
             // }
         }
-        // log.Println("count", count)
     }
-
 }
 
 // GetLastPrice 获取上次交易价格

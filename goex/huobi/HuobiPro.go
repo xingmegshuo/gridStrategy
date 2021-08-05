@@ -62,11 +62,11 @@ type HuoBiProSymbol struct {
 }
 
 func NewHuobiWithConfig(config *APIConfig) *HuoBiPro {
-	start := time.Now()
 	hbpro := new(HuoBiPro)
 	if config.Endpoint == "" {
-		hbpro.baseUrl = "https://api.huobi.de.com"
-		// "https://api.huobi.pro"
+		hbpro.baseUrl =
+			// "https://api.huobi.de.com"
+			"https://api.huobi.pro"
 	} else {
 		hbpro.baseUrl = config.Endpoint
 	}
@@ -91,7 +91,6 @@ func NewHuobiWithConfig(config *APIConfig) *HuoBiPro {
 	// if err != nil {
 	// 	Log.Panic("GetCurrenciesPrecision Error=", err)
 	// }
-	fmt.Println("新建客户端用时:", time.Since(start))
 	return hbpro
 }
 
@@ -181,10 +180,9 @@ func (hbpro *HuoBiPro) GetAccount() (*Account, error) {
 
 	urlStr := hbpro.baseUrl + path + "?" + params.Encode()
 	//println(urlStr)
-	start := time.Now()
-	fmt.Println(start, "请求开始时间")
+
 	respmap, err := HttpGet(hbpro.httpClient, urlStr)
-	fmt.Println(time.Since(start), "请求结束时间", time.Now())
+
 	if err != nil {
 		return nil, err
 	}

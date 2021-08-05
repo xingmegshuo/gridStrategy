@@ -48,6 +48,7 @@ type OneOrder struct {
 @param        : symbol  *model.SymbolCategory         `交易对信息`
 @return       : cli *Cliex                             `cli对象`
 */
+
 func NewEx(symbol *model.SymbolCategory) *Cliex {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
 		Host: symbol.Host, ClientID: symbol.Label}
@@ -65,8 +66,6 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 	info, err := c.Ex.GetAccount()
 	d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))
 	b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
-	// r = false
-	// fmt.Println(err)
 	if err == nil {
 		r = true
 		money = decimal.NewFromFloat(info.SubAccounts[b].Amount)

@@ -148,16 +148,18 @@ func ParseStrategy(u User) *Args {
 	}
 	// log.Println(data)
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
-	if data["allSell"].(float64) == 2 {
+	if data["allSell"].(float64) == 2 && u.IsRun == 10 {
 		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
 	}
-	if data["one_buy"].(float64) == 2 {
+	if data["one_buy"].(float64) == 2 && u.IsRun==10{
 		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
 		// arg.OneBuy = true
 	}
-	if data["limit_high"].(float64) == 2 {
+	if data["limit_high"].(float64) == 2 && u.IsRun==10 {
 		arg.IsLimit = true
-		// arg.LimitHigh = data["high_price"].(float64)
+		if data["high_price"] != nil {
+			arg.LimitHigh = data["high_price"].(float64)
+		}
 	}
 	if data["double"].(float64) == 2 {
 		arg.FirstDouble = true

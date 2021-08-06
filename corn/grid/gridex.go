@@ -1,12 +1,12 @@
 package grid
 
 import (
-    "context"
-    "errors"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"errors"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type ExTrader struct {

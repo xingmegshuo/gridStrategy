@@ -205,7 +205,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 if err != nil {
                     log.Printf("买入错误: %d, err: %s", t.base, err)
                     time.Sleep(time.Second * 5)
-                    continue
+                    t.ErrString = err.Error()
+                    t.over = true
                 } else {
                     high = price
                     low = price
@@ -228,7 +229,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 err := t.WaitSell(price, t.CountHold(), win*100, len(t.RealGrids)-1)
                 if err != nil {
                     time.Sleep(time.Second * 5)
-                    continue
+                    t.ErrString = err.Error()
+                    t.over = true
                 } else {
                     t.over = true
                     t.Tupdate()
@@ -240,7 +242,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             if t.SetupBeMutiple(price, reduce, win) != nil {
                 continue
             } else {
-                // t.Tupdate()
+                t.Tupdate()
             }
             if t.arg.AllSell {
                 log.Printf("%v用户智多元清仓", t.u.ObjectId)
@@ -251,7 +253,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                         err := t.WaitSell(price, t.CountHold(), win*100, g.Id)
                         if err != nil {
                             time.Sleep(time.Second * 5)
-                            continue
+                            t.ErrString = err.Error()
+                            t.over = true
                         } else {
                             t.over = true
                             t.Tupdate()
@@ -286,7 +289,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             if err != nil {
                 log.Printf("买入错误: %d, err: %s", t.base, err)
                 time.Sleep(time.Second * 5)
-                continue
+                t.ErrString = err.Error()
+                t.over = true
             } else {
                 high = price
                 low = price

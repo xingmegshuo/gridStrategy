@@ -162,7 +162,7 @@ func ParseStrategy(u User) *Args {
 	if data["limit_high"].(float64) == 2 && u.IsRun == 10 {
 		arg.IsLimit = true
 		if data["high_price"] != nil {
-			arg.LimitHigh = data["high_price"].(float64)
+			arg.LimitHigh = ParseStringFloat(data["high_price"].(string))
 		}
 	}
 	if data["double"].(float64) == 2 {

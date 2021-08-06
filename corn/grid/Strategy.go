@@ -337,7 +337,7 @@ func (t *Trader) Buy(price decimal.Decimal) (uint64, string, error) {
 
 func (t *Trader) Sell(price decimal.Decimal, rate float64, n int) (uint64, string, error) {
 	clientOrderId := fmt.Sprintf("s-%d-%d", t.base, time.Now().Unix())
-	t.amount = t.CountBuy()
+	t.amount = t.CountHold()
 	log.Println("卖出数量:", t.amount, t.u.ObjectId)
 	orderId, err := t.sell(clientOrderId, price.Round(t.symbol.PricePrecision), t.amount.Truncate(t.symbol.AmountPrecision).Round(t.symbol.AmountPrecision), rate, n)
 	// t.amount.RoundBank(-t.symbol.AmountPrecision))

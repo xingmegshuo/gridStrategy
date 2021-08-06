@@ -315,6 +315,7 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 		orderType = huobi.OrderTypeBuyMarket
 		orderTypeString = "市价"
 		price = decimal.Decimal{}
+		amount = t.grids[t.base].TotalBuy
 	}
 	log.Printf("[Order][buy] price: %s, amount: %s", price, amount)
 	orderId, err := t.ex.huobi.PlaceOrder(orderType, t.symbol.Symbol, clientOrderId, price, amount)
@@ -329,19 +330,21 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 	return orderId, err
 }
 func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal, rate float64, n int) (uint64, error) {
+	if n == t.base {
+		n = 1
+	}
 	orderType := huobi.OrderTypeSellLimit
 	orderTypeString := "限价"
 	if t.arg.OrderType == 2 {
 		orderType = huobi.OrderTypeSellMarket
 		orderTypeString = "市价"
 		price = decimal.Decimal{}
+		// amount = t.grids[n-1].TotalBuy
 	}
 	log.Printf("[Order][sell] price: %s, amount: %s", price, amount)
 	orderId, err := t.ex.huobi.PlaceOrder(orderType, t.symbol.Symbol, clientOrderId, price, amount)
 	if err == nil {
-		if n == t.base {
-			n = 1
-		}
+
 		t.log(clientOrderId, price, orderTypeString, n, amount, rate, "卖出")
 		t.RealGrids[n-1].Decline = rate
 	}

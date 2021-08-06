@@ -127,8 +127,10 @@ func NewUser() {
 				if u.Strategy != parseInput(order) {
 					log.Println("修改参数")
 					u.Strategy = parseInput(order)
-					if u.IsRun == 10 && order["stop_buy"].(float64) == 1 {
-						OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+					if order["stop_buy"].(float64) == 1 {
+						if u.IsRun == 10 {
+							OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+						}
 					}
 					u = UpdateUser(u)
 					u.Update()

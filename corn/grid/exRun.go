@@ -1,13 +1,13 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -103,7 +103,6 @@ func (t *ExTrader) Trade(ctx context.Context) {
                     model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
                     GridDone <- 1
                 }
-                // }
             }
         }
     }

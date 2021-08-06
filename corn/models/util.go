@@ -150,10 +150,12 @@ func ParseStrategy(u User) *Args {
 	// log.Println(data)
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
 	if data["allSell"].(float64) == 2 && u.IsRun == 10 {
+		log.Println("发送清仓")
 		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
 	}
 	if data["one_buy"].(float64) == 2 {
 		if u.IsRun == 10 {
+			log.Println("发送补仓")
 			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
 		}
 	}

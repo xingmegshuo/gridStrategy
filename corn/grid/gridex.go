@@ -1,12 +1,12 @@
 package grid
 
 import (
-	"context"
-	"errors"
-	"time"
-	model "zmyjobs/corn/models"
+    "context"
+    "errors"
+    "time"
+    model "zmyjobs/corn/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 type ExTrader struct {
@@ -80,7 +80,7 @@ func (t *ExTrader) log(orderId string, price decimal.Decimal, ty string, num int
 // 初始化
 func (t *ExTrader) ReBalance(ctx context.Context) error {
     t.base = t.u.Base
-    t.amount = t.CountBuy()
+    t.amount = t.CountHold()
     moneyNeed := t.CountNeed()
     for i := 0; i < len(t.RealGrids); i++ {
         if i < t.base {
@@ -173,7 +173,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
         amount := decimal.NewFromFloat(order.Amount)
         fee := decimal.NewFromFloat(order.Fee)
         t.hold = t.myMoney()
-        log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash,order.OrderId)
+        log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
         if b, ok := t.SellOrder[clientOrderId]; ok {
             sellMoney := price.Mul(amount).Abs().Sub(fee)
             t.SellMoney = t.SellMoney.Add(sellMoney)  // 卖出钱

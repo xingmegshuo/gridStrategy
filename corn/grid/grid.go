@@ -314,6 +314,7 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 	if t.arg.OrderType == 2 {
 		orderType = huobi.OrderTypeBuyMarket
 		orderTypeString = "市价"
+		price = decimal.Decimal{}
 	}
 	log.Printf("[Order][buy] price: %s, amount: %s", price, amount)
 	orderId, err := t.ex.huobi.PlaceOrder(orderType, t.symbol.Symbol, clientOrderId, price, amount)
@@ -333,6 +334,7 @@ func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal, rate 
 	if t.arg.OrderType == 2 {
 		orderType = huobi.OrderTypeSellMarket
 		orderTypeString = "市价"
+		price = decimal.Decimal{}
 	}
 	log.Printf("[Order][sell] price: %s, amount: %s", price, amount)
 	orderId, err := t.ex.huobi.PlaceOrder(orderType, t.symbol.Symbol, clientOrderId, price, amount)

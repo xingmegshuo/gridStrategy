@@ -74,5 +74,12 @@ func TestBinanceSwap_FutureCancelOrder(t *testing.T) {
 }
 
 func TestBinanceSwap_GetFuturePosition(t *testing.T) {
-	t.Log(bs.GetFuturePosition(goex.BTC_USDT, ""))
+	curr := goex.NewCurrencyPair2("ETHUSDT_210924")
+	v, err := bs.GetFuturePosition(curr, goex.QUARTER_CONTRACT)
+	fmt.Println(fmt.Sprintf("%+v", v), err)
+
+	curr = goex.NewCurrencyPair2("COTI_USDT")
+	v, err = bs.GetFuturePosition(curr, goex.SWAP_USDT_CONTRACT)
+	fmt.Println(fmt.Sprintf("%+v", v), err)
+
 }

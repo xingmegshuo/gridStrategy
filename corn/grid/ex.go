@@ -10,6 +10,7 @@ package grid
 
 import (
 	"encoding/json"
+	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/util"
 	"zmyjobs/goex"
@@ -205,4 +206,16 @@ func (c *Cliex) MakePair() goex.CurrencyPair {
 */
 func MakeCurrency(name string) goex.Currency {
 	return goex.Currency{Symbol: name, Desc: ""}
+}
+
+/**
+ *@title        : FutureAccount
+ *@desc         : 获取期货账户资金
+ *@auth         : small_ant / time(2021/08/06 14:49:09)
+ *@param        : t / string / `输入参数为u本位合约或币本位合约`
+ *@return       : / / ``
+ */
+func (c *Cliex) FutureAccount(t string) {
+	account, err := c.Future.GetFutureUserinfo()
+	fmt.Println(account, err)
 }

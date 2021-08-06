@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"zmyjobs/goex"
 	. "zmyjobs/goex"
 )
 
@@ -273,15 +274,16 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	balances := respmap["assets"].([]interface{})
 	for _, v := range balances {
 		vv := v.(map[string]interface{})
-		// if ToFloat64(vv["unrealizedProfit"]) > 0 {
-		currency := NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
-		acc.FutureSubAccounts[currency] = FutureSubAccount{
-			Currency:      currency,
-			AccountRights: ToFloat64(vv["marginBalance"]),
-			KeepDeposit:   ToFloat64(vv["maintMargin"]),
-			ProfitUnreal:  ToFloat64(vv["unrealizedProfit"]),
+		if ToFloat64(vv["marginBalance"]) > 0 {
+			currency := NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
+			acc.FutureSubAccounts[currency] = FutureSubAccount{
+				Currency:      currency,
+				AccountRights: ToFloat64(vv["marginBalance"]),
+				KeepDeposit:   ToFloat64(vv["maintMargin"]),
+				ProfitUnreal:  ToFloat64(vv["unrealizedProfit"]),
+				CanEX:         ToFloat64(vv["availableBalance"]),
+			}
 		}
-		// }
 	}
 
 	return acc, nil
@@ -516,9 +518,9 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 		return bs.f.GetFuturePosition(currencyPair.AdaptUsdtToUsd(), contractType)
 	}
 
-	if contractType != SWAP_USDT_CONTRACT {
-		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
-	}
+	// if contractType != SWAP_USDT_CONTRACT {
+	// 	return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
+	// }
 
 	currencyPair1 := bs.adaptCurrencyPair(currencyPair)
 
@@ -531,32 +533,32 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 	if err != nil {
 		return nil, err
 	}
-
+	thisSybol := currencyPair1.ToSymbol("")
+	if contractType == goex.QUARTER_CONTRACT {
+		thisSybol = currencyPair1.ToSymbol("_")
+	}
 	var positions []FuturePosition
 	for _, info := range result {
-
 		cont := info.(map[string]interface{})
-		if cont["symbol"] != currencyPair1.ToSymbol("") {
+		if cont["symbol"] != thisSybol {
 			continue
 		}
 		p := FuturePosition{
 			LeverRate:      ToFloat64(cont["leverage"]),
 			Symbol:         currencyPair,
 			ForceLiquPrice: ToFloat64(cont["liquidationPrice"]),
+			ContractType:   cont["positionSide"].(string),
+			Money:          ToFloat64(cont["isolatedMargin"]),
 		}
 		amount := ToFloat64(cont["positionAmt"])
 		price := ToFloat64(cont["entryPrice"])
 		upnl := ToFloat64(cont["unRealizedProfit"])
-		if amount > 0 {
+		if p.Money > 0 || amount != 0 {
 			p.BuyAmount = amount
 			p.BuyPriceAvg = price
 			p.BuyProfitReal = upnl
-		} else if amount < 0 {
-			p.SellAmount = amount
-			p.SellPriceAvg = price
-			p.SellProfitReal = upnl
+			positions = append(positions, p)
 		}
-		positions = append(positions, p)
 	}
 	return positions, nil
 }
@@ -589,7 +591,6 @@ func (bs *BinanceSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyP
 
 	orders := make([]FutureOrder, 0)
 	for _, info := range result {
-
 		_ord := info.(map[string]interface{})
 		if _ord["symbol"].(string) != currencyPair1.ToSymbol("") {
 			continue

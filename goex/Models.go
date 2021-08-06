@@ -140,12 +140,12 @@ type FutureKline struct {
 
 type FutureSubAccount struct {
 	Currency      Currency // 交易对
-	AccountRights float64  //保证金余额
-	KeepDeposit   float64  //保证金
-	ProfitReal    float64  //已实现盈亏
+	AccountRights float64  // 保证金余额
+	KeepDeposit   float64  // 维持保证金
+	ProfitReal    float64  // 已实现盈亏
 	ProfitUnreal  float64  // 未实现盈亏
-	RiskRate      float64  //保证金率
-	// TODO  1.仓位方向 2.可用余额 3. 全仓余额
+	RiskRate      float64  // 保证金率
+	CanEX         float64  // 可用余额
 }
 
 type FutureAccount struct {
@@ -176,14 +176,15 @@ type FutureOrder struct {
 }
 
 type FuturePosition struct {
-	BuyAmount      float64
+	BuyAmount      float64 // 数量
+	Money          float64 // 逐仓保证金
 	BuyAvailable   float64
-	BuyPriceAvg    float64
+	BuyPriceAvg    float64 // 开仓价格
 	BuyPriceCost   float64
-	BuyProfitReal  float64
+	BuyProfitReal  float64 // 未实现盈亏
 	BuyProfit      float64
 	CreateDate     int64
-	LeverRate      float64
+	LeverRate      float64 // 杠杆倍数
 	SellAmount     float64
 	SellAvailable  float64
 	SellPriceAvg   float64
@@ -191,7 +192,7 @@ type FuturePosition struct {
 	SellProfitReal float64
 	SellProfit     float64
 	Symbol         CurrencyPair //btc_usd:比特币,ltc_usd:莱特币
-	ContractType   string
+	ContractType   string       // 方向
 	ContractId     int64
 	ForceLiquPrice float64 //预估爆仓价
 	ShortPnlRatio  float64 //空仓收益率

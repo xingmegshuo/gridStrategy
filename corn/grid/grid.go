@@ -338,7 +338,7 @@ func (t *Trader) sell(clientOrderId string, price, amount decimal.Decimal, rate 
 	orderId, err := t.ex.huobi.PlaceOrder(orderType, t.symbol.Symbol, clientOrderId, price, amount)
 	if err == nil {
 		if n == t.base {
-			n = 0
+			n = 1
 		}
 		t.log(clientOrderId, price, orderTypeString, n, amount, rate, "卖出")
 		t.RealGrids[n-1].Decline = rate

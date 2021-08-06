@@ -122,16 +122,20 @@ func TestGetMoney(t *testing.T) {
 	//获取深度
 	// b, err := cli.Future.GetFutureDepth(goex.BTC_USDT, goex.SWAP_CONTRACT, 1)
 	// fmt.Println(b, err)
-	b := goex.NewCurrencyPair2("DOGEUSDT")
+	b := goex.NewCurrencyPair2("FIL_USDT")
 
 	// 持仓查询
-	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
-	// fmt.Println(fmt.Sprintf("%+v", p), err)
-	// fmt.Println(len(p))
+	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
+	fmt.Println(fmt.Sprintf("%+v", p), err)
+
+	// 账户信息
+	// account, e :=
+	cli.FutureAccount("aa")
+	// fmt.Println(account, e)
 
 	// 合约价值
-	p, err := cli.Future.GetFutureTicker(b, goex.SWAP_CONTRACT)
-	fmt.Println(p, err)
+	// p, err := cli.Future.GetFutureTicker(b, goex.SWAP_CONTRACT)
+	// fmt.Println(p, err)
 
 	// p, err := cli.Future
 }

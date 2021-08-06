@@ -84,7 +84,11 @@ func TestBinanceFutures_FutureCancelOrder(t *testing.T) {
 
 func TestBinanceFutures_GetFuturePosition(t *testing.T) {
 	// 持仓风险
-	t.Log(baDapi.GetFuturePosition(goex.BTC_USD, goex.QUARTER_CONTRACT))
+	curr := goex.NewCurrencyPair2("ETH_USD")
+
+	t.Log(baDapi.GetFuturePosition(curr, goex.QUARTER_CONTRACT))
+
+
 }
 
 func TestBinanceFutures_GetUnfinishFutureOrders(t *testing.T) {

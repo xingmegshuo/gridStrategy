@@ -395,7 +395,7 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug(string(respBody))
+	// logger.Debug(string(respBody))
 
 	var (
 		positionRiskResponse []PositionRiskResponse
@@ -426,6 +426,8 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 			p.BuyPriceCost = info.EntryPrice
 			p.BuyProfit = info.UnRealizedProfit
 			p.BuyProfitReal = info.UnRealizedProfit
+			positions = append(positions, p)
+
 		} else if info.PositionAmt < 0 {
 			p.SellAmount = math.Abs(info.PositionAmt)
 			p.SellAvailable = math.Abs(info.PositionAmt)
@@ -433,9 +435,9 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 			p.SellPriceCost = info.EntryPrice
 			p.SellProfit = info.UnRealizedProfit
 			p.SellProfitReal = info.UnRealizedProfit
+			positions = append(positions, p)
 		}
 
-		positions = append(positions, p)
 	}
 
 	return positions, nil
@@ -612,7 +614,6 @@ func (bs *BinanceFutures) adaptToSymbol(pair CurrencyPair, contractType string) 
 			logger.Debugf("pair=%s , contractType=%s, delivery date = %d ,  now= %d", info.Pair, info.ContractType, info.DeliveryDate, time.Now().Unix()*1000)
 			bs.GetExchangeInfo()
 		}
-
 		if info.Pair == pair.ToSymbol("") {
 			if info.ContractStatus != "TRADING" {
 				return "", errors.New("contract status " + info.ContractStatus)

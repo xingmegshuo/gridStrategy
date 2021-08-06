@@ -9,16 +9,16 @@
 package util
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+    "fmt"
+    "net/http"
+    "os"
+    "strings"
+    "time"
 
-	"zmyjobs/goex"
-	"zmyjobs/goex/builder"
+    "zmyjobs/goex"
+    "zmyjobs/goex/builder"
 
-	"golang.org/x/net/proxy"
+    "golang.org/x/net/proxy"
 )
 
 type Config struct {
@@ -54,7 +54,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
-        cli = api.BuildFuture(goex.BINANCE)
+        cli = api.BuildFuture(goex.BINANCE_SWAP)
     default:
         // 火币没有期货api
         cli = api.BuildFuture(goex.HUOBI)

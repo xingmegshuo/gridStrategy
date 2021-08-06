@@ -221,8 +221,14 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 
 		//  第一单 进场时机无所谓
 		if t.base == 0 && !t.arg.StopBuy {
-			if count >= 10 {
-				t.OrderOver = false
+			willbuy := false
+			t.OrderOver = false
+			if t.arg.IsLimit && price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)) < 1 {
+				willbuy = true
+			} else if !t.arg.IsLimit {
+				willbuy = true
+			}
+			if count >= 10 && willbuy {
 				log.Println("开始进场首次买入:---价格", price, "---数量:", t.grids[t.base].AmountBuy, "---money", t.grids[t.base].TotalBuy)
 				err := t.WaitBuy(price)
 				if err != nil {

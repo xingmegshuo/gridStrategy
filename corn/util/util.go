@@ -29,10 +29,13 @@ type Config struct {
     ClientID string // 连接id
 }
 
-// NewApi 现货api  目前火币
+/**
+ * @desc NewApi 现货api  目前火币
+ * @param *config 配置信息
+ */
 func NewApi(c *Config) (cli goex.API) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
     // fmt.Println(fmt.Sprintf("%+v", api), api.GetHttpClient())
     switch c.Name {
     case "币安":
@@ -45,13 +48,15 @@ func NewApi(c *Config) (cli goex.API) {
 }
 
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-        Endpoint(c.Host).ClientID(c.ClientID).HttpTimeout(time.Second * 10)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+    // ClientID(c.ClientID).HttpTimeout(time.Second * 60)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
-        cli = api.BuildFuture(goex.BINANCE_SWAP)
+        cli = api.BuildFuture(goex.BINANCE)
     default:
+        // 火币没有期货api
         cli = api.BuildFuture(goex.HUOBI)
     }
     return

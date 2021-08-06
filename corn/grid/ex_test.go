@@ -1,13 +1,15 @@
 package grid
 
 import (
-	"context"
 	"fmt"
 	"testing"
-	"time"
 	model "zmyjobs/corn/models"
+	"zmyjobs/goex"
 	// "github.com/nntaoli-project/goex"
 )
+
+// bian Test api mhRYW9GrdeEZ6nNKdZsoGYg4S3DlvrHNxxTqNaP60m3SDz09TwXe5rGDw7YrEVyp secretKey lkUxg31nEBExSprEXX3wRgcGIte30UaYxZmfSW0b31sClkVa0hjrtgCEV5AsxJXB
+// bian my api cIiIZnQ8L77acyTkSAH6je0rDAZGoFcoHSlMHaWYUNDjJhKNtu0Gb8nR9MjLSaws secretKey dnc7LwiB1Vgy6zDOqwuqodIxL8FwltVlxhfEVLvrgmfozezrW9JvnHStpmB4Lymx
 
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
@@ -73,9 +75,9 @@ func TestGetMoney(t *testing.T) {
 	// 稳定测试
 	u := model.User{
 		Symbol: `{"Category":"币安","Symbol":"dogeusdt","AmountPrecision":2,
-			"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
-			"Secret":"EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR","Host":"","MinTotal":"5","MinAmount":"1",
-			"BaseCurrency":"doge","QuoteCurrency":"usdt"}`,
+			"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"cIiIZnQ8L77acyTkSAH6je0rDAZGoFcoHSlMHaWYUNDjJhKNtu0Gb8nR9MjLSaws",
+			"Secret":"dnc7LwiB1Vgy6zDOqwuqodIxL8FwltVlxhfEVLvrgmfozezrW9JvnHStpmB4Lymx","Host":"","MinTotal":"5","MinAmount":"1",
+			"BaseCurrency":"doge","QuoteCurrency":"usdt","future":true}`,
 		Arg: `{"FirstBuy": 6, "FirstDouble": false, "Price": 0.196562, "IsChange": false, "Rate": 20,
 				"MinBuy": 6, "AddRate": 50, "NeedMoney": 0, "MinPrice": 0, "Callback": 0.2, "Reduce": 0.2, "Stop": 5,
 				"AddMoney": 0, "Decline": 0.5, "Out": false, "OrderType": 0, "IsLimit": false, "LimitHigh": 0, "StrategyType": 1,
@@ -88,28 +90,48 @@ func TestGetMoney(t *testing.T) {
 			{"Id":3,"Price":"0.1928764625","AmountBuy":"44.8","Decline":1.125,"AmountSell":"0","TotalBuy":"8.64","Order":0}]`,
 		Number: 3,
 		Base:   0,
+		Custom: 2,
 	}
 	symbol := model.StringSymobol(u.Symbol)
 
-	o := false
-	var v = []map[time.Duration]bool{}
-	for i := 1; i < 2; i++ {
-		fmt.Println("bbb")
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		u.ObjectId = int32(i)
-		cli := NewEx(&symbol)
-		fmt.Println("bbb1")
-		time.Sleep(time.Millisecond * 500)
-		go RunEx(ctx, u, cli)
-	}
+	// o := false
+	// var v = []map[time.Duration]bool{}
+	// for i := 1; i < 2; i++ {
+	// 	ctx, cancel := context.WithCancel(context.Background())
+	// 	defer cancel()
+	// 	u.ObjectId = int32(i)
+	// 	cli := NewEx(&symbol)
+	// 	time.Sleep(time.Millisecond * 500)
+	// 	go RunEx(ctx, u, cli)
+	// }
 
-	for {
-		if len(v) == 200 {
-			o = true
-		}
-		if o {
-			break
-		}
-	}
+	// for {
+	// 	if len(v) == 200 {
+	// 		o = true
+	// 	}
+	// 	if o {
+	// 		break
+	// 	}
+	// }
+
+	// 期货
+	cli := NewEx(&symbol)
+	fmt.Println(cli.Future.GetExchangeName()) //交易所名字
+	// b, err := cli.Future.GetFee()
+
+	//获取深度
+	// b, err := cli.Future.GetFutureDepth(goex.BTC_USDT, goex.SWAP_CONTRACT, 1)
+	// fmt.Println(b, err)
+	b := goex.NewCurrencyPair2("DOGEUSDT")
+
+	// 持仓查询
+	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
+	// fmt.Println(fmt.Sprintf("%+v", p), err)
+	// fmt.Println(len(p))
+
+	// 合约价值
+	p, err := cli.Future.GetFutureTicker(b, goex.SWAP_CONTRACT)
+	fmt.Println(p, err)
+
+	// p, err := cli.Future
 }

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"encoding/json"
+	"zmyjobs/goex"
 
 	"github.com/shopspring/decimal"
 )
@@ -15,10 +15,10 @@ var OperateCh = make(chan Operate) // 立即补仓
 
 // SymbolCategory 交易对参数
 type SymbolCategory struct {
-	Category        string
-	Symbol          string
-	AmountPrecision int32
-	PricePrecision  int32
+	Category        string // 平台
+	Symbol          string // 交易对
+	AmountPrecision int32  // 精度
+	PricePrecision  int32  // 价格精度
 	Label           string
 	Key             string
 	Secret          string
@@ -27,6 +27,7 @@ type SymbolCategory struct {
 	MinAmount       decimal.Decimal
 	BaseCurrency    string
 	QuoteCurrency   string
+	Future          bool
 }
 
 // Args 策略输入参数
@@ -68,17 +69,13 @@ type Grid struct {
 	Order      uint64          // 订单id
 }
 
-func StringArg(data string) (a Args) {
-	_ = json.Unmarshal([]byte(data), &a)
-	return
+// 合约
+type Future struct {
+	// TODO : 合约类型
 }
 
-func ArgString(a *Args) string {
-	s, _ := json.Marshal(&a)
-	return string(s)
-}
-
-func StringSymobol(data string) (a SymbolCategory) {
-	_ = json.Unmarshal([]byte(data), &a)
-	return
-}
+var (
+	a = goex.SWAP_CONTRACT // 永续合约
+	b = goex.SWAP_USDT     // u本位
+	c = goex.SWAP_USDT_CONTRACT
+)

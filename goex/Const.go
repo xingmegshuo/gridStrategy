@@ -119,7 +119,7 @@ var (
 	QUARTER_CONTRACT    = "quarter"    //季度合约
 	BI_QUARTER_CONTRACT = "bi_quarter" // NEXT QUARTER
 	SWAP_CONTRACT       = "swap"       //永续合约
-	SWAP_USDT_CONTRACT  = "swap-usdt"
+	SWAP_USDT_CONTRACT  = "swap-usdt"  // u 永续
 )
 
 //exchanges const

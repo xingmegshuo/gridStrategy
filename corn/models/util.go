@@ -18,6 +18,11 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+var (
+	HUOBI_MIN = decimal.NewFromInt(5)
+	BIAN_MIN  = decimal.NewFromFloat(10)
+)
+
 // NewSymbol 生成grid.SymbolCategory
 func NewSymbol(u User) *SymbolCategory {
 	var (
@@ -73,6 +78,10 @@ func MakeStrategy(u User) (*[]Grid, error) {
 		AmountBuy: preTotal,
 		TotalBuy:  decimal.NewFromFloat(arg.FirstBuy),
 	}
+	if CheckMinToal(u.Category, decimal.NewFromFloat(arg.FirstBuy)) != nil {
+		log.Printf("total %s less than minTotal(%s)", decimal.NewFromFloat(arg.FirstBuy), symbol.MinTotal)
+		return nil, errors.New(" total not enough")
+	}
 	grids = append(grids, currentGrid)
 	// 补仓
 	for i := 2; i <= int(u.Number); i++ {
@@ -87,10 +96,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 			rate := arg.Rate*0.01 + 1 // 补仓比例
 			TotalBuy = grids[i-2].TotalBuy.Mul(decimal.NewFromFloat(rate))
 		}
-		if TotalBuy.Cmp(symbol.MinTotal) == -1 {
-			log.Printf("total %s less than minTotal(%s)", TotalBuy, symbol.MinTotal)
-			return nil, errors.New(" total not enough")
-		}
+
 		currentGrid = Grid{
 			Id:        i,
 			Price:     price,
@@ -114,7 +120,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 			arg.NeedMoney += m
 		}
 	}
-	log.Println("需要资金", arg.NeedMoney)
+	log.Println(u.ObjectId, "需要资金", arg.NeedMoney)
 	return &grids, nil
 }
 
@@ -165,7 +171,6 @@ func ParseStrategy(u User) *Args {
 	if arg.StrategyType == 3 || arg.StrategyType == 4 {
 		arg.OrderType = 2
 	}
-
 	return &arg
 }
 
@@ -180,4 +185,34 @@ func GetPrice(symbol string) decimal.Decimal {
 func ToStringJson(v interface{}) string {
 	s, _ := json.Marshal(v)
 	return string(s)
+}
+
+func CheckMinToal(name string, f decimal.Decimal) (e error) {
+	switch name {
+	case "币安":
+		if BIAN_MIN.Cmp(f) == 1 {
+			e = errors.New("sorry first should late 10 ")
+		}
+	default:
+		if HUOBI_MIN.Cmp(f) == 1 {
+			e = errors.New("sorry first should late 5 ")
+		}
+	}
+	return
+}
+
+// StringArg string to
+func StringArg(data string) (a Args) {
+	_ = json.Unmarshal([]byte(data), &a)
+	return
+}
+
+func ArgString(a *Args) string {
+	s, _ := json.Marshal(&a)
+	return string(s)
+}
+
+func StringSymobol(data string) (a SymbolCategory) {
+	_ = json.Unmarshal([]byte(data), &a)
+	return
 }

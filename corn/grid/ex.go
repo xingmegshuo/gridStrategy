@@ -49,19 +49,25 @@ type OneOrder struct {
 @return       : cli *Cliex                             `cli对象`
 */
 
-func NewEx(symbol *model.SymbolCategory) *Cliex {
+func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
 		Host: symbol.Host, ClientID: symbol.Label}
-	return &Cliex{Ex: util.NewApi(&c), symbol: symbol}
+	if symbol.Future {
+		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
+	} else {
+		cli = &Cliex{Ex: util.NewApi(&c), symbol: symbol}
+	}
+
+	return
 }
 
-/*
-@title        : GetAccount
-dDesc         : 验证api获取账户资产
-@auth         : small_ant                   time(2021/08/03 11:01:35)
-@param        : 不需要参数                            ``
-@return       : r/money/coin bool/decimal/decimal    `正确与否/余额/币种数量`
-*/
+/**
+ *@title        : GetAccount
+ *dDesc         : 验证api获取账户资产
+ *@auth         : small_ant                   time(2021/08/03 11:01:35)
+ *@param        : 不需要参数                            ``
+ *@return       : r/money/coin bool/decimal/decimal    `正确与否/余额/币种数量`
+ */
 func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decimal) {
 	info, err := c.Ex.GetAccount()
 	d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))

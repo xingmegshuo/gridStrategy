@@ -11,6 +11,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -69,6 +70,7 @@ func NewUser() {
 			// 数据库查找存在与否
 			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 			// 条件 数据库未找到，订单启用，创建新的任务
+			fmt.Println("hhhhh")
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				u = User{
 					ObjectId: int32(order["id"].(float64)),
@@ -135,6 +137,7 @@ func NewUser() {
 				}
 			}
 		}
+
 	}
 }
 

@@ -139,12 +139,13 @@ type FutureKline struct {
 }
 
 type FutureSubAccount struct {
-	Currency      Currency
-	AccountRights float64 //账户权益
-	KeepDeposit   float64 //保证金
-	ProfitReal    float64 //已实现盈亏
-	ProfitUnreal  float64
-	RiskRate      float64 //保证金率
+	Currency      Currency // 交易对
+	AccountRights float64  //保证金余额
+	KeepDeposit   float64  //保证金
+	ProfitReal    float64  //已实现盈亏
+	ProfitUnreal  float64  // 未实现盈亏
+	RiskRate      float64  //保证金率
+	// TODO  1.仓位方向 2.可用余额 3. 全仓余额
 }
 
 type FutureAccount struct {

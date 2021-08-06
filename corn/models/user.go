@@ -126,6 +126,7 @@ func NewUser() {
 				}
 				// 更新策略参数
 				if u.Strategy != parseInput(order) {
+					log.Println("更新用户策略配置:", u.ObjectId)
 					u.Strategy = parseInput(order)
 					if order["stop_buy"].(float64) == 1 {
 						if u.IsRun == 10 && order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {

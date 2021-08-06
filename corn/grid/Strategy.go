@@ -169,6 +169,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 		high = t.last
 	)
 	t.amount = t.CountHold()
+	error := 0
 	t.pay = t.CountPay()
 	for {
 		count++
@@ -234,7 +235,13 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 				if err != nil {
 					log.Printf("买入错误: %d, err: %s", t.base, err)
 					time.Sleep(time.Second * 5)
-					continue
+					if error < 5 {
+						error += 1
+						continue
+					} else {
+						t.ErrString = "意料之外的错误,联系开发者处理"
+						t.over = true
+					}
 				} else {
 					high = price
 					low = price
@@ -273,6 +280,7 @@ func (t *Trader) setupGridOrders(ctx context.Context) {
 			if t.SetupBeMutiple(price, reduce, win) != nil {
 				continue
 			} else {
+
 				t.Tupdate()
 			}
 		}

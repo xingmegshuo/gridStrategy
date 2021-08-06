@@ -121,11 +121,8 @@ func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
 		return decimal.NewFromFloat(0), err
 	}
 	for _, candlestick := range candlesticks {
-		// log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
-		// candlestick.Open, candlestick.High, candlestick.Low, candlestick.Close)
 		return candlestick.Close, nil
 	}
-
 	return decimal.NewFromFloat(0), nil
 }
 

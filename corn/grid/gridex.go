@@ -1,12 +1,12 @@
 package grid
 
 import (
-    "context"
-    "errors"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"errors"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type ExTrader struct {
@@ -132,6 +132,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
     orderType := BuyL
     if t.arg.OrderType == 2 {
         orderType = BuyM
+        amount = t.grids[t.base].TotalBuy
     }
     log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d", price, amount, t.u.ObjectId)
     clientId, orderId, err := t.goex.Exchanges(amount, price, orderType)
@@ -172,6 +173,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
         amount := decimal.NewFromFloat(order.Amount)
         fee := decimal.NewFromFloat(order.Fee)
         t.hold = t.myMoney()
+        log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash,order.OrderId)
         if b, ok := t.SellOrder[clientOrderId]; ok {
             sellMoney := price.Mul(amount).Abs().Sub(fee)
             t.SellMoney = t.SellMoney.Add(sellMoney)  // 卖出钱
@@ -227,7 +229,6 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
         pay = pay.Add(b.TotalBuy)
         my = my.Add(b.AmountSell)
     }
-    // log.Println("pay:", pay, "my:", my)
     return my.Sub(pay)
 }
 

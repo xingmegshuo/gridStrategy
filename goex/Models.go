@@ -7,12 +7,13 @@ import (
 )
 
 type Order struct {
+	CashAmount   float64 // 钱
 	Price        float64
 	Amount       float64
 	AvgPrice     float64
-	DealAmount   float64
-	Fee          float64
-	Cid          string //客户端自定义ID
+	DealAmount   float64 // 成交数量
+	Fee          float64 // 手续费
+	Cid          string  //客户端自定义ID
 	OrderID2     string
 	OrderID      int //deprecated
 	Status       TradeStatus

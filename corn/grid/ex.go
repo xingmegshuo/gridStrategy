@@ -40,6 +40,7 @@ type OneOrder struct {
 	ClientId string  // 自定义id
 	Type     string  // 类型
 	Slide    string  // 买入还是卖出
+	Cash     float64 // 现金
 }
 
 /*
@@ -143,15 +144,15 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 	)
 	b = 2
 	if err == nil {
-		// fmt.Println(fmt.Sprintf("%+v", order), b.String())
 		if order.Status == b {
-			o.Amount = order.Amount
+			o.Amount = order.DealAmount
 			o.Fee = order.Fee
 			o.Price = order.AvgPrice
 			o.ClientId = order.Cid
 			o.OrderId = order.OrderID2
 			o.Type = order.Type
 			o.Slide = order.Side.String()
+			o.Cash = order.CashAmount
 			return true, true, &o
 		} else {
 			return true, false, nil

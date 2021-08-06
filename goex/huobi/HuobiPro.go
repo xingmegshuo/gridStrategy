@@ -360,6 +360,7 @@ func (hbpro *HuoBiPro) parseOrder(ordmap map[string]interface{}) Order {
 		DealAmount: ToFloat64(ordmap["field-amount"]),
 		Fee:        ToFloat64(ordmap["field-fees"]),
 		OrderTime:  ToInt(ordmap["created-at"]),
+		CashAmount: ToFloat64(ordmap["field-cash-amount"]),
 	}
 
 	state := ordmap["state"].(string)
@@ -399,6 +400,7 @@ func (hbpro *HuoBiPro) GetOneOrder(orderId string, currency CurrencyPair) (*Orde
 	params := url.Values{}
 	hbpro.buildPostForm("GET", path, &params)
 	respmap, err := HttpGet(hbpro.httpClient, hbpro.baseUrl+path+"?"+params.Encode())
+	// fmt.Println(respmap)
 	if err != nil {
 		return nil, err
 	}

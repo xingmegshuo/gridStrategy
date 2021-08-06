@@ -1,21 +1,16 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
-
-
-
-
-
-func RunEx(ctx context.Context, u model.User, cli *Cliex) {
+func RunEx(ctx context.Context, u model.User) {
     //var ctx *cli.Context
     status := 0
     for {
@@ -27,7 +22,7 @@ func RunEx(ctx context.Context, u model.User, cli *Cliex) {
         }
         if status == 0 {
             status = 1
-            g := NewExStrategy(u, cli)
+            g := NewExStrategy(u)
             if len(g.grids) != int(u.Number) {
                 u.IsRun = -10
                 u.Error = "api 请求超时，或api接口更改"
@@ -43,16 +38,17 @@ func RunEx(ctx context.Context, u model.User, cli *Cliex) {
 }
 
 // NewGrid 实例化对象，并验证api key的正确性
-func NewExStrategy(u model.User, cli *Cliex) (ex *ExTrader) {
+func NewExStrategy(u model.User) (ex *ExTrader) {
     arg := model.StringArg(u.Arg)
     grid, _ := model.SourceStrategy(u, false)
     var realGrid []Grid
     _ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
+    symbol := model.StringSymobol(u.Symbol)
     ex = &ExTrader{
         grids:     *grid,
         arg:       &arg,
         RealGrids: realGrid,
-        goex:      cli,
+        goex:      NewEx(&symbol),
     }
     return
 }
@@ -174,7 +170,14 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 
         //  第一单 进场时机无所谓
         if t.base == 0 && !t.arg.StopBuy {
-            if count == 30 {
+            willbuy := false
+            // t.OrderOver = false
+            if t.arg.IsLimit && price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)) < 1 {
+                willbuy = true
+            } else if !t.arg.IsLimit {
+                willbuy = true
+            }
+            if count > 30 && willbuy {
                 t.OrderOver = false
                 log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
                 err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)

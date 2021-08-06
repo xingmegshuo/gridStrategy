@@ -20,18 +20,20 @@ func RunEx(ctx context.Context, u model.User) {
             return
         default:
         }
-        if status == 0 {
-            status = 1
-            g := NewExStrategy(u)
-            if len(g.grids) != int(u.Number) {
-                u.IsRun = -10
-                u.Error = "api 请求超时，或api接口更改"
-                log.Println(u.Error)
-                u.Update()
-                GridDone <- 1
-            } else {
-                g.u = u
-                go g.Trade(ctx)
+        for i := 0; i < 1; i++ {
+            if status == 0 {
+                status = 1
+                g := NewExStrategy(u)
+                if len(g.grids) != int(u.Number) {
+                    u.IsRun = -10
+                    u.Error = "api 请求超时，或api接口更改"
+                    log.Println(u.Error)
+                    u.Update()
+                    GridDone <- 1
+                } else {
+                    g.u = u
+                    go g.Trade(ctx)
+                }
             }
         }
     }
@@ -64,44 +66,45 @@ func (t *ExTrader) Trade(ctx context.Context) {
             return
         default:
         }
-        // for i := 0; i < 1; i++ {
-        if c == 0 {
-            c = 1
-            log.Printf("尝试获取%v用户账户数据，校验余额，api 等信息正确性", t.u.ObjectId)
-            if err := t.ReBalance(ctx); err != nil {
-                log.Printf("校验%v账户余额不足够，策略不开始----", t.u.ObjectId)
-                t.u.IsRun = -10
-                t.u.Error = err.Error()
-                log.Println(err, t.u.ObjectId)
-                t.u.Update()
-                // 执行报错就关闭
-                GridDone <- 1
-            } else {
-                t.setupGridOrders(ctx)
-                if t.ErrString != "" {
-                    log.Println("网络链接问题：", t.u.ObjectId)
+        for i := 0; i < 1; i++ {
+            if c == 0 {
+                c = 1
+                log.Printf("尝试获取%v用户账户数据，校验余额，api 等信息正确性", t.u.ObjectId)
+                if err := t.ReBalance(ctx); err != nil {
+                    log.Printf("校验%v账户余额不足够，策略不开始----", t.u.ObjectId)
                     t.u.IsRun = -10
-                    t.u.Error = t.ErrString
+                    t.u.Error = err.Error()
+                    log.Println(err, t.u.ObjectId)
                     t.u.Update()
-                    model.StrategyError(t.u.ObjectId, t.ErrString)
                     // 执行报错就关闭
                     GridDone <- 1
-                }
-                if t.over {
-                    // 策略执行完毕 to do 计算盈利
-                    log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
-                    p, _ := t.CalCulateProfit().Float64()
-                    // 盈利ctx
-                    t.u.IsRun = 1
-                    t.u.BasePrice = p
-                    model.RunOver(t.u.Custom, t.u.BasePrice)
-                    model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
-                        t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
-                    t.u.RealGrids = "***"
-                    t.u.Base = 0
-                    t.u.Update()
-                    model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
-                    GridDone <- 1
+                } else {
+                    t.setupGridOrders(ctx)
+                    if t.ErrString != "" {
+                        log.Println("网络链接问题：", t.u.ObjectId)
+                        t.u.IsRun = -10
+                        t.u.Error = t.ErrString
+                        t.u.Update()
+                        model.StrategyError(t.u.ObjectId, t.ErrString)
+                        // 执行报错就关闭
+                        GridDone <- 1
+                    }
+                    if t.over {
+                        // 策略执行完毕 to do 计算盈利
+                        log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
+                        p, _ := t.CalCulateProfit().Float64()
+                        // 盈利ctx
+                        t.u.IsRun = 1
+                        t.u.BasePrice = p
+                        model.RunOver(t.u.Custom, t.u.BasePrice)
+                        model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
+                            t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+                        t.u.RealGrids = "***"
+                        t.u.Base = 0
+                        t.u.Update()
+                        model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
+                        GridDone <- 1
+                    }
                 }
             }
         }
@@ -160,8 +163,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     log.Printf("用户%d停止买入----", t.u.ObjectId)
                 }
                 if op.Op == 4 {
-                    t.arg.StopBuy = false
-                    log.Printf("用户%d恢复买入----", t.u.ObjectId)
+                    if t.arg.StopBuy {
+                        t.arg.StopBuy = false
+                        log.Printf("用户%d恢复买入----", t.u.ObjectId)
+                    }
                 }
             }
         default:
@@ -214,7 +219,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             if t.setupBi(win, reduce, price) != nil {
                 continue
             } else {
-                // t.Tupdate()
+                t.Tupdate()
             }
             if t.arg.AllSell {
                 log.Printf("%v用户智乘方清仓", t.u.ObjectId)
@@ -227,7 +232,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 } else {
                     t.over = true
                     t.Tupdate()
-                    break
                 }
             }
         }

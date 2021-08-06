@@ -363,15 +363,15 @@ func DeleteRebotLog(orderId string) {
 
 // LogStrategy 卖出盈利日志
 func LogStrategy(name interface{}, coin_name interface{}, order interface{}, member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}) {
-	log.Println("盈利日志")
+	log.Println("盈利日志", name, member)
 	var (
 		data     = map[string]interface{}{}
 		categroy = map[string]interface{}{}
 		coin     = map[string]interface{}{}
 	)
-	c := UserDB.Raw("select id from db_task_category where `name` like ?", "火币").Scan(&categroy)
-	d := UserDB.Raw("select id from db_task_coin where `en_name` like ?", "doge").Scan(&coin)
-	log.Println(categroy, coin, c, d)
+	UserDB.Raw("select id from db_task_category where `name` like ?", "火币").Scan(&categroy)
+	UserDB.Raw("select id from db_task_coin where `en_name` like ?", "doge").Scan(&coin)
+	// log.Println(categroy, coin, c, d)
 	data["category_id"] = categroy["id"]
 	data["coin_id"] = coin["id"]
 	data["order_id"] = order

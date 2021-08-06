@@ -111,6 +111,7 @@ func NewUser() {
 					default:
 					}
 				} else {
+					time.Sleep(time.Second * 2)
 					if u.Status == 2 {
 						if u.IsRun == 2 {
 							u.IsRun = -1
@@ -125,10 +126,9 @@ func NewUser() {
 				}
 				// 更新策略参数
 				if u.Strategy != parseInput(order) {
-					log.Println("修改参数")
 					u.Strategy = parseInput(order)
 					if order["stop_buy"].(float64) == 1 {
-						if u.IsRun == 10 {
+						if u.IsRun == 10 && order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
 							OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
 						}
 					}

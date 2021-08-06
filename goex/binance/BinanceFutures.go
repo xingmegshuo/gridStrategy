@@ -3,8 +3,6 @@ package binance
 import (
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"math"
 	"net/http"
@@ -13,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	. "zmyjobs/goex"
+	"zmyjobs/goex/internal/logger"
 )
 
 type BaseResponse struct {
@@ -71,6 +71,7 @@ type SymbolInfo struct {
 	PricePrecision int    `json:"pricePrecision"`
 }
 
+// 币本位合约
 type BinanceFutures struct {
 	base         *Binance
 	apikey       string
@@ -241,23 +242,21 @@ func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*Futu
 
 	respData, err := HttpGet5(bs.base.httpClient, accountUri+"?"+param.Encode(), map[string]string{
 		"X-MBX-APIKEY": bs.apikey})
-
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Debug(string(respData))
+	// logger.Debug(string(respData))
 
 	var (
 		accountResp    AccountResponse
 		futureAccounts FutureAccount
 	)
-
+	// fmt.Println("hhhh-----", string(respData))
 	err = json.Unmarshal(respData, &accountResp)
 	if err != nil {
 		return nil, fmt.Errorf("response body: %s , %w", string(respData), err)
 	}
-
 	futureAccounts.FutureSubAccounts = make(map[Currency]FutureSubAccount, 4)
 	for _, asset := range accountResp.Assets {
 		currency := NewCurrency(asset.Asset, "")
@@ -590,7 +589,7 @@ func (bs *BinanceFutures) GetExchangeInfo() {
 		return
 	}
 
-	logger.Debug("[ExchangeInfo]", bs.exchangeInfo)
+	// logger.Debug("[ExchangeInfo]", bs.exchangeInfo)
 }
 
 func (bs *BinanceFutures) adaptToSymbol(pair CurrencyPair, contractType string) (string, error) {

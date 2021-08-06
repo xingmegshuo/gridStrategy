@@ -1,11 +1,11 @@
 package binance
 
 import (
-	goex "zmyjobs/goex"
 	"log"
 	"os"
 	"testing"
 	"time"
+	goex "zmyjobs/goex"
 )
 
 var futuresWs *FuturesWs

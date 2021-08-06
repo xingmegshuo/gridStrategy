@@ -3,13 +3,13 @@ package binance
 import (
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex"
 	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	. "zmyjobs/goex"
 )
 
 const (
@@ -255,6 +255,8 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	if err != nil {
 		return nil, err
 	}
+	// var acc = &FutureAccount{}
+	acc.FutureSubAccounts = map[Currency]FutureSubAccount{}
 
 	params := url.Values{}
 	bs.buildParamsSigned(&params)
@@ -271,6 +273,7 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	balances := respmap["assets"].([]interface{})
 	for _, v := range balances {
 		vv := v.(map[string]interface{})
+		// if ToFloat64(vv["unrealizedProfit"]) > 0 {
 		currency := NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
 		acc.FutureSubAccounts[currency] = FutureSubAccount{
 			Currency:      currency,
@@ -278,6 +281,7 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 			KeepDeposit:   ToFloat64(vv["maintMargin"]),
 			ProfitUnreal:  ToFloat64(vv["unrealizedProfit"]),
 		}
+		// }
 	}
 
 	return acc, nil

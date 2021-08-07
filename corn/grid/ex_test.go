@@ -3,8 +3,9 @@ package grid
 import (
 	"fmt"
 	"testing"
-	"time"
 	model "zmyjobs/corn/models"
+
+	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -58,18 +59,18 @@ func TestGetMoney(t *testing.T) {
 	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 
-	// price := decimal.Decimal{}
-	// // // 买入
-	// amount := decimal.NewFromFloat(0.0641)
-	// cliId, orderId, err := ex.Exchanges(amount, price, SellM)
-	// fmt.Println(cliId, err, orderId, amount, price)
+	price := decimal.Decimal{}
+	// // 买入
+	amount := decimal.NewFromFloat(0.1297)
+	cliId, orderId, err := ex.Exchanges(amount, price, SellM)
+	fmt.Println(cliId, err, orderId, amount, price)
 
 	// // 查找
-	cliId := "338260919426729"
-	time.Sleep(time.Second * 10)
+	// cliId := "338260919426729"
+	// time.Sleep(time.Second * 10)
 
-	b, c, o := ex.SearchOrder(cliId)
-	fmt.Println(b, c, o)
+	// b, c, o := ex.SearchOrder(cliId)
+	// fmt.Println(b, c, o)
 
 	// order, err := ex.Ex.GetOrderHistorys(ex.MakePair())
 	// fmt.Println(order, err)

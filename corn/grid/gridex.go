@@ -1,12 +1,12 @@
 package grid
 
 import (
-	"context"
-	"errors"
-	"time"
-	model "zmyjobs/corn/models"
+    "context"
+    "errors"
+    "time"
+    model "zmyjobs/corn/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 type ExTrader struct {
@@ -130,15 +130,17 @@ func (t *ExTrader) CountNeed() (moneyNeed decimal.Decimal) {
 // 买入
 func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, string, error) {
     orderType := BuyL
+    msg := "限价买入"
     if t.arg.OrderType == 2 {
         orderType = BuyM
         amount = t.grids[t.base].TotalBuy
+        msg = "市价买入"
     }
-    log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d", price, amount, t.u.ObjectId)
     clientId, orderId, err := t.goex.Exchanges(amount, price, orderType)
+    log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
     // 增加一个真实成交
     if err == nil {
-        t.log(clientId, price, orderType, t.base, amount, rate, "买入")
+        t.log(orderId, price, msg, t.base, amount, rate, "买入")
         t.RealGrids = append(t.RealGrids, Grid{
             Id:      t.base + 1,
             Decline: rate,
@@ -151,17 +153,18 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 // 卖出
 func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (string, string, error) {
     orderType := SellL
+    msg := "限价卖出"
     if t.arg.OrderType == 2 {
         orderType = SellM
         price = decimal.Decimal{}
+        msg = "市价卖出"
     }
-    log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d", price, amount, t.u.ObjectId)
     clientId, orderId, err := t.goex.Exchanges(amount, price, orderType)
-
+    log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
     // 增加一个真实成交
     if err == nil {
         t.RealGrids[n-1].Decline = rate
-        t.log(clientId, price, orderType, t.base, amount, rate, "卖出")
+        t.log(orderId, price, msg, t.base, amount, rate, "卖出")
         g := map[string]int{orderId: n}
         t.SellOrder = g
     }
@@ -184,7 +187,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
             t.RealGrids[b-1].AmountSell = t.SellMoney // 修改卖出
             t.amount = t.CountHold()
             t.pay = t.CountPay()
-            model.RebotUpdateBy(client, price, amount.Abs(), fee, t.RealGrids[b-1].TotalBuy, t.hold, "成功")
+            model.RebotUpdateBy(clientOrderId, price, amount.Abs(), fee, t.RealGrids[b-1].TotalBuy, t.hold, "成功", order.ClientId)
             if b == t.base {
                 t.over = true
                 model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
@@ -198,7 +201,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
             t.amount = t.CountHold()
             t.pay = t.CountPay()
             t.cost = t.pay.Div(t.amount)
-            model.RebotUpdateBy(client, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
+            model.RebotUpdateBy(clientOrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId)
             model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
         }
         return true

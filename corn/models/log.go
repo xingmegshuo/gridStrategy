@@ -58,11 +58,12 @@ func (r *RebotLog) New() {
 }
 
 func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
-	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string) {
-	log.Println(orderId, "------订单成功")
+	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string, cli string) {
+	// log.Println(orderId, "------订单成功")
 	money, _ := m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
-		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Sub(transactFee)).Update("pay_money", hold_m)
+		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Sub(transactFee)).
+		Update("pay_money", hold_m).Update("odrder_id", cli)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
 	AddModelLog(&r, money)

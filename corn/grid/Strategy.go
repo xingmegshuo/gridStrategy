@@ -493,7 +493,7 @@ func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
 					sellMoney := price.Mul(amount).Abs().Sub(transact)
 					t.SellMoney = t.SellMoney.Add(sellMoney)  // 卖出钱
 					t.RealGrids[b-1].AmountSell = t.SellMoney // 修改卖出
-					model.RebotUpdateBy(client, price, amount.Abs(), transact, t.RealGrids[b-1].TotalBuy, t.hold, "成功")
+					// model.RebotUpdateBy(client, price, amount.Abs(), transact, t.RealGrids[b-1].TotalBuy, t.hold, "成功")
 					t.amount = t.CountHold()
 					t.pay = t.CountPay()
 					t.cost = t.pay.Div(t.amount)
@@ -510,7 +510,7 @@ func (t *Trader) SearchOrder(clientOrderId string, client string) bool {
 					t.amount = t.CountHold()
 					t.pay = t.CountPay()
 					t.cost = t.pay.Div(t.amount)
-					model.RebotUpdateBy(client, price, amount.Sub(transact), transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
+					// model.RebotUpdateBy(client, price, amount.Sub(transact), transact, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 					model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 				}
 				return true

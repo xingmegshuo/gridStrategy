@@ -142,11 +142,11 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 	order, err := c.Ex.GetOneOrder(orderId, c.MakePair())
 	var (
 		o OneOrder
-		b goex.TradeStatus
+		// b goex.TradeStatus
 	)
-	b = 2
+	// b = 2
 	if err == nil {
-		if order.Status == b {
+		if order.Status == 2 {
 			o.Amount = order.DealAmount
 			o.Fee = order.Fee
 			o.Price = order.AvgPrice
@@ -157,7 +157,15 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 			o.Cash = order.CashAmount
 			return true, true, &o
 		} else {
-			return true, false, nil
+			o.Amount = order.DealAmount
+			o.Fee = order.Fee
+			o.Price = order.AvgPrice
+			o.ClientId = order.Cid
+			o.OrderId = order.OrderID2
+			o.Type = order.Type
+			o.Slide = order.Side.String2()
+			o.Cash = order.CashAmount
+			return true, false, &o
 		}
 	} else {
 		return false, false, nil

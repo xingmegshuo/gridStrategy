@@ -1,13 +1,13 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -95,7 +95,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         // 盈利ctx
                         t.u.IsRun = 1
                         t.u.BasePrice = p
-                        model.RunOver(t.u.Custom, t.u.BasePrice)
+                        model.RunOver(p, t.u.Custom)
                         model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
                             t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
                         t.u.RealGrids = "***"

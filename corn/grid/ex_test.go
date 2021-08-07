@@ -63,12 +63,12 @@ func TestGetMoney(t *testing.T) {
 	// fmt.Println(cliId, err, orderId, amount, price)
 
 	// 查找
-	// b, c, o := ex.SearchOrder("338257219234466")
-	// fmt.Println(b, c, o)
+	b, c, o := ex.SearchOrder("338258695263369")
+	fmt.Println(b, c, o)
 
 	// 撤单
-	b = ex.CancelOrder("338257303905840")
-	fmt.Println(b)
+	// b = ex.CancelOrder("338257303905840")
+	// fmt.Println(b)
 
 	// goex.LimitOrderOptionalParameter
 	// c, e := ex.Ex.LimitSell("0.025", "2400.00", ex.MakePair(), 332301627399393)

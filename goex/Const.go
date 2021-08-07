@@ -28,6 +28,21 @@ func (ts TradeSide) String() string {
 	}
 }
 
+func (ts TradeSide) String2() string {
+	switch ts {
+	case 1:
+		return "限价买入"
+	case 2:
+		return "限价卖出"
+	case 3:
+		return "市价买入"
+	case 4:
+		return "市价卖出"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 type TradeStatus int
 
 func (ts TradeStatus) String() string {

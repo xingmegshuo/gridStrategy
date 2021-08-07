@@ -239,7 +239,6 @@ func (hbpro *HuoBiPro) placeOrder(amount, price string, pair CurrencyPair, order
 	params.Set("amount", amount)
 	params.Set("symbol", pair.AdaptUsdToUsdt().ToLower().ToSymbol(""))
 	params.Set("type", orderType)
-
 	switch orderType {
 	case "buy-limit", "sell-limit":
 		params.Set("price", price)
@@ -308,7 +307,7 @@ func (hbpro *HuoBiPro) LimitSell(amount, price string, currency CurrencyPair, op
 			Log.Error("limit order optional parameter error ,opt= ", opt[0])
 		}
 	}
-	fmt.Println(amount, price, currency, currency.PriceTickSize, currency.AmountTickSize, orderTy, "-----")
+	// fmt.Println(amount, price, currency, currency.PriceTickSize, currency.AmountTickSize, orderTy, "-----")
 	orderId, err := hbpro.placeOrder(amount, price, currency, orderTy)
 	if err != nil {
 		return nil, err

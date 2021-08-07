@@ -257,7 +257,7 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 		return nil, err
 	}
 	// var acc = &FutureAccount{}
-	acc.FutureSubAccounts = map[Currency]FutureSubAccount{}
+	// acc.FutureSubAccounts = map[Currency]FutureSubAccount{}
 
 	params := url.Values{}
 	bs.buildParamsSigned(&params)

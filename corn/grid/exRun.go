@@ -191,7 +191,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 } else {
                     high = price
                     low = price
-                    t.last = price
+                    t.last = t.RealGrids[0].Price
+                    t.base++
+                    continue
                 }
             }
         }
@@ -209,7 +211,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 } else {
                     high = price
                     low = price
-                    t.last = price
+                    t.last = t.RealGrids[t.base].Price
+                    t.base++
+                    continue
                 }
             }
         }
@@ -295,7 +299,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             } else {
                 high = price
                 low = price
-                t.last = price
+                t.last = t.RealGrids[t.base].Price
+                t.base++
+                continue
             }
         }
     }
@@ -317,6 +323,7 @@ func (t *ExTrader) Tupdate() {
     s, _ := json.Marshal(t.grids)
     t.u.Grids = string(s)
     t.u.RealGrids = model.ToStringJson(t.RealGrids)
+    log.Println("真实成交数据---", t.RealGrids)
     // t.u.Update()
 }
 

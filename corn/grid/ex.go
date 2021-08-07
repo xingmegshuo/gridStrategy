@@ -19,10 +19,14 @@ import (
 )
 
 const (
-	BuyM  = "buy"   // 市价买入
-	BuyL  = "lbuy"  // 限价买入
-	SellM = "sell"  // 市价卖出
-	SellL = "selll" // 限价卖出
+	BuyM   = "buy"    // 市价买入
+	BuyL   = "lbuy"   // 限价买入
+	SellM  = "sell"   // 市价卖出
+	SellL  = "selll"  // 限价卖出
+	OpenDL = "opendl" // 开多
+	OpenDM = "opendm" // 平多
+	OpenLL = "openll" // 开空
+	OpenLM = "openlM" // 平空
 )
 
 type Cliex struct {
@@ -54,13 +58,12 @@ type OneOrder struct {
 func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
 		Host: symbol.Host, ClientID: symbol.Label}
-
+	fmt.Println(symbol.Future)
 	if symbol.Future {
 		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
 	} else {
 		cli = &Cliex{Ex: util.NewApi(&c), symbol: symbol}
 	}
-
 	return
 }
 
@@ -72,13 +75,25 @@ func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
  *@return       : r/money/coin bool/decimal/decimal    `正确与否/余额/币种数量`
  */
 func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decimal) {
-	info, err := c.Ex.GetAccount()
-	d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))
-	b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
-	if err == nil {
-		r = true
-		money = decimal.NewFromFloat(info.SubAccounts[b].Amount)
-		coin = decimal.NewFromFloat(info.SubAccounts[d].Amount)
+	if c.symbol.Future {
+		acc, err := c.Future.GetFutureUserinfo()
+		if err == nil {
+			for _, u := range acc.FutureSubAccounts {
+				if u.Currency.String() == "USDT" {
+					r = true
+					money = decimal.NewFromFloat(u.CanEX)
+				}
+			}
+		}
+	} else {
+		info, err := c.Ex.GetAccount()
+		d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))
+		b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
+		if err == nil {
+			r = true
+			money = decimal.NewFromFloat(info.SubAccounts[b].Amount)
+			coin = decimal.NewFromFloat(info.SubAccounts[d].Amount)
+		}
 	}
 	return
 }
@@ -114,20 +129,41 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 		err   error
 	)
 	symbol := c.MakePair()
-	switch name {
-	case BuyL:
-		order, err = c.Ex.LimitBuy(amount.String(), price.String(), symbol)
-	case SellL:
-		order, err = c.Ex.LimitSell(amount.String(), price.String(), symbol)
-	case BuyM:
-		order, err = c.Ex.MarketBuy(amount.String(), price.String(), symbol)
-	case SellM:
-		order, err = c.Ex.MarketSell(amount.String(), price.String(), symbol)
+	if c.symbol.Future {
+		var FutureOrder *goex.FutureOrder
+		num := 1
+		switch name {
+		case OpenDL:
+			num = 1
+		case OpenLL:
+			num = 2
+		case OpenLM:
+			num = 3
+		case OpenDM:
+			num = 4
+		}
+		FutureOrder, err = c.Future.LimitFuturesOrder(symbol, goex.QUARTER_CONTRACT, price.String(), amount.String(), num)
+		if err == nil {
+			return FutureOrder.OrderID2, FutureOrder.ClientOid, err
+		}
+	} else {
+		switch name {
+		case BuyL:
+			order, err = c.Ex.LimitBuy(amount.String(), price.String(), symbol)
+		case SellL:
+			order, err = c.Ex.LimitSell(amount.String(), price.String(), symbol)
+		case BuyM:
+			order, err = c.Ex.MarketBuy(amount.String(), price.String(), symbol)
+		case SellM:
+			order, err = c.Ex.MarketSell(amount.String(), price.String(), symbol)
+		}
+		if err == nil {
+			return order.Cid, order.OrderID2, err
+		}
 	}
+
 	// log.Println(amount, price, symbol, "交易信息")
-	if err == nil {
-		return order.Cid, order.OrderID2, err
-	}
+
 	return "", "", err
 }
 

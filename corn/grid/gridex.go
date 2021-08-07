@@ -280,8 +280,6 @@ func (t *ExTrader) WaitBuy(price decimal.Decimal, amount decimal.Decimal, rate f
         return err
     } else {
         if t.WaitOrder(orderId, clientOrder) {
-            t.base++
-            t.last = price
             return nil
         } else {
             t.goex.CancelOrder(orderId)

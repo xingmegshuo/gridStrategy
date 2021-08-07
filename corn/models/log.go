@@ -63,9 +63,9 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 	money, _ := m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
 		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Sub(transactFee)).
-		Update("pay_money", hold_m).Update("odrder_id", cli)
+		Update("pay_money", hold_m).Update("odder_id", cli)
 	var r RebotLog
-	DB.Raw("select * from rebot_logs where `order_id` = ?", orderId).Scan(&r)
+	DB.Raw("select * from rebot_logs where `order_id` = ?", cli).Scan(&r)
 	AddModelLog(&r, money)
 }
 
@@ -113,15 +113,15 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}, b float64) {
+func RunOver(id float64, b float64) {
 	var data = map[string]interface{}{
 		"status": 2,
 	}
 	if b > 0 {
 		data["total_profit"] = b
-		GotMoney(b, float64(id.(int32)))
+		GotMoney(b, id)
 	}
-	log.Println("修改盈利-----")
+	log.Println("修改盈利-----", id)
 	UpdateOrder(id, data)
 }
 

@@ -283,6 +283,7 @@ func LoadStrategy(u User) (*[]Grid, bool) {
 
 // UpdateUser  更新u
 func UpdateUser(u User) User {
+	log.Println("开始解析参数", u.ObjectId)
 	u.Arg = ToStringJson(ParseStrategy(u))
 	u.Symbol = ToStringJson(NewSymbol(u))
 
@@ -296,5 +297,7 @@ func UpdateUser(u User) User {
 		u.Error = e.Error()
 		StrategyError(u.ObjectId, e.Error())
 	}
+	log.Println("解析参数完成", u.ObjectId)
+
 	return u
 }

@@ -13,13 +13,17 @@ import (
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
 	huobi := model.SymbolCategory{
-		Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
-		Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
+		// Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
+		// Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
+
+		Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
+		Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
+
 		// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
 		// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
 		Host:            "https://api.huobi.de.com",
-		BaseCurrency:    "USDT",
-		QuoteCurrency:   "ACH",
+		BaseCurrency:    "DOGE",
+		QuoteCurrency:   "USDT",
 		AmountPrecision: 4,
 		PricePrecision:  6,
 	}
@@ -45,18 +49,20 @@ func TestGetMoney(t *testing.T) {
 	// fmt.Println(price, err)
 	// 交易测试
 	// price = price.Sub(price.Mul(decimal.NewFromFloat(0.001))).Round(ex.symbol.PricePrecision)
+	// price := decimal.NewFromFloat(30000)
 	// 买入
-	// amount := decimal.NewFromInt(6).Div(price).Round(ex.symbol.AmountPrecision)
-	// cliId, orderId, err := ex.Exchanges(amount, price, BuyL)
+	// amount := decimal.NewFromInt(28).Round(ex.symbol.AmountPrecision)
+	// fmt.Println(amount)
+	// cliId, orderId, err := ex.Exchanges(amount, price, SellL)
 	// fmt.Println(cliId, err, orderId, amount, price)
 
 	// 查找
-	b, c, o := ex.SearchOrder("338247640404515")
-	fmt.Println(b, c, o)
+	// b, c, o := ex.SearchOrder("338247640404515")
+	// fmt.Println(b, c, o)
 
 	// 撤单
-	// b = ex.CancelOrder("335517933772145")
-	// fmt.Println(b)
+	b = ex.CancelOrder("338256381420234")
+	fmt.Println(b)
 
 	// goex.LimitOrderOptionalParameter
 	// c, e := ex.Ex.LimitSell("0.025", "2400.00", ex.MakePair(), 332301627399393)

@@ -123,6 +123,7 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 	case SellM:
 		order, err = c.Ex.MarketSell(amount.String(), price.String(), symbol)
 	}
+	log.Println(amount, price, symbol, "交易信息")
 	if err == nil {
 		return order.Cid, order.OrderID2, err
 	}

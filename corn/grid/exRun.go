@@ -1,13 +1,13 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -188,7 +188,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 if err != nil {
                     log.Printf("买入错误: %d, err: %s", t.base, err)
                     time.Sleep(time.Second * 5)
-                    continue
+                    t.over = true
                 } else {
                     high = price
                     low = price
@@ -217,8 +217,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 
         // 智乘方
         if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
-            if t.setupBi(win, reduce, price) != nil {
-                continue
+            if err := t.setupBi(win, reduce, price); err != nil {
+                t.ErrString = err.Error()
+                t.over = true
             } else {
                 t.Tupdate()
             }
@@ -255,9 +256,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                             time.Sleep(time.Second * 5)
                             t.ErrString = err.Error()
                             t.over = true
+                            break
                         } else {
-                            t.over = true
                             t.Tupdate()
+                            continue
                         }
                     }
                     time.Sleep(time.Second)

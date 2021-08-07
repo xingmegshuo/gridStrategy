@@ -9,16 +9,16 @@
 package util
 
 import (
-    "fmt"
-    "net/http"
-    "os"
-    "strings"
-    "time"
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 
-    "zmyjobs/goex"
-    "zmyjobs/goex/builder"
+	"zmyjobs/goex"
+	"zmyjobs/goex/builder"
 
-    "golang.org/x/net/proxy"
+	"golang.org/x/net/proxy"
 )
 
 type Config struct {
@@ -34,10 +34,10 @@ type Config struct {
  * @param *config 配置信息
  */
 func NewApi(c *Config) (cli goex.API) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
 
     // 本地使用代理
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
     // fmt.Println(fmt.Sprintf("%+v", api), api.GetHttpClient())
     switch c.Name {
     case "币安":

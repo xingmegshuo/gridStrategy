@@ -1,13 +1,13 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -192,9 +192,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 } else {
                     high = price
                     low = price
+                    log.Panicln("首次买入成功")
                     t.last = t.RealGrids[0].Price
                     t.base = t.base + 1
-                    continue
                 }
             }
         }
@@ -213,7 +213,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     low = price
                     t.last = t.RealGrids[t.base].Price
                     t.base = t.base + 1
-                    continue
                 }
             }
         }
@@ -244,7 +243,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         // 智多元
         if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
             if t.SetupBeMutiple(price, reduce, win) != nil {
-                continue
+                t.ErrString = "卖出错误"
+                t.over = true
             } else {
                 t.Tupdate()
             }
@@ -262,7 +262,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                             break
                         } else {
                             t.Tupdate()
-                            continue
                         }
                     }
                     time.Sleep(time.Second)
@@ -273,16 +272,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     }
                 }
             }
-        }
-
-        //  如果不相等更新
-        if t.base != t.u.Base {
-            t.Tupdate()
-        }
-
-        if t.over {
-            log.Printf("%v用户任务结束", t.u.ObjectId)
-            break
         }
 
         // 立即买入
@@ -301,8 +290,15 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 low = price
                 t.last = t.RealGrids[t.base].Price
                 t.base = t.base + 1
-                continue
             }
+        }
+        //  如果不相等更新
+        if t.base != t.u.Base {
+            t.Tupdate()
+        }
+        if t.over {
+            log.Printf("%v用户任务结束", t.u.ObjectId)
+            break
         }
     }
 }

@@ -60,12 +60,12 @@ func TestGetMoney(t *testing.T) {
 
 	// price := decimal.Decimal{}
 	// // // 买入
-	// amount := decimal.NewFromFloat(0.1900)
+	// amount := decimal.NewFromFloat(0.0641)
 	// cliId, orderId, err := ex.Exchanges(amount, price, SellM)
 	// fmt.Println(cliId, err, orderId, amount, price)
 
 	// // 查找
-	cliId := "338260742716449"
+	cliId := "338260919426729"
 	time.Sleep(time.Second * 10)
 
 	b, c, o := ex.SearchOrder(cliId)

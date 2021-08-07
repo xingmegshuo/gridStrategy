@@ -179,6 +179,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 willbuy = true
 
             } else if !t.arg.IsLimit {
+                time.Sleep(time.Second * 2)
                 willbuy = true
             }
             if count == 30 || willbuy {

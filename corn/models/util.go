@@ -159,7 +159,7 @@ func ParseStrategy(u User) *Args {
 			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
 		}
 	}
-	if data["limit_high"].(float64) == 2 && u.IsRun == 10 {
+	if data["limit_high"].(float64) == 2 {
 		arg.IsLimit = true
 		if data["high_price"] != nil {
 			arg.LimitHigh = ParseStringFloat(data["high_price"].(string))

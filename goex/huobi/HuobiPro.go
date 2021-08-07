@@ -231,19 +231,18 @@ func (hbpro *HuoBiPro) GetAccount() (*Account, error) {
 }
 
 func (hbpro *HuoBiPro) placeOrder(amount, price string, pair CurrencyPair, orderType string) (string, error) {
-	symbol := hbpro.Symbols[pair.ToLower().ToSymbol("")]
-
+	// symbol := hbpro.Symbols[pair.ToLower().ToSymbol("")]
 	path := "/v1/order/orders/place"
 	params := url.Values{}
 	params.Set("account-id", hbpro.accountId)
 	params.Set("client-order-id", GenerateOrderClientId(32))
-	params.Set("amount", FloatToString(ToFloat64(amount), int(symbol.AmountPrecision)))
+	params.Set("amount", amount)
 	params.Set("symbol", pair.AdaptUsdToUsdt().ToLower().ToSymbol(""))
 	params.Set("type", orderType)
 
 	switch orderType {
 	case "buy-limit", "sell-limit":
-		params.Set("price", FloatToString(ToFloat64(price), int(symbol.PricePrecision)))
+		params.Set("price", price)
 	}
 	hbpro.buildPostForm("POST", path, &params)
 
@@ -309,6 +308,7 @@ func (hbpro *HuoBiPro) LimitSell(amount, price string, currency CurrencyPair, op
 			Log.Error("limit order optional parameter error ,opt= ", opt[0])
 		}
 	}
+	fmt.Println(amount, price, currency, currency.PriceTickSize, currency.AmountTickSize, orderTy, "-----")
 	orderId, err := hbpro.placeOrder(amount, price, currency, orderTy)
 	if err != nil {
 		return nil, err

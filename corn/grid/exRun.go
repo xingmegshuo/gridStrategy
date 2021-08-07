@@ -88,8 +88,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         model.StrategyError(t.u.ObjectId, t.ErrString)
                         // 执行报错就关闭
                         GridDone <- 1
-                    }
-                    if t.over {
+                    } else if t.over {
                         // 策略执行完毕 to do 计算盈利
                         log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
                         p, _ := t.CalCulateProfit().Float64()
@@ -227,7 +226,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 log.Printf("%v用户智乘方清仓", t.u.ObjectId)
                 t.arg.AllSell = false
                 t.AllSellMy()
-                err := t.WaitSell(price, t.CountHold(), win*100, len(t.RealGrids)-1)
+                err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, len(t.RealGrids)-1)
                 if err != nil {
                     time.Sleep(time.Second * 5)
                     t.ErrString = err.Error()
@@ -251,7 +250,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 t.AllSellMy()
                 for {
                     for _, g := range t.RealGrids {
-                        err := t.WaitSell(price, t.CountHold(), win*100, g.Id)
+                        err := t.WaitSell(price, t.SellCount(g.AmountBuy), win*100, g.Id)
                         if err != nil {
                             time.Sleep(time.Second * 5)
                             t.ErrString = err.Error()
@@ -328,4 +327,8 @@ func (t *ExTrader) AllSellMy() {
     t.u.Arg = model.ToStringJson(&t.arg)
     // t.u.Update()
     model.OneSell(t.u.ObjectId)
+}
+
+func (t *ExTrader) ToPrecision(p decimal.Decimal) decimal.Decimal {
+    return p.Truncate(t.goex.symbol.AmountPrecision).Round(t.goex.symbol.AmountPrecision)
 }

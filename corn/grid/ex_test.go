@@ -12,7 +12,7 @@ import (
 
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
-	huobi := model.SymbolCategory{
+	huobiSymbol := model.SymbolCategory{
 		// Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
 		// Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
 
@@ -21,11 +21,11 @@ func TestGetMoney(t *testing.T) {
 
 		// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
 		// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
-		Host:            "https://api.huobi.de.com",
-		BaseCurrency:    "DOGE",
+		Host:            "api.huobi.de.com",
+		BaseCurrency:    "ETH",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 4,
-		PricePrecision:  6,
+		PricePrecision:  2,
 	}
 
 	// bian := model.SymbolCategory{
@@ -41,7 +41,7 @@ func TestGetMoney(t *testing.T) {
 	// }
 
 	// 账户测试
-	ex := NewEx(&huobi)
+	ex := NewEx(&huobiSymbol)
 	b, m, coin := ex.GetAccount()
 	fmt.Println(b, m, coin)
 	// // 价格测试
@@ -49,19 +49,25 @@ func TestGetMoney(t *testing.T) {
 	// fmt.Println(price, err)
 	// 交易测试
 	// price = price.Sub(price.Mul(decimal.NewFromFloat(0.001))).Round(ex.symbol.PricePrecision)
-	// price := decimal.NewFromFloat(30000)
+	// price := decimal.NewFromFloat(30000.11).Round(huobi.PricePrecision)
+	// price := decimal.NewFromFloat(32001.11)
 	// 买入
-	// amount := decimal.NewFromInt(28).Round(ex.symbol.AmountPrecision)
+	// amount := decimal.NewFromFloat(0.0032)
+
+	// c, _ := huobi.New(huobi.Config{Host: huobiSymbol.Host, Label: huobiSymbol.Label, SecretKey: huobiSymbol.Secret, AccessKey: huobiSymbol.Key})
+	// n, err := c.PlaceOrder("sell-market", "ethusdt", "test", price, amount)
+	// fmt.Println(n, err)
+	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 	// cliId, orderId, err := ex.Exchanges(amount, price, SellL)
 	// fmt.Println(cliId, err, orderId, amount, price)
 
 	// 查找
-	// b, c, o := ex.SearchOrder("338247640404515")
+	// b, c, o := ex.SearchOrder("338257219234466")
 	// fmt.Println(b, c, o)
 
 	// 撤单
-	b = ex.CancelOrder("338256381420234")
+	b = ex.CancelOrder("338257303905840")
 	fmt.Println(b)
 
 	// goex.LimitOrderOptionalParameter

@@ -1,12 +1,12 @@
 package grid
 
 import (
-    "context"
-    "errors"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"errors"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type ExTrader struct {
@@ -287,8 +287,31 @@ func (t *ExTrader) WaitBuy(price decimal.Decimal, amount decimal.Decimal, rate f
     }
 }
 
-// 获取账户
+// 获取账户余额
 func (t *ExTrader) myMoney() (m decimal.Decimal) {
     _, m, _ = t.goex.GetAccount()
+    return
+}
+
+// 获取coin
+func (t *ExTrader) myCoin() (coin decimal.Decimal) {
+    _, _, coin = t.goex.GetAccount()
+    return
+}
+
+/**
+ *@title        : SellCount
+ *@desc         : 计算卖出数量并设置精度为交易所需要精度, 如果要卖出数量大于用户持有货币数量就更改为用户持有货币数量
+ *@auth         : small_ant / time(2021/08/07 13:55:15)
+ *@param        : sell / decimal.Decimal / `要卖出数量`
+ *@return       : coin / decimal.Decimal / `能够卖出的币种数量`
+ */
+func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
+    c := t.myCoin()
+    coin = t.CountHold()
+    if coin.Cmp(c) == 1 {
+        coin = c
+    }
+    coin = t.ToPrecision(coin)
     return
 }

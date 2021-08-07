@@ -70,6 +70,7 @@ func NewUser() {
 			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
 			// 条件 数据库未找到，订单启用，创建新的任务
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				log.Println("新建用户:", order["id"])
 				u = User{
 					ObjectId: int32(order["id"].(float64)),
 					ApiKey:   api,

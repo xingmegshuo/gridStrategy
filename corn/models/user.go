@@ -111,7 +111,7 @@ func NewUser() {
 					default:
 					}
 				} else {
-					time.Sleep(time.Second * 2)
+					time.Sleep(time.Second)
 					if u.Status == 2 {
 						if u.IsRun == 2 {
 							u.IsRun = -1
@@ -125,7 +125,7 @@ func NewUser() {
 					}
 				}
 				// 更新策略参数
-				if u.Strategy != parseInput(order) {
+				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
 					log.Println("更新用户策略配置:", u.ObjectId)
 					u.Strategy = parseInput(order)
 					if order["stop_buy"].(float64) == 1 {

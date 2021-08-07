@@ -1,13 +1,13 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -195,6 +195,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     log.Println("首次买入成功")
                     t.last = t.RealGrids[0].Price
                     t.base = t.base + 1
+                    t.Tupdate()
                 }
             }
         }
@@ -213,6 +214,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     low = price
                     t.last = t.RealGrids[t.base].Price
                     t.base = t.base + 1
+                    t.Tupdate()
                 }
             }
         }
@@ -319,7 +321,6 @@ func (t *ExTrader) Tupdate() {
     s, _ := json.Marshal(t.grids)
     t.u.Grids = string(s)
     t.u.RealGrids = model.ToStringJson(t.RealGrids)
-    // log.Println("真实成交数据---", t.RealGrids)
 }
 
 // AllSellMy 平仓

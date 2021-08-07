@@ -192,7 +192,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 } else {
                     high = price
                     low = price
-                    log.Panicln("首次买入成功")
+                    log.Println("首次买入成功")
                     t.last = t.RealGrids[0].Price
                     t.base = t.base + 1
                 }

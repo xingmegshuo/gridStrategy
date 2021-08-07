@@ -63,7 +63,7 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 	money, _ := m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
 		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Sub(transactFee)).
-		Update("pay_money", hold_m).Update("odder_id", cli)
+		Update("pay_money", hold_m).Update("order_id", cli)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", cli).Scan(&r)
 	AddModelLog(&r, money)

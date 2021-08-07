@@ -1,12 +1,12 @@
 package grid
 
 import (
-    "context"
-    "errors"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"errors"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type ExTrader struct {
@@ -160,7 +160,7 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (str
         msg = "市价卖出"
     }
     clientId, orderId, err := t.goex.Exchanges(amount, price, orderType)
-    log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
+    log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
     // 增加一个真实成交
     if err == nil {
         t.RealGrids[n-1].Decline = rate

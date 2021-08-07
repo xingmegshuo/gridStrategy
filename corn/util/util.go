@@ -9,16 +9,16 @@
 package util
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+    "fmt"
+    "net/http"
+    "os"
+    "strings"
+    "time"
 
-	"zmyjobs/goex"
-	"zmyjobs/goex/builder"
+    "zmyjobs/goex"
+    "zmyjobs/goex/builder"
 
-	"golang.org/x/net/proxy"
+    "golang.org/x/net/proxy"
 )
 
 type Config struct {

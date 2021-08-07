@@ -3,6 +3,7 @@ package grid
 import (
 	"fmt"
 	"testing"
+	"time"
 	model "zmyjobs/corn/models"
 	// "github.com/nntaoli-project/goex"
 )
@@ -59,13 +60,13 @@ func TestGetMoney(t *testing.T) {
 
 	// price := decimal.Decimal{}
 	// // // 买入
-	// amount := decimal.NewFromFloat(0.5867)
+	// amount := decimal.NewFromFloat(0.1900)
 	// cliId, orderId, err := ex.Exchanges(amount, price, SellM)
 	// fmt.Println(cliId, err, orderId, amount, price)
 
 	// // 查找
-	cliId := "338260449182931"
-	// time.Sleep(time.Second * 5)
+	cliId := "338260742716449"
+	time.Sleep(time.Second * 10)
 
 	b, c, o := ex.SearchOrder(cliId)
 	fmt.Println(b, c, o)
@@ -74,10 +75,10 @@ func TestGetMoney(t *testing.T) {
 	// fmt.Println(order, err)
 
 	// 撤单
-	if !c {
-		b = ex.CancelOrder(cliId)
-		fmt.Println(b)
-	}
+	// if !c {
+	// 	b = ex.CancelOrder(cliId)
+	// 	fmt.Println(b)
+	// }
 
 	// goex.LimitOrderOptionalParameter
 	// c, e := ex.Ex.LimitSell("0.025", "2400.00", ex.MakePair(), 332301627399393)

@@ -174,14 +174,14 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         //  第一单 进场时机无所谓
         if t.base == 0 && !t.arg.StopBuy {
             willbuy := false
-            // t.OrderOver = false
             if t.arg.IsLimit && price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)) < 1 {
+                log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动", t.arg.IsLimit)
                 willbuy = true
+
             } else if !t.arg.IsLimit {
                 willbuy = true
             }
-            if count > 30 && willbuy {
-                t.OrderOver = false
+            if count == 30 || willbuy {
                 log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
                 err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
                 if err != nil {
@@ -192,7 +192,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     high = price
                     low = price
                     t.last = t.RealGrids[0].Price
-                    t.base++
+                    t.base = t.base + 1
                     continue
                 }
             }
@@ -200,7 +200,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         // 后续买入按照跌幅+回调来下单
         if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy {
             if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
-                t.OrderOver = false
                 log.Printf("第%d买入信息:{价格:%v,数量:%v,用户:%v,钱:%v,跌幅:%v}", t.base+1, price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy, die)
                 err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
                 if err != nil {
@@ -212,7 +211,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     high = price
                     low = price
                     t.last = t.RealGrids[t.base].Price
-                    t.base++
+                    t.base = t.base + 1
                     continue
                 }
             }
@@ -300,7 +299,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 high = price
                 low = price
                 t.last = t.RealGrids[t.base].Price
-                t.base++
+                t.base = t.base + 1
                 continue
             }
         }

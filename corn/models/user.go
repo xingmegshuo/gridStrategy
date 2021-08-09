@@ -286,7 +286,6 @@ func UpdateUser(u User) User {
 	log.Println("开始解析参数", u.ObjectId)
 	u.Arg = ToStringJson(ParseStrategy(u))
 	u.Symbol = ToStringJson(NewSymbol(u))
-
 	if grid, e := SourceStrategy(u, true); e == nil {
 		s, _ := json.Marshal(grid)
 		u.Grids = string(s)
@@ -298,6 +297,5 @@ func UpdateUser(u User) User {
 		StrategyError(u.ObjectId, e.Error())
 	}
 	log.Println("解析参数完成", u.ObjectId)
-
 	return u
 }

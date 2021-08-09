@@ -226,6 +226,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 t.over = true
             } else {
                 t.Tupdate()
+                t.over = true
             }
             if t.arg.AllSell {
                 log.Printf("%v用户智乘方清仓", t.u.ObjectId)
@@ -235,11 +236,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 if err != nil {
                     time.Sleep(time.Second * 5)
                     t.ErrString = err.Error()
-                    t.over = true
                 } else {
-                    t.over = true
                     t.Tupdate()
                 }
+                t.over = true
             }
         }
         // 智多元
@@ -249,6 +249,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 t.over = true
             } else {
                 t.Tupdate()
+                t.over = true
             }
             if t.arg.AllSell {
                 log.Printf("%v用户智多元清仓", t.u.ObjectId)
@@ -273,6 +274,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                         continue
                     }
                 }
+                t.over = true
             }
         }
 

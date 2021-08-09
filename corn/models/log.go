@@ -114,6 +114,7 @@ func AddRun(id interface{}, b interface{}) {
 
 // RunOver 运行完成
 func RunOver(id float64, b float64) {
+	log.Println("修改盈利:", id, "盈利金额:", b)
 	var data = map[string]interface{}{
 		"status": 2,
 	}
@@ -121,7 +122,6 @@ func RunOver(id float64, b float64) {
 		data["total_profit"] = b
 		GotMoney(b, id)
 	}
-	log.Println("修改盈利-----", id)
 	UpdateOrder(id, data)
 }
 

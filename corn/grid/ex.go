@@ -79,7 +79,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 		acc, err := c.Future.GetFutureUserinfo()
 		if err == nil {
 			for _, u := range acc.FutureSubAccounts {
-				if u.Currency.String() == "USDT" {
+				if u.Currency.String() == c.symbol.QuoteCurrency {
 					r = true
 					money = decimal.NewFromFloat(u.CanEX)
 				}
@@ -142,7 +142,11 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 		case OpenDM:
 			num = 4
 		}
-		FutureOrder, err = c.Future.LimitFuturesOrder(symbol, goex.QUARTER_CONTRACT, price.String(), amount.String(), num)
+		if c.symbol.QuoteCurrency == "USDT" {
+			FutureOrder, err = c.Future.LimitFuturesOrder(symbol, goex.SWAP_CONTRACT, price.String(), amount.String(), num)
+		} else {
+			FutureOrder, err = c.Future.LimitFuturesOrder(symbol, goex.SWAP_USDT_CONTRACT, price.String(), amount.String(), num)
+		}
 		if err == nil {
 			return FutureOrder.OrderID2, FutureOrder.ClientOid, err
 		}

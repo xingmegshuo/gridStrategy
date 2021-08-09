@@ -146,7 +146,7 @@ func TestFutureAccount(t *testing.T) {
 		Symbol: `{"Category":"币安","Symbol":"btcusdt","AmountPrecision":2,
 			"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"cIiIZnQ8L77acyTkSAH6je0rDAZGoFcoHSlMHaWYUNDjJhKNtu0Gb8nR9MjLSaws",
 			"Secret":"dnc7LwiB1Vgy6zDOqwuqodIxL8FwltVlxhfEVLvrgmfozezrW9JvnHStpmB4Lymx","Host":"","MinTotal":"5","MinAmount":"1",
-			"BaseCurrency":"doge","QuoteCurrency":"usdt","future":true}`,
+			"BaseCurrency":"BTC","QuoteCurrency":"USDT","future":true}`,
 		Arg: `{"FirstBuy": 6, "FirstDouble": false, "Price": 0.196562, "IsChange": false, "Rate": 20,
 				"MinBuy": 6, "AddRate": 50, "NeedMoney": 0, "MinPrice": 0, "Callback": 0.2, "Reduce": 0.2, "Stop": 5,
 				"AddMoney": 0, "Decline": 0.5, "Out": false, "OrderType": 0, "IsLimit": false, "LimitHigh": 0, "StrategyType": 1,

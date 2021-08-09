@@ -114,6 +114,7 @@ func AddRun(id interface{}, b interface{}) {
 
 // RunOver 运行完成
 func RunOver(id float64, b float64) {
+	// todo 获取之前盈利加上本次盈利
 	log.Println("修改盈利:", id, "盈利金额:", b)
 	var data = map[string]interface{}{
 		"status": 2,
@@ -207,7 +208,6 @@ func GotMoney(money float64, uId float64) {
 		tx := UserDB                                                                                                                               // 使用事务
 		tx.Raw("select `id`,`profit_min_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", uId).Scan(&u) // 获取用户
 		log.Println(fmt.Sprintf("分红金额:%v----用户id:%v", realMoney, u["id"]))
-		baseLevel := u["level"].(uint8)
 		// 修改盈利
 		ChangeAmount(money, &u, tx, true)
 
@@ -224,9 +224,14 @@ func GotMoney(money float64, uId float64) {
 			Hash:           "000",
 			Remark:         "盈利扣款",
 		}
-		log.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v---vip等级:%v", ownLog.BeforeAmount, ownLog.AfterAmount, baseLevel))
+		log.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v", ownLog.BeforeAmount, ownLog.AfterAmount))
 		ownLog.Write(UserDB)
 		tx.Table("db_customer").Where("id = ? ", uId).Update("meal_amount", ownLog.AfterAmount)
+		if u["level"] == nil {
+			log.Println("获取级别出错----", uId)
+			return
+		}
+		baseLevel := u["level"].(uint8)
 
 		// 合伙人
 

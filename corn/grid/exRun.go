@@ -187,19 +187,19 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             }
             if willbuy {
                 log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
-                // err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
-                // if err != nil {
-                //     log.Printf("买入错误: %d, err: %s", t.base, err)
-                //     time.Sleep(time.Second * 5)
-                //     t.over = true
-                // } else {
-                //     high = price
-                //     low = price
-                //     log.Println("首次买入成功")
-                //     t.last = t.RealGrids[0].Price
-                //     t.base = t.base + 1
-                //     t.Tupdate()
-                // }
+                err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
+                if err != nil {
+                    log.Printf("买入错误: %d, err: %s", t.base, err)
+                    time.Sleep(time.Second * 5)
+                    t.over = true
+                } else {
+                    high = price
+                    low = price
+                    log.Println("首次买入成功")
+                    t.last = t.RealGrids[0].Price
+                    t.base = t.base + 1
+                    t.Tupdate()
+                }
             }
         }
         // 后续买入按照跌幅+回调来下单

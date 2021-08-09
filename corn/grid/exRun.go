@@ -93,11 +93,18 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
                         p, _ := t.CalCulateProfit().Float64()
                         // 盈利ctx
-                        t.u.IsRun = 1
+                        if t.arg.Crile {
+                            t.u.IsRun = 100
+                        } else {
+                            t.u.IsRun = 1
+                        }
                         t.u.BasePrice = p
                         model.RunOver(t.u.Custom, p)
-                        model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
-                            t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+                        if p > 0 {
+                            model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
+                                t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+                        }
+
                         t.u.RealGrids = "***"
                         t.u.Base = 0
                         t.u.Update()

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 	model "zmyjobs/corn/models"
-
-	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -15,16 +13,16 @@ import (
 func TestGetMoney(t *testing.T) {
 	// fmt.Println("testing start .....")
 	huobiSymbol := model.SymbolCategory{
-		Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
-		Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
+		// Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
+		// Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
 
-		// Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
-		// Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
+		Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
+		Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
 
 		// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
 		// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
 		Host:            "api.huobi.de.com",
-		BaseCurrency:    "LTC",
+		BaseCurrency:    "ETH",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 4,
 		PricePrecision:  2,
@@ -59,18 +57,18 @@ func TestGetMoney(t *testing.T) {
 	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 
-	price := decimal.Decimal{}
-	// // 买入
-	amount := decimal.NewFromFloat(0.1297)
-	cliId, orderId, err := ex.Exchanges(amount, price, SellM)
-	fmt.Println(cliId, err, orderId, amount, price)
+	// price := decimal.Decimal{}
+	// // // 买入
+	// amount := decimal.NewFromFloat(0.0135)
+	// cliId, orderId, err := ex.Exchanges(amount, price, SellM)
+	// fmt.Println(cliId, err, orderId, amount, price)
 
 	// // 查找
-	// cliId := "338260919426729"
+	cliId := "338280716011966"
 	// time.Sleep(time.Second * 10)
 
-	// b, c, o := ex.SearchOrder(cliId)
-	// fmt.Println(b, c, o)
+	b, c, o := ex.SearchOrder(cliId)
+	fmt.Println(b, c, o)
 
 	// order, err := ex.Ex.GetOrderHistorys(ex.MakePair())
 	// fmt.Println(order, err)

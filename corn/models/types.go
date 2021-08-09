@@ -15,19 +15,20 @@ var OperateCh = make(chan Operate) // 立即补仓
 
 // SymbolCategory 交易对参数
 type SymbolCategory struct {
-	Category        string // 平台
-	Symbol          string // 交易对
-	AmountPrecision int32  // 精度
-	PricePrecision  int32  // 价格精度
-	Label           string
-	Key             string
-	Secret          string
-	Host            string
-	MinTotal        decimal.Decimal
-	MinAmount       decimal.Decimal
-	BaseCurrency    string
-	QuoteCurrency   string
-	Future          bool
+	Category        string          // 平台
+	Symbol          string          // 交易对
+	AmountPrecision int32           // 精度
+	PricePrecision  int32           // 价格精度
+	Label           string          // label
+	Key             string          // 秘钥
+	Secret          string          // 秘钥
+	Host            string          // 连接
+	MinTotal        decimal.Decimal // 最小交易钱
+	MinAmount       decimal.Decimal // 最小交易数量
+	BaseCurrency    string          // 交易币种
+	QuoteCurrency   string          // 交易基础币种
+	Future          bool            // 现货/期货
+	Lever           float64         // 杠杆倍数
 }
 
 // Args 策略输入参数

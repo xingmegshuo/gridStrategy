@@ -37,7 +37,7 @@ func exitHandle() {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	logs.NoneLog()
+	// logs.NoneLog()
 	logs.Log.Println("what fuck")
 	exitChan = make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt, syscall.SIGTERM)

@@ -30,21 +30,87 @@ const (
 )
 
 type Cliex struct {
-	Ex     goex.API              // 现货
-	Future goex.FutureRestAPI    // 期货
-	symbol *model.SymbolCategory // 交易
+	Ex       goex.API              // 现货
+	Future   goex.FutureRestAPI    // 期货
+	symbol   *model.SymbolCategory // 交易对信息
+	Currency goex.CurrencyPair     // 币种
 }
 
 // OneOrder 交易成功订单
 type OneOrder struct {
-	Amount   float64 // 数量
-	Price    float64 // 价格
-	Fee      float64 // 手续费
-	OrderId  string  // id
-	ClientId string  // 自定义id
-	Type     string  // 类型
-	Slide    string  // 买入还是卖出
-	Cash     float64 // 现金
+	Amount   float64          // 数量
+	Price    float64          // 价格
+	Fee      float64          // 手续费
+	OrderId  string           // id
+	ClientId string           // 自定义id
+	Type     string           // 类型
+	Slide    string           // 买入还是卖出
+	Cash     float64          // 现金
+	Status   goex.TradeStatus // 状态
+}
+
+// NewFromOrder 现货订单
+func NewFromOrder(order *goex.Order) *OneOrder {
+	return &OneOrder{
+		Amount:   order.DealAmount,
+		Fee:      order.Fee,
+		Price:    order.AvgPrice,
+		ClientId: order.Cid,
+		OrderId:  order.OrderID2,
+		Type:     order.Type,
+		Slide:    order.Side.String(),
+		Cash:     order.CashAmount,
+		Status:   order.Status,
+	}
+}
+
+// 期货类型转换
+func FutureTypeString(b interface{}, t bool) (r interface{}) {
+	// 类型转数字
+	if t {
+		switch b.(string) {
+		case OpenDL:
+			r = 1
+		case OpenDM:
+			r = 3
+		case OpenLL:
+			r = 2
+		case OpenLM:
+			r = 4
+		}
+	} else {
+		switch b.(int) {
+		case 1:
+			r = "开多"
+		case 2:
+			r = "开空"
+		case 3:
+			r = "平多"
+		case 4:
+			r = "平空"
+		}
+	}
+	return
+}
+
+// NewFromFutureOrder 期货订单
+func NewFromFutureOrder(order *goex.FutureOrder) *OneOrder {
+	fmt.Println(fmt.Sprintf("%+v", order))
+	OrdType := "限价"
+	if order.AlgoType == 2 {
+		OrdType = "市价"
+	}
+	return &OneOrder{
+		Amount:   order.DealAmount,
+		Fee:      order.Fee,
+		Price:    order.AvgPrice,
+		OrderId:  order.OrderID2,
+		Slide:    FutureTypeString(order.OType, false).(string),
+		Cash:     order.Cash,
+		Status:   order.Status,
+		Type:     OrdType,
+		ClientId: order.ClientOid,
+	}
 }
 
 /*
@@ -57,13 +123,14 @@ type OneOrder struct {
 
 func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
-		Host: symbol.Host, ClientID: symbol.Label}
+		Host: symbol.Host, ClientID: symbol.Label, Lever: symbol.Lever}
 	// fmt.Println(symbol.Future)
 	if symbol.Future {
 		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
 	} else {
 		cli = &Cliex{Ex: util.NewApi(&c), symbol: symbol}
 	}
+	cli.Currency = cli.MakePair()
 	return
 }
 
@@ -76,14 +143,29 @@ func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
  */
 func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decimal) {
 	if c.symbol.Future {
-		acc, err := c.Future.GetFutureUserinfo()
+		var (
+			p   []goex.FuturePosition
+			err error
+			acc *goex.FutureAccount
+		)
+		acc, err = c.Future.GetFutureUserinfo()
 		if err == nil {
+			// fmt.Println(acc)
 			for _, u := range acc.FutureSubAccounts {
 				if u.Currency.String() == c.symbol.QuoteCurrency {
 					r = true
 					money = decimal.NewFromFloat(u.CanEX)
 				}
 			}
+		}
+
+		if c.symbol.QuoteCurrency == "USDT" {
+			p, err = c.Future.GetFuturePosition(c.Currency, goex.SWAP_USDT_CONTRACT)
+		} else {
+			p, err = c.Future.GetFuturePosition(c.Currency, goex.SWAP_CONTRACT)
+		}
+		if err == nil && len(p) > 0 {
+			coin = decimal.NewFromFloat(p[0].BuyAmount)
 		}
 	} else {
 		info, err := c.Ex.GetAccount()
@@ -107,45 +189,48 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 @return 	err 			error					"错误"
 */
 func (c *Cliex) GetPrice() (price decimal.Decimal, err error) {
-	symbol := c.MakePair()
-	// fmt.Println(symbol)
-	b, err := c.Ex.GetTicker(symbol)
+	var b *goex.Ticker
+	if c.symbol.Future {
+		if c.symbol.QuoteCurrency == "USDT" {
+			b, err = c.Future.GetFutureTicker(c.Currency, goex.SWAP_USDT_CONTRACT)
+		} else {
+			b, err = c.Future.GetFutureTicker(c.Currency, goex.SWAP_CONTRACT)
+		}
+	} else {
+		b, err = c.Ex.GetTicker(c.Currency)
+	}
 	if err == nil {
 		price = decimal.NewFromFloat(b.Last)
 	}
 	return
 }
 
-/*
-@title        : Exchanges
-@Desc         : 交易内容
-@auth         : small_ant                   time(2021/08/03 10:28:03)
-@param        : amount,price,name decimal/decimal/string                            `数量/价格/交易类型`
-@return       : clientId,orderId,err string/string/error                            `自定义id/id/错误`
-*/
-func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name string) (string, string, error) {
+/**
+ *@title        : Exchanges
+ *@Desc         : 交易内容
+ *@auth         : small_ant                   time(2021/08/03 10:28:03)
+ *@param        : amount,price,name decimal/decimal/string                            `数量/价格/交易类型`
+ *@return       : clientId,orderId,err string/string/error                            `自定义id/id/错误`
+ */
+func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name string, futureLimit bool) (string, string, error) {
 	var (
 		order *goex.Order
 		err   error
 	)
-	symbol := c.MakePair()
 	if c.symbol.Future {
 		var FutureOrder *goex.FutureOrder
-		num := 1
-		switch name {
-		case OpenDL:
-			num = 1
-		case OpenLL:
-			num = 2
-		case OpenLM:
-			num = 3
-		case OpenDM:
-			num = 4
-		}
 		if c.symbol.QuoteCurrency == "USDT" {
-			FutureOrder, err = c.Future.LimitFuturesOrder(symbol, goex.SWAP_CONTRACT, price.String(), amount.String(), num)
+			if futureLimit {
+				FutureOrder, err = c.Future.LimitFuturesOrder(c.Currency, goex.SWAP_USDT_CONTRACT, price.String(), amount.String(), FutureTypeString(name, true).(int))
+			} else {
+				FutureOrder, err = c.Future.MarketFuturesOrder(c.Currency, goex.SWAP_USDT_CONTRACT, amount.String(), FutureTypeString(name, true).(int))
+			}
 		} else {
-			FutureOrder, err = c.Future.LimitFuturesOrder(symbol, goex.SWAP_USDT_CONTRACT, price.String(), amount.String(), num)
+			if futureLimit {
+				FutureOrder, err = c.Future.LimitFuturesOrder(c.Currency, goex.SWAP_CONTRACT, price.String(), amount.String(), FutureTypeString(name, true).(int))
+			} else {
+				FutureOrder, err = c.Future.MarketFuturesOrder(c.Currency, goex.SWAP_CONTRACT, amount.String(), FutureTypeString(name, true).(int))
+			}
 		}
 		if err == nil {
 			return FutureOrder.OrderID2, FutureOrder.ClientOid, err
@@ -153,13 +238,13 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 	} else {
 		switch name {
 		case BuyL:
-			order, err = c.Ex.LimitBuy(amount.String(), price.String(), symbol)
+			order, err = c.Ex.LimitBuy(amount.String(), price.String(), c.Currency)
 		case SellL:
-			order, err = c.Ex.LimitSell(amount.String(), price.String(), symbol)
+			order, err = c.Ex.LimitSell(amount.String(), price.String(), c.Currency)
 		case BuyM:
-			order, err = c.Ex.MarketBuy(amount.String(), price.String(), symbol)
+			order, err = c.Ex.MarketBuy(amount.String(), price.String(), c.Currency)
 		case SellM:
-			order, err = c.Ex.MarketSell(amount.String(), price.String(), symbol)
+			order, err = c.Ex.MarketSell(amount.String(), price.String(), c.Currency)
 		}
 		if err == nil {
 			return order.Cid, order.OrderID2, err
@@ -179,33 +264,27 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 @return       : b/status/order  bool/bool/*OneOrder         `是否查找到订单/订单是否结束/订单结束返回的需要数据`
 */
 func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
-	order, err := c.Ex.GetOneOrder(orderId, c.MakePair())
 	var (
-		o OneOrder
+		o *OneOrder
 		// b goex.TradeStatus
+		err    error
+		order  *goex.Order
+		FOrder *goex.FutureOrder
 	)
-	// b = 2
+	if c.symbol.Future {
+		if FOrder, err = c.Future.GetFutureOrder(orderId, c.Currency, goex.SWAP_USDT_CONTRACT); FOrder != nil {
+			o = NewFromFutureOrder(FOrder)
+		}
+	} else {
+		if order, err = c.Ex.GetOneOrder(orderId, c.Currency); order != nil {
+			o = NewFromOrder(order)
+		}
+	}
 	if err == nil {
-		if order.Status == 2 {
-			o.Amount = order.DealAmount
-			o.Fee = order.Fee
-			o.Price = order.AvgPrice
-			o.ClientId = order.Cid
-			o.OrderId = order.OrderID2
-			o.Type = order.Type
-			o.Slide = order.Side.String()
-			o.Cash = order.CashAmount
-			return true, true, &o
+		if o.Status == 2 {
+			return true, true, o
 		} else {
-			o.Amount = order.DealAmount
-			o.Fee = order.Fee
-			o.Price = order.AvgPrice
-			o.ClientId = order.Cid
-			o.OrderId = order.OrderID2
-			o.Type = order.Type
-			o.Slide = order.Side.String2()
-			o.Cash = order.CashAmount
-			return true, false, &o
+			return true, false, o
 		}
 	} else {
 		return false, false, nil
@@ -220,7 +299,19 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 @return       : b  bool                          `撤单成功或失败`
 */
 func (c *Cliex) CancelOrder(orderId string) bool {
-	b, err := c.Ex.CancelOrder(orderId, c.MakePair())
+	var (
+		b   bool
+		err error
+	)
+	if c.symbol.Future {
+		if c.symbol.QuoteCurrency == "USDT" {
+			b, err = c.Future.FutureCancelOrder(c.Currency, goex.SWAP_USDT_CONTRACT, orderId)
+		} else {
+			b, err = c.Future.FutureCancelOrder(c.Currency, goex.SWAP_CONTRACT, orderId)
+		}
+	} else {
+		b, err = c.Ex.CancelOrder(orderId, c.Currency)
+	}
 	if b && err == nil {
 		return true
 	}
@@ -240,6 +331,9 @@ func (c *Cliex) CancelOrder(orderId string) bool {
 @return       : symbol  goex.CurrencyPair     `交易对信息`
 */
 func (c *Cliex) MakePair() goex.CurrencyPair {
+	if c.symbol.Future {
+		return goex.NewCurrencyPair2(c.symbol.Symbol)
+	}
 	return goex.CurrencyPair{
 		CurrencyA:      MakeCurrency(util.UpString(c.symbol.BaseCurrency)),
 		CurrencyB:      MakeCurrency(util.UpString(c.symbol.QuoteCurrency)),

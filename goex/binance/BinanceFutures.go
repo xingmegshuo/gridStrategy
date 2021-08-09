@@ -29,6 +29,7 @@ type AccountResponse struct {
 		MarginBalance    float64 `json:"marginBalance,string"`
 		UnrealizedProfit float64 `json:"unrealizedProfit,string"`
 		MaintMargin      float64 `json:"maintMargin,string"`
+		AvailableBalance float64 `json:"availableBalance,string"`
 	} `json:"assets"`
 }
 
@@ -71,13 +72,13 @@ type SymbolInfo struct {
 	PricePrecision int    `json:"pricePrecision"`
 }
 
-// 币本位合约
 type BinanceFutures struct {
 	base         *Binance
 	apikey       string
 	exchangeInfo *struct {
 		Symbols []SymbolInfo `json:"symbols"`
 	}
+	Level int
 }
 
 func NewBinanceFutures(config *APIConfig) *BinanceFutures {
@@ -92,11 +93,12 @@ func NewBinanceFutures(config *APIConfig) *BinanceFutures {
 	bs := &BinanceFutures{
 		apikey: config.ApiKey,
 		base:   NewWithConfig(config),
+		Level:  int(config.Lever),
 	}
 
 	bs.base.apiV1 = config.Endpoint + "/dapi/v1/"
 
-	go bs.GetExchangeInfo()
+	// go bs.GetExchangeInfo()
 
 	return bs
 }
@@ -267,6 +269,7 @@ func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*Futu
 			ProfitReal:    0,
 			ProfitUnreal:  asset.UnrealizedProfit,
 			RiskRate:      0,
+			CanEX:         asset.AvailableBalance,
 		}
 	}
 
@@ -382,11 +385,13 @@ func (bs *BinanceFutures) FutureCancelOrder(currencyPair CurrencyPair, contractT
 }
 
 func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
-	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
-	if err != nil {
-		return nil, err
-	}
+	// symbol, err := bs.adaptToSymbol(currencyPair, contractType)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
+	symbol := currencyPair.ToSymbol("_")
+	// fmt.Println(symbol)
 	params := url.Values{}
 	bs.base.buildParamsSigned(&params)
 	path := bs.base.apiV1 + "positionRisk?" + params.Encode()
@@ -396,7 +401,7 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 		return nil, err
 	}
 	// logger.Debug(string(respBody))
-
+	// fmt.Println(fmt.Sprintf("%+v", string(respBody)))
 	var (
 		positionRiskResponse []PositionRiskResponse
 		positions            []FuturePosition
@@ -412,7 +417,6 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 		if info.Symbol != symbol {
 			continue
 		}
-
 		p := FuturePosition{
 			LeverRate:      info.Leverage,
 			Symbol:         currencyPair,
@@ -437,7 +441,7 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 			p.SellProfitReal = info.UnRealizedProfit
 			positions = append(positions, p)
 		}
-
+		// fmt.Println(fmt.Sprintf("%+v", p))
 	}
 
 	return positions, nil

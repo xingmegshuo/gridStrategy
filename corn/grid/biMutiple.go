@@ -38,8 +38,22 @@ func (t *ExTrader) SetupBeMutiple(price decimal.Decimal, reduce float64, rate fl
 				log.Printf("一单一单卖出, grid number: %d, err: %s", g.Id, err)
 				time.Sleep(time.Second * 5)
 				return err
+			} else {
+				t.base = t.base - 1
+				t.Tupdate()
+				continue
 			}
 		}
 	}
+
 	return nil
+}
+
+func (t *ExTrader) HaveOver() bool {
+	for _, v := range t.RealGrids {
+		if v.AmountSell.Cmp(decimal.Decimal{}) == 1 {
+			return false
+		}
+	}
+	return true
 }

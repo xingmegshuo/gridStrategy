@@ -48,10 +48,8 @@ func RunWG() {
 			}
 			// 循环策略进入
 			if model.UpdateStatus(u.ID) == int64(100) && u.Status == 2 {
-				log.Println("重新开始", u.ObjectId)
-				u.IsRun = 100
-				u.RealGrids = ""
-				u.Total = ""
+				log.Println("等待重新开始", u.ObjectId)
+				u.IsRun = 99
 				u.Base = 0
 				u.RunCount++
 				u.Update()
@@ -61,6 +59,7 @@ func RunWG() {
 				u = model.UpdateUser(u)
 				u.Update()
 				runtime.Goexit()
+				log.Println("重新开始", u.ObjectId)
 			}
 			break OuterLoop
 		}

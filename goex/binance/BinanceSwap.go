@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"zmyjobs/goex"
 	. "zmyjobs/goex"
 )
 
@@ -256,6 +255,7 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	if err != nil {
 		return nil, err
 	}
+	// fmt.Println(acc)
 	// var acc = &FutureAccount{}
 	// acc.FutureSubAccounts = map[Currency]FutureSubAccount{}
 
@@ -266,15 +266,14 @@ func (bs *BinanceSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureA
 	if err != nil {
 		return nil, err
 	}
-
 	if _, isok := respmap["code"]; isok == true {
 		return nil, errors.New(respmap["msg"].(string))
 	}
-
 	balances := respmap["assets"].([]interface{})
 	for _, v := range balances {
 		vv := v.(map[string]interface{})
 		if ToFloat64(vv["marginBalance"]) > 0 {
+			// fmt.Println(vv)
 			currency := NewCurrency(vv["asset"].(string), "").AdaptBccToBch()
 			acc.FutureSubAccounts[currency] = FutureSubAccount{
 				Currency:      currency,
@@ -333,14 +332,14 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 			ContractName: contractType,
 		}, err
 	}
-
 	if contractType != SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
 
+	clientOid := GenerateOrderClientId(32)
 	fOrder := &FutureOrder{
 		Currency:     currencyPair,
-		ClientOid:    GenerateOrderClientId(32),
+		ClientOid:    clientOid,
 		Price:        ToFloat64(price),
 		Amount:       ToFloat64(amount),
 		OrderType:    openType,
@@ -354,7 +353,11 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	params.Set("symbol", pair.ToSymbol(""))
 	params.Set("quantity", amount)
 	params.Set("newClientOrderId", fOrder.ClientOid)
-
+	if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
+		params.Set("positionSide", p[0].ContractType)
+	} else {
+		return nil, err
+	}
 	switch openType {
 	case OPEN_BUY, CLOSE_SELL:
 		params.Set("side", "BUY")
@@ -368,7 +371,7 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	} else {
 		params.Set("type", "MARKET")
 	}
-
+	// fmt.Println(params)
 	bs.buildParamsSigned(&params)
 	resp, err := HttpPostForm2(bs.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bs.accessKey})
@@ -392,11 +395,11 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 }
 
 func (bs *BinanceSwap) LimitFuturesOrder(currencyPair CurrencyPair, contractType, price, amount string, openType int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
-	return bs.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, 0, 10)
+	return bs.PlaceFutureOrder2(currencyPair, contractType, price, amount, openType, 0, float64(bs.f.Level))
 }
 
 func (bs *BinanceSwap) MarketFuturesOrder(currencyPair CurrencyPair, contractType, amount string, openType int) (*FutureOrder, error) {
-	return bs.PlaceFutureOrder2(currencyPair, contractType, "0", amount, openType, 1, 10)
+	return bs.PlaceFutureOrder2(currencyPair, contractType, "0", amount, openType, 1, float64(bs.f.Level))
 }
 
 func (bs *BinanceSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType, orderId string) (bool, error) {
@@ -437,10 +440,6 @@ func (bs *BinanceSwap) FutureCancelOrder(currencyPair CurrencyPair, contractType
 }
 
 func (bs *BinanceSwap) FutureCancelAllOrders(currencyPair CurrencyPair, contractType string) (bool, error) {
-	if contractType == SWAP_CONTRACT {
-		return false, errors.New("not support")
-	}
-
 	if contractType == SWAP_CONTRACT {
 		return false, errors.New("not support")
 	}
@@ -515,15 +514,15 @@ func (bs *BinanceSwap) FutureCancelOrders(currencyPair CurrencyPair, contractTyp
 
 func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
 	if contractType == SWAP_CONTRACT {
-		return bs.f.GetFuturePosition(currencyPair.AdaptUsdtToUsd(), contractType)
+		return bs.f.GetFuturePosition(currencyPair, contractType)
 	}
 
 	// if contractType != SWAP_USDT_CONTRACT {
 	// 	return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	// }
 
-	currencyPair1 := bs.adaptCurrencyPair(currencyPair)
-
+	// currencyPair1 := bs.adaptCurrencyPair(currencyPair)
+	// fmt.Println(currencyPair1)
 	params := url.Values{}
 	bs.buildParamsSigned(&params)
 	path := bs.apiV1 + "positionRisk?" + params.Encode()
@@ -533,10 +532,11 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 	if err != nil {
 		return nil, err
 	}
-	thisSybol := currencyPair1.ToSymbol("")
-	if contractType == goex.QUARTER_CONTRACT {
-		thisSybol = currencyPair1.ToSymbol("_")
-	}
+	thisSybol := currencyPair.ToSymbol("")
+	// if contractType == goex.QUARTER_CONTRACT {
+	// 	thisSybol = currencyPair.ToSymbol("_")
+	// }
+	// fmt.Println(thisSybol)
 	var positions []FuturePosition
 	for _, info := range result {
 		cont := info.(map[string]interface{})
@@ -631,7 +631,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	path := bs.apiV1 + "allOrders?" + params.Encode()
 
 	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
-
+	// fmt.Println(result)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +639,6 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	order := &FutureOrder{}
 	ordId, _ := strconv.Atoi(orderId)
 	for _, info := range result {
-
 		_ord := info.(map[string]interface{})
 		if _ord["symbol"].(string) != currencyPair1.ToSymbol("") {
 			continue
@@ -663,11 +662,12 @@ func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
 	order.DealAmount = ToFloat64(rsp["executedQty"])
 	order.AvgPrice = ToFloat64(rsp["avgPrice"])
 	order.OrderTime = ToInt64(rsp["time"])
-
+	order.Cash = ToFloat64(rsp["cumQuote"])
 	status := rsp["status"].(string)
 	order.Status = bs.parseOrderStatus(status)
 	order.OrderID = ToInt64(rsp["orderId"])
 	order.OrderID2 = strconv.Itoa(int(order.OrderID))
+	order.ClientOid = rsp["clientOrderId"].(string)
 	order.OType = OPEN_BUY
 	if rsp["side"].(string) == "SELL" {
 		order.OType = OPEN_SELL

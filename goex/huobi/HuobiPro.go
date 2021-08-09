@@ -243,16 +243,20 @@ func (hbpro *HuoBiPro) placeOrder(amount, price string, pair CurrencyPair, order
 	case "buy-limit", "sell-limit":
 		params.Set("price", price)
 	}
-	hbpro.buildPostForm("POST", path, &params)
+	// params.Set("price", price)
 
+	hbpro.buildPostForm("POST", path, &params)
+	// fmt.Println(params)
 	resp, err := HttpPostForm3(hbpro.httpClient, hbpro.baseUrl+path+"?"+params.Encode(), hbpro.toJson(params),
 		map[string]string{"Content-Type": "application/json", "Accept-Language": "zh-cn"})
 	if err != nil {
+		// fmt.Println(err)
 		return "", err
 	}
-
 	respmap := make(map[string]interface{})
 	err = json.Unmarshal(resp, &respmap)
+	// fmt.Println(respmap, err)
+
 	if err != nil {
 		return "", err
 	}

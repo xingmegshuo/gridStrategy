@@ -1,6 +1,9 @@
 package goex
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 type Currency struct {
 	Symbol string
@@ -65,7 +68,7 @@ var (
 	CRV     = Currency{"CRV", ""}
 	ALGO    = Currency{"ALGO", ""}
 	DOGE    = Currency{"DOGE", ""}
-	
+
 	//currency pair
 	BTC_KRW = CurrencyPair{CurrencyA: BTC, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 1}
 	ETH_KRW = CurrencyPair{CurrencyA: ETH, CurrencyB: KRW, AmountTickSize: 2, PriceTickSize: 2}
@@ -245,6 +248,10 @@ func (pair *CurrencyPair) SetPriceTickSize(tickSize int) CurrencyPair {
 }
 
 func (pair CurrencyPair) ToSymbol(joinChar string) string {
+	// fmt.Println(pair.CurrencyA.Symbol, pair.CurrencyB.Symbol)
+	if _, err := strconv.ParseFloat(pair.CurrencyB.Symbol, 64); err == nil {
+		joinChar = "_"
+	}
 	return strings.Join([]string{pair.CurrencyA.Symbol, pair.CurrencyB.Symbol}, joinChar)
 }
 

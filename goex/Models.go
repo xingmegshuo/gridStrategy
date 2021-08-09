@@ -169,7 +169,8 @@ type FutureOrder struct {
 	LeverRate    float64 //倍数
 	Fee          float64 //手续费
 	ContractName string
-	FinishedTime int64 // finished timestamp
+	FinishedTime int64   // finished timestamp
+	Cash         float64 // 金额
 
 	//策略委托单
 	TriggerPrice float64

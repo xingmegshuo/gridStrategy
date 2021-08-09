@@ -186,8 +186,10 @@ func GetPrice(symbol string) decimal.Decimal {
 	price, err := huobi.GetPriceSymbol(symbol)
 	if err == nil {
 		return price
+	} else {
+		log.Println(err)
 	}
-	return decimal.NewFromFloat(0)
+	return decimal.NewFromFloat(1)
 }
 
 func ToStringJson(v interface{}) string {

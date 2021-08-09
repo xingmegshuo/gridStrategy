@@ -22,11 +22,12 @@ import (
 )
 
 type Config struct {
-    Name     string //平台名称
-    Host     string // url
-    APIKey   string // 秘钥
-    Secreet  string // 秘钥
-    ClientID string // 连接id
+    Name     string  //平台名称
+    Host     string  // url
+    APIKey   string  // 秘钥
+    Secreet  string  // 秘钥
+    ClientID string  // 连接id
+    Lever    float64 // 期货杠杆倍数
 }
 
 /**
@@ -50,9 +51,9 @@ func NewApi(c *Config) (cli goex.API) {
 }
 
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
-    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-    //     ClientID(c.ClientID).HttpTimeout(time.Second * 60)
-    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
+    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+        ClientID(c.ClientID).HttpTimeout(time.Second * 60)
+    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api

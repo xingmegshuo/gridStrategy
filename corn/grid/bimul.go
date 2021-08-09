@@ -37,6 +37,8 @@ func (t *ExTrader) setupBi(win float64, reduce float64, price decimal.Decimal) e
 			log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)
 			time.Sleep(time.Second * 5)
 			return err
+		} else {
+			t.over = true
 		}
 	}
 	return nil

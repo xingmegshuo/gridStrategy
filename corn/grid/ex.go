@@ -58,7 +58,7 @@ type OneOrder struct {
 func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
 		Host: symbol.Host, ClientID: symbol.Label}
-	fmt.Println(symbol.Future)
+	// fmt.Println(symbol.Future)
 	if symbol.Future {
 		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
 	} else {

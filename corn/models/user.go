@@ -126,6 +126,7 @@ func NewUser() {
 					}
 				}
 				// 更新策略参数
+				log.Printf("%+v 用户配置", parseInput(order))
 				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
 					log.Println("更新用户策略配置:", u.ObjectId)
 					u.Strategy = parseInput(order)

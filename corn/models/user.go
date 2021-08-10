@@ -127,7 +127,7 @@ func NewUser() {
 					}
 				}
 				// 更新策略参数
-				log.Printf("停止买入: %v,补仓：%v", order["stop_buy"], order["one_buy"])
+				log.Printf("停止买入: %v,补仓：%v,用户：%v", order["stop_buy"], order["one_buy"], u.ObjectId)
 				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
 					u.Strategy = parseInput(order)
 					log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)

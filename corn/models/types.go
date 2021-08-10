@@ -11,7 +11,7 @@ type Operate struct {
 	Op int // 1 全部卖出 2 立即补仓 3. 停止买入 4. 恢复买入
 }
 
-var OperateCh = make(chan Operate) // 立即补仓
+var OperateCh = make(chan Operate) // 操作管道
 
 // SymbolCategory 交易对参数
 type SymbolCategory struct {
@@ -70,13 +70,7 @@ type Grid struct {
 	Order      uint64          // 订单id
 }
 
-// 合约
-type Future struct {
-	// TODO : 合约类型
-}
-
 var (
-	a = goex.SWAP_CONTRACT // 永续合约
-	b = goex.SWAP_USDT     // u本位
-	c = goex.SWAP_USDT_CONTRACT
+	a = goex.SWAP_CONTRACT      // 币本位合约
+	c = goex.SWAP_USDT_CONTRACT // u 本位合约
 )

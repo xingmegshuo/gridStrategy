@@ -131,6 +131,7 @@ func NewUser() {
 					u.Strategy = parseInput(order)
 					if order["stop_buy"].(float64) == 1 {
 						if u.IsRun == 10 && order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
+							log.Println("发送恢复买入", u.ObjectId)
 							OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
 						}
 					}

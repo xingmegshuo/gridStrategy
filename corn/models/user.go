@@ -58,7 +58,7 @@ type User struct {
 func NewUser() {
 	orders := StringMap(GetCache("db_task_order"))
 	if GetCache("火币交易对") == "" {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second)
 	}
 	for _, order := range orders {
 		// 符合条件的订单
@@ -129,7 +129,6 @@ func NewUser() {
 				// 更新策略参数
 				if u.Status == 2 {
 					log.Printf("停止买入: %v,补仓：%v,用户：%v", order["stop_buy"], order["one_buy"], u.ObjectId)
-
 					if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
 						u.Strategy = parseInput(order)
 						log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)
@@ -145,8 +144,8 @@ func NewUser() {
 				}
 			}
 		}
-
 	}
+	log.Println("检测用户任务")
 }
 
 // StringMap 字符串转map

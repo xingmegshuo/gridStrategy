@@ -30,10 +30,8 @@ func UserJobRun() {
 // LoadUser 数据库读入缓存
 func LoadUser() {
 	userData()
-	for i := 1; i < 2; i++ {
-		go model.NewUser()
-		go RunWG()
-	}
+	model.NewUser()
+	RunWG()
 }
 
 func userData() {

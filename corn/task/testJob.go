@@ -79,7 +79,7 @@ func xhttpCraw(url string) {
 	client := http.Client{Timeout: 10 * time.Second}
 	// client := proxyHttp()
 	resp, err := client.Get(url)
-	fmt.Println(err)
+	// fmt.Println(err)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)

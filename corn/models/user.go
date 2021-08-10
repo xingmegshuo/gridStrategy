@@ -56,20 +56,19 @@ type User struct {
 
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
+	start := time.Now()
+	var u User
 	orders := StringMap(GetCache("db_task_order"))
 	if GetCache("火币交易对") == "" {
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 	}
 	for _, order := range orders {
-		// 符合条件的订单
-		// if _, Ok := cacheNone[order["id"]]; !Ok {
-		b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
-		if b {
-			var u User
-			// 数据库查找存在与否
-			result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
-			// 条件 数据库未找到，订单启用，创建新的任务
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		result := DB.Where(&User{ObjectId: int32(order["id"].(float64))}).First(&u)
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			// 符合条件的订单
+			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
+			if b {
+				// 数据库查找存在与否
 				log.Println("新建用户:", order["id"])
 				u = User{
 					ObjectId: int32(order["id"].(float64)),
@@ -91,60 +90,56 @@ func NewUser() {
 				}
 				u = UpdateUser(u)
 				DB.Create(&u)
-			} else if result.Error == nil {
-				// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
-				if order["status"].(float64)+1 != u.Status {
-					log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
-					u.Status = order["status"].(float64) + 1
+			}
+		} else if result.Error == nil {
+			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
+			if order["status"].(float64)+1 != u.Status {
+				log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
+				u.Status = order["status"].(float64) + 1
+				u.Update()
+				switch order["status"].(float64) {
+				case 0:
+					// 发送暂停
+					Ch <- JobChan{Id: u.ID, Run: 2}
+				case 3:
+					log.Println("nothing")
+					// Ch <- JobChan{Id: u.ID, Run: 3}
+				case 1:
+					u.Status = 2
+					if u.IsRun == 2 {
+						u.IsRun = -1
+					}
 					u.Update()
-					switch order["status"].(float64) {
-					case 0:
-						// 发送暂停
-						Ch <- JobChan{Id: u.ID, Run: 2}
-					case 3:
-						log.Println("nothing")
-						// Ch <- JobChan{Id: u.ID, Run: 3}
-					case 1:
-						u.Status = 2
-						if u.IsRun == 2 {
-							u.IsRun = -1
-						}
-						u.Update()
-					default:
-					}
-				} else {
-					time.Sleep(time.Second)
-					if u.Status == 2 {
-						if u.IsRun == 2 {
-							u.IsRun = -1
-							u = UpdateUser(u)
-							u.Update()
-							log.Println("从暂停中恢复的用户:", u.ObjectId)
-						}
-						if u.IsRun == -10 {
-							StrategyError(u.ObjectId, u.Error)
-						}
-					}
+				default:
 				}
-				// 执行中的任务更新策略参数
-				if u.Status == 2 && UpdateStatus(u.ID) == 10 {
+			} else if u.Status == 2 {
+
+				if u.IsRun == 2 {
+					u.IsRun = -1
+					u = UpdateUser(u)
+					u.Update()
+					log.Println("从暂停中恢复的用户:", u.ObjectId)
+				}
+				if u.IsRun == -10 {
+					StrategyError(u.ObjectId, u.Error)
+				}
+				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
 					log.Printf("停止买入: %v,补仓：%v,用户：%v", order["stop_buy"], order["one_buy"], u.ObjectId)
-					if u.Strategy != parseInput(order) {
-						u.Strategy = parseInput(order)
-						log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)
-						if order["stop_buy"].(float64) == 1 {
-							if order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
-								log.Println("发送恢复买入", u.ObjectId)
-								OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
-							}
+					u.Strategy = parseInput(order)
+					log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)
+					if order["stop_buy"].(float64) == 1 {
+						if order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
+							log.Println("发送恢复买入", u.ObjectId)
+							OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
 						}
-						u = UpdateUser(u)
-						u.Update()
 					}
+					u = UpdateUser(u)
+					u.Update()
 				}
 			}
 		}
 	}
+	log.Println(time.Since(start), "检查任务花费时间")
 }
 
 // StringMap 字符串转map

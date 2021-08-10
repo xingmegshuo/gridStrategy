@@ -26,7 +26,6 @@ func UserJobRun() {
 	userData()
 	log.Println(time.Since(start), "查找数据执行时间")
 	model.NewUser()
-	log.Println(time.Since(start), "检查数据执行时间")
 	go RunWG()
 	log.Println(time.Since(start), "执行时间")
 }

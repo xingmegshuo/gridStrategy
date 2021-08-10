@@ -146,6 +146,7 @@ func xhttpCraw(url string) {
 					data["name"] = name
 					data["coin_name"] = name
 					data["en_name"] = name[:len(name)-5]
+					data["category_id"] = 1
 					tx.Table("db_task_coin").Create(&data)
 				}
 			}

@@ -102,6 +102,7 @@ func NewUser() {
 						// 发送暂停
 						Ch <- JobChan{Id: u.ID, Run: 2}
 					case 3:
+						log.Println("nothing")
 						// Ch <- JobChan{Id: u.ID, Run: 3}
 					case 1:
 						u.Status = 2
@@ -126,12 +127,13 @@ func NewUser() {
 					}
 				}
 				// 更新策略参数
-				log.Printf("%+v 用户配置", parseInput(order))
+				// log.Printf("%+v 用户配置", parseInput(order))
 				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
-					log.Println("更新用户策略配置:", u.ObjectId)
 					u.Strategy = parseInput(order)
+					log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)
+
 					if order["stop_buy"].(float64) == 1 {
-						if u.IsRun == 10 && order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
+						if order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
 							log.Println("发送恢复买入", u.ObjectId)
 							OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
 						}

@@ -29,9 +29,11 @@ func UserJobRun() {
 
 // LoadUser 数据库读入缓存
 func LoadUser() {
+	start := time.Now()
 	userData()
 	model.NewUser()
 	RunWG()
+	log.Println(time.Since(start), "执行时间")
 }
 
 func userData() {

@@ -22,12 +22,9 @@ var db = model.UserDB
 var updateCount sync.Mutex
 
 func UserJobRun() {
-	start := time.Now()
 	userData()
-	log.Println(time.Since(start), "查找数据执行时间")
 	model.NewUser()
 	go RunWG()
-	log.Println(time.Since(start), "执行时间")
 }
 
 // // LoadUser 数据库读入缓存

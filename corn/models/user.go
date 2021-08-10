@@ -55,7 +55,6 @@ type User struct {
 
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
-	start := time.Now()
 	var u User
 	orders := StringMap(GetCache("db_task_order"))
 	if GetCache("火币交易对") == "" {
@@ -137,7 +136,6 @@ func NewUser() {
 			}
 		}
 	}
-	log.Println(time.Since(start), "检查任务花费时间")
 }
 
 // StringMap 字符串转map

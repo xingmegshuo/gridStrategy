@@ -185,7 +185,7 @@ func AddModelLog(r *RebotLog, m float64) {
 			mes = fmt.Sprintf("当前第%d单卖出,盈利:%f", r.AddNum, r.AddRate) + "%"
 		}
 	}
-	data["remark"] = mes
+	data["remark"] = mes + fmt.Sprintf(",您的交易所账户余额:%v", m)
 	data["jy_coin_id"] = 1
 	data["js_coin_id"] = 1
 	data["coin_name"] = "币币交易"                    // 币种名字
@@ -201,7 +201,7 @@ func AddModelLog(r *RebotLog, m float64) {
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_profit").Create(&data)
 	// data["description"] = "手动策略"                  // 策略类型
-	// data["order_number"] = r.AddNum                            // 当前第几单
+	// data["order_number"] = r.AddNum                  // 当前第几单
 }
 
 // GotMoney 盈利分红

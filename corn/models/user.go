@@ -127,18 +127,21 @@ func NewUser() {
 					}
 				}
 				// 更新策略参数
-				log.Printf("停止买入: %v,补仓：%v,用户：%v", order["stop_buy"], order["one_buy"], u.ObjectId)
-				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
-					u.Strategy = parseInput(order)
-					log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)
-					if order["stop_buy"].(float64) == 1 {
-						if order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
-							log.Println("发送恢复买入", u.ObjectId)
-							OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+				if u.Status == 2 {
+					log.Printf("停止买入: %v,补仓：%v,用户：%v", order["stop_buy"], order["one_buy"], u.ObjectId)
+
+					if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
+						u.Strategy = parseInput(order)
+						log.Println("更新用户策略配置:", u.ObjectId, u.Strategy)
+						if order["stop_buy"].(float64) == 1 {
+							if order["one_sell"].(float64) != 2 && order["one_buy"].(float64) != 2 {
+								log.Println("发送恢复买入", u.ObjectId)
+								OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+							}
 						}
+						u = UpdateUser(u)
+						u.Update()
 					}
-					u = UpdateUser(u)
-					u.Update()
 				}
 			}
 		}

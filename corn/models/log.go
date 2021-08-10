@@ -185,7 +185,7 @@ func AddModelLog(r *RebotLog, m float64) {
 			mes = fmt.Sprintf("当前第%d单卖出,盈利:%f", r.AddNum, r.AddRate) + "%"
 		}
 	}
-	data["remark"] = mes + fmt.Sprintf(",您的交易所账户余额:%v", m)
+	data["remark"] = mes + fmt.Sprintf(",您的交易所账户可交易余额:%v", m)
 	data["jy_coin_id"] = 1
 	data["js_coin_id"] = 1
 	data["coin_name"] = "币币交易"                    // 币种名字

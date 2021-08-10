@@ -10,7 +10,6 @@ package job
 
 import (
 	"encoding/json"
-	"runtime"
 	"sync"
 	"time"
 	model "zmyjobs/corn/models"
@@ -23,18 +22,19 @@ var db = model.UserDB
 var updateCount sync.Mutex
 
 func UserJobRun() {
-	runtime.GOMAXPROCS(2)
-	LoadUser()
-}
-
-// LoadUser 数据库读入缓存
-func LoadUser() {
 	start := time.Now()
 	userData()
+	log.Println(time.Since(start), "查找数据执行时间")
 	model.NewUser()
-	RunWG()
+	log.Println(time.Since(start), "检查数据执行时间")
+	go RunWG()
 	log.Println(time.Since(start), "执行时间")
 }
+
+// // LoadUser 数据库读入缓存
+// func LoadUser() {
+
+// }
 
 func userData() {
 	updateCount.Lock()

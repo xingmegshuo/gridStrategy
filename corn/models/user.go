@@ -145,7 +145,6 @@ func NewUser() {
 			}
 		}
 	}
-	log.Println("检测用户任务")
 }
 
 // StringMap 字符串转map

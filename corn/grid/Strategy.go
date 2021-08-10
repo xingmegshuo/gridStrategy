@@ -130,7 +130,7 @@ func (t *Trader) Trade(ctx context.Context) {
 						// 盈利ctx
 						t.u.IsRun = 1
 						t.u.BasePrice = p
-						model.RunOver(t.u.Custom, t.u.BasePrice)
+						model.RunOver(t.u.Custom, t.u.BasePrice, float64(t.u.ObjectId))
 						model.LogStrategy(t.symbol.Category, t.symbol.QuoteCurrency, t.u.ObjectId,
 							t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
 						t.u.RealGrids = "***"

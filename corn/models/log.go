@@ -113,17 +113,25 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id float64, b float64) {
+func RunOver(id float64, b float64, orderId float64) {
 	// todo 获取之前盈利加上本次盈利
-	log.Println("修改盈利:", id, "盈利金额:", b)
+	old := GetOldAmount(orderId)
+	log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b)
 	var data = map[string]interface{}{
 		"status": 2,
 	}
 	if b > 0 {
-		data["total_profit"] = b
-		GotMoney(b, id)
+		data["total_profit"] = b + old
+		// GotMoney(b, id)
 	}
-	UpdateOrder(id, data)
+	UpdateOrder(orderId, data)
+}
+
+// 获取策略之前盈利
+func GetOldAmount(id float64) (m float64) {
+	UserDB.Raw("select `total_profit` from db_task_order where id = ? ", id).Scan(&m)
+	log.Println("之前盈利", m)
+	return
 }
 
 // OneSell 平仓执行
@@ -198,15 +206,16 @@ func AddModelLog(r *RebotLog, m float64) {
 
 // GotMoney 盈利分红
 func GotMoney(money float64, uId float64) {
+	t := GetAccount(uId)
 	realMoney := money * 0.2 // 分红盈利
-	log.Println("盈利金额:", money, "账户余额:", GetAccount(uId))
-	if money > 0 && GetAccount(uId) > realMoney { // 盈利
+	log.Println("盈利金额:", money, "账户余额:", t)
+	if money > 0 && t > realMoney { // 盈利
 		var (
 			u         = map[string]interface{}{}
 			thisLevel uint8
 		)
-		tx := UserDB                                                                                                                               // 使用事务
-		tx.Raw("select `id`,`profit_min_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", uId).Scan(&u) // 获取用户
+		tx := UserDB                                                                                                                                // 使用事务
+		tx.Raw("select `id`,`profit_mine_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", uId).Scan(&u) // 获取用户
 		log.Println(fmt.Sprintf("分红金额:%v----用户id:%v", realMoney, u["id"]))
 		// 修改盈利
 		ChangeAmount(money, &u, tx, true)
@@ -219,18 +228,14 @@ func GotMoney(money float64, uId float64) {
 			Direction:      1,
 			CoinId:         2,
 			Amount:         realMoney,
-			BeforeAmount:   GetAccount(uId),
-			AfterAmount:    GetAccount(uId) - realMoney,
+			BeforeAmount:   t,
+			AfterAmount:    t - realMoney,
 			Hash:           "000",
 			Remark:         "盈利扣款",
 		}
 		log.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v", ownLog.BeforeAmount, ownLog.AfterAmount))
 		ownLog.Write(UserDB)
 		tx.Table("db_customer").Where("id = ? ", uId).Update("meal_amount", ownLog.AfterAmount)
-		if u["level"] == nil {
-			log.Println("获取级别出错----", uId)
-			return
-		}
 		baseLevel := u["level"].(uint8)
 
 		// 合伙人
@@ -241,14 +246,13 @@ func GotMoney(money float64, uId float64) {
 		levelMoney := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.8))
 		log.Println("级差分红金额:", levelMoney, "合伙人分红:", friends, "平台收入:", realMoney*0.2)
 
-		log.Println("--------------")
 		f := true
 		after := levelMoney
 		for {
 			var myMoney float64
 			if u["inviter_id"].(uint32) > 0 {
 				time.Sleep(time.Second)
-				tx.Raw("select `id`,`team_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
+				tx.Raw("select `id`,`team_amount`,`profit_mine_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
 				// ChangeAmount(money, &u, tx, true)
 				thisLevel = u["level"].(uint8)
 				var thisLog = &AmountLog{
@@ -342,10 +346,11 @@ func GotMoney(money float64, uId float64) {
 
 // ChangeAmount 修改账户业绩
 func ChangeAmount(money float64, u *map[string]interface{}, db *gorm.DB, b bool) {
+	// fmt.Println(*u)
 	var grade = map[string]interface{}{}
 	// 修改业绩
 	if b {
-		grade["profit_min_amount"] = ParseStringFloat((*u)["profit_min_amount"].(string)) + money
+		grade["profit_mine_amount"] = ParseStringFloat((*u)["profit_mine_amount"].(string)) + money
 	}
 	log.Println(fmt.Sprintf("业绩更新:%+v,用户:%v", grade, (*u)["id"]))
 	db.Table("db_customer").Where("id = ?", (*u)["id"]).Updates(&grade)

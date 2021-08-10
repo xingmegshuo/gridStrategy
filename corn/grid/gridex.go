@@ -140,7 +140,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 	log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
 	// 增加一个真实成交
 	if err == nil {
-		t.log(orderId, price, msg, t.base, amount, rate, "买入")
+		t.log(orderId, price, msg, t.base, amount, rate, "已经挂单的买入信息")
 		t.RealGrids = append(t.RealGrids, Grid{
 			Id:      t.base + 1,
 			Decline: rate,

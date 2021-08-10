@@ -61,7 +61,6 @@ func WriteCache(name string, t time.Duration) {
 			for _, v := range Data {
 				db.Raw("select `name` from db_task_coin where `en_name` = ?", v["task_coin_name"]).Scan(&coin)
 				v["task_coin_name"] = coin
-
 			}
 		}
 		byteData, _ := json.Marshal(Data)

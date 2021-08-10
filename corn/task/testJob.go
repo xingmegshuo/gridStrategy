@@ -13,10 +13,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 	model "zmyjobs/corn/models"
+
+	"golang.org/x/net/proxy"
 )
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
@@ -72,22 +76,23 @@ func xhttp(url string, name string) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string) {
-	client := &http.Client{Timeout: 3 * time.Second}
+	client := http.Client{Timeout: 10 * time.Second}
+	// client := proxyHttp()
 	resp, err := client.Get(url)
+	fmt.Println(err)
 	if err == nil {
 		defer resp.Body.Close()
-		tx := model.UserDB.Begin()
 		content, _ := ioutil.ReadAll(resp.Body)
 		var data = make(map[string]interface{})
 		_ = json.Unmarshal(content, &data)
 		byteData, _ := json.Marshal(data["data"])
 		var realData = []map[string]interface{}{}
 		_ = json.Unmarshal(byteData, &realData)
+
 		if !model.CheckCache("coin") {
 			var coin = []map[string]interface{}{}
 			model.UserDB.Raw("select id,en_name from db_coin").Scan(&coin)
 			byteData, _ := json.Marshal(coin)
-
 			model.SetCache("coins", string(byteData), time.Second*60)
 		}
 		coins := model.StringMap(model.GetCache("coins"))
@@ -119,12 +124,14 @@ func xhttpCraw(url string) {
 				}
 			}
 		}
-		tx.Commit()
-		var task_coins = []map[string]interface{}{}
-		model.UserDB.Raw("select name,id from db_task_coin").Scan(&task_coins)
-		for _, d := range task_coins {
-			for _, s := range realData {
-				if s["symbol"].(string) == model.ParseSymbol(d["name"].(string)) {
+
+		tx := model.UserDB.Begin()
+		for _, s := range realData {
+			if name := ToMySymbol(s["symbol"].(string)); name != "none" {
+				// fmt.Println(name)
+				var task_coins = map[string]interface{}{}
+				tx.Raw("select name,id from db_task_coin where name = ?", ToMySymbol(s["symbol"].(string))).Scan(&task_coins)
+				if task_coins["id"] != nil {
 					raf := (s["close"].(float64) - s["open"].(float64)) / s["open"].(float64) * 100
 					base := "+"
 					if raf < 0 {
@@ -132,10 +139,38 @@ func xhttpCraw(url string) {
 					}
 					dayAmount := fmt.Sprintf("%2f", s["amount"].(float64)*s["close"].(float64)*float64(6.5)/100000000)
 					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
-					model.UserDB.Table("db_task_coin").Where("id = ?", d["id"]).Update("price_usd", s["close"].(float64)).
+					tx.Table("db_task_coin").Where("id = ?", task_coins["id"]).Update("price_usd", s["close"].(float64)).
 						Update("price", s["close"].(float64)*6.5).Update("day_amount", dayAmount).Update("raf", base+r+"%")
+				} else {
+					var data = map[string]interface{}{}
+					data["name"] = name
+					data["coin_name"] = name
+					data["en_name"] = name[:len(name)-5]
+					tx.Table("db_task_coin").Create(&data)
 				}
 			}
 		}
+		tx.Commit()
 	}
+}
+
+func proxyHttp() *http.Client {
+	dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1123", nil, proxy.Direct)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+		// os.Exit(1)
+	}
+	// setup a http client
+	httpTransport := &http.Transport{}
+	httpTransport.Dial = dialer.Dial
+	return &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
+}
+
+// 把数据库交易对转换成api交易对
+func ToMySymbol(name string) string {
+	d := len(name) - 4
+	if name[d:] == "usdt" {
+		return strings.ToUpper(name[:d]) + "/" + strings.ToUpper(name[d:])
+	}
+	return "none"
 }

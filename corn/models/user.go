@@ -135,6 +135,9 @@ func NewUser() {
 				}
 			}
 		}
+		if order["id"].(float64) == 61{
+			log.Println(result,u)
+		}
 	}
 }
 

@@ -10,6 +10,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -60,9 +61,10 @@ func NewUser() {
 	if GetCache("火币交易对") == "" {
 		time.Sleep(time.Second)
 	}
+
 	for _, order := range orders {
-		DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
-		if u.ObjectId == 0 {
+		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
+		if u.ObjectId == 0 || errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			// 符合条件的订单
 			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
 			if b {

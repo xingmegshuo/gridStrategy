@@ -9,12 +9,16 @@
 package job
 
 import (
-	"fmt"
-	"testing"
+    "fmt"
+    "testing"
 )
 
 func TestCraw(t *testing.T) {
     fmt.Println("testing start ...")
-    xhttpCraw("https://api.huobi.de.com/market/tickers", 1)
-    // xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
+    // xhttpCraw("https://api.huobi.de.com/market/tickers", 1)
+    xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
+
+    for {
+
+    }
 }

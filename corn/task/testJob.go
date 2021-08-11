@@ -80,7 +80,7 @@ func xhttpCraw(url string, category int) {
 	client := http.Client{Timeout: 10 * time.Second}
 	// client := proxyHttp()
 	resp, err := client.Get(url)
-	fmt.Println(err)
+	// fmt.Println(err)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)
@@ -130,17 +130,22 @@ func xhttpCraw(url string, category int) {
 		if category == 2 {
 			_ = json.Unmarshal(content, &realData)
 		}
-		// fmt.Println(realData)
-		tx := model.UserDB.Begin()
-		for _, s := range realData {
-			if name := ToMySymbol(s["symbol"].(string)); name != "none" {
-				// if name == "BTC/USDT" {
-				// 	fmt.Println(fmt.Sprintf("%+v", s))
-				// }
-				// fmt.Println(name)
-				var task_coins = map[string]interface{}{}
-				tx.Raw("select name,id from db_task_coin where name = ? and category_id = ?", ToMySymbol(s["symbol"].(string)), category).Scan(&task_coins)
-				if task_coins["id"] != nil {
+		go WriteDB(realData, category)
+	}
+}
+
+func WriteDB(realData []map[string]interface{}, category int) {
+	// start := time.Now()
+	var (
+		coins = []map[string]interface{}{}
+	)
+	model.UserDB.Raw("select name,id from db_task_coin where category_id = ?", category).Scan(&coins)
+	for _, s := range realData {
+		// a := time.Now()
+		add := true
+		if name := ToMySymbol(s["symbol"].(string)); name != "none" {
+			for _, coin := range coins {
+				if ToMySymbol(s["symbol"].(string)) == coin["name"].(string) {
 					var (
 						raf       float64
 						dayAmount string
@@ -161,20 +166,28 @@ func xhttpCraw(url string, category int) {
 						base = ""
 					}
 					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
-					tx.Table("db_task_coin").Where("id = ?", task_coins["id"]).Update("price_usd", price).
-						Update("price", price*6.5).Update("day_amount", dayAmount).Update("raf", base+r+"%")
-				} else {
-					var data = map[string]interface{}{}
-					data["name"] = name
-					data["coin_name"] = name
-					data["en_name"] = name[:len(name)-5]
-					data["category_id"] = category
-					tx.Table("db_task_coin").Create(&data)
+					value := map[string]interface{}{
+						"price_usd":  price,
+						"price":      price * 6.5,
+						"day_amount": dayAmount,
+						"raf":        base + r + "%",
+					}
+					model.UserDB.Table("db_task_coin").Where("id = ?", coin["id"]).Updates(&value)
+					add = false
 				}
 			}
+			if add {
+				var data = map[string]interface{}{}
+				data["name"] = name
+				data["coin_name"] = name
+				data["en_name"] = name[:len(name)-5]
+				data["category_id"] = category
+				model.UserDB.Table("db_task_coin").Create(&data)
+			}
 		}
-		tx.Commit()
+		// fmt.Println(time.Since(a))
 	}
+	// fmt.Println(time.Since(start), "结束")
 }
 
 func proxyHttp() *http.Client {

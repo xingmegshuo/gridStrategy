@@ -12,6 +12,8 @@ import (
 // bian Test api mhRYW9GrdeEZ6nNKdZsoGYg4S3DlvrHNxxTqNaP60m3SDz09TwXe5rGDw7YrEVyp secretKey lkUxg31nEBExSprEXX3wRgcGIte30UaYxZmfSW0b31sClkVa0hjrtgCEV5AsxJXB
 // bian my api cIiIZnQ8L77acyTkSAH6je0rDAZGoFcoHSlMHaWYUNDjJhKNtu0Gb8nR9MjLSaws secretKey dnc7LwiB1Vgy6zDOqwuqodIxL8FwltVlxhfEVLvrgmfozezrW9JvnHStpmB4Lymx
 
+// ok my api 61d888b4-bb69-461e-81e9-3987604ab08b FD78BBB9BCEB06DCD27E8CEFF6D51E74
+
 func TestGetMoney(t *testing.T) {
 	// fmt.Println("testing start .....")
 	huobiSymbol := model.SymbolCategory{

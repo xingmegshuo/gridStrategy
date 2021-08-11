@@ -53,9 +53,9 @@ func RunWG() {
 				u.Base = 0
 				u.RunCount++
 				u.Update()
-				model.AddRun(u.ObjectId, u.RunCount)
 				time.Sleep(time.Second * 60)
 				u.IsRun = -1
+				model.AddRun(u.ObjectId, u.RunCount)
 				u = model.UpdateUser(u)
 				u.Update()
 				log.Println("重新开始", u.ObjectId)

@@ -186,11 +186,11 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 		if b, ok := t.SellOrder[clientOrderId]; ok {
 			log.Printf("当前单数:%v,卖出单数:%v", t.base, b)
 			sellMoney := price.Mul(amount).Abs().Sub(fee)
-			t.SellMoney = t.SellMoney.Add(sellMoney)  // 卖出钱
-			t.RealGrids[b-1].AmountSell = t.SellMoney // 修改卖出
+			t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
+			t.RealGrids[b].AmountSell = t.SellMoney  // 修改卖出
 			t.amount = t.CountHold()
 			t.pay = t.CountPay()
-			model.RebotUpdateBy(clientOrderId, price, amount.Abs(), fee, t.RealGrids[b-1].TotalBuy, t.hold, "成功", order.ClientId)
+			model.RebotUpdateBy(clientOrderId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId)
 			if b == 0 {
 				t.over = true
 				model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)

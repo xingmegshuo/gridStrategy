@@ -56,13 +56,13 @@ type User struct {
 
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
-	var u User
 	orders := StringMap(GetCache("db_task_order"))
 	if GetCache("火币交易对") == "" {
 		time.Sleep(time.Second)
 	}
 
 	for _, order := range orders {
+		var u User
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
 		if u.ObjectId == 0 || errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			// 符合条件的订单
@@ -134,9 +134,6 @@ func NewUser() {
 					}
 				}
 			}
-		}
-		if order["id"].(float64) == 61{
-			log.Println(result,u)
 		}
 	}
 }

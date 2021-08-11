@@ -125,10 +125,10 @@ func NewUser() {
 					u.Strategy = parseInput(order)
 					if old.StopBuy {
 						log.Println("发送恢复买入", u.ObjectId)
+						// log.Println("更新用户策略配置:", u.ObjectId)
+						// u = UpdateUser(u)
+						// u.Update()
 						OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
-						log.Println("更新用户策略配置:", u.ObjectId)
-						u = UpdateUser(u)
-						u.Update()
 					}
 				}
 			}

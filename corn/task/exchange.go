@@ -58,8 +58,8 @@ func RunWG() {
 				u.IsRun = -1
 				u = model.UpdateUser(u)
 				u.Update()
-				runtime.Goexit()
 				log.Println("重新开始", u.ObjectId)
+				runtime.Goexit()
 			}
 			break OuterLoop
 		}

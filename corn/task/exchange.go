@@ -47,7 +47,7 @@ func RunWG() {
 				}
 			}
 			// 循环策略进入
-			if model.UpdateStatus(u.ID) == int64(100) && u.Status == 2 {
+			if model.UpdateStatus(u.ID) == int64(100) && u.Status == 3 {
 				log.Println("等待重新开始", u.ObjectId)
 				u.IsRun = 99
 				u.Base = 0

@@ -231,7 +231,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             if t.arg.AllSell {
                 log.Printf("%v用户智乘方清仓", t.u.ObjectId)
                 t.AllSellMy()
-                err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, len(t.RealGrids)-1)
+                err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
                 if err != nil {
                     time.Sleep(time.Second * 5)
                     t.ErrString = err.Error()
@@ -255,7 +255,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 t.AllSellMy()
                 for {
                     for _, g := range t.RealGrids {
-                        err := t.WaitSell(price, t.SellCount(g.AmountBuy), win*100, g.Id)
+                        err := t.WaitSell(price, t.SellCount(g.AmountBuy), win*100, g.Id-1)
                         if err != nil {
                             time.Sleep(time.Second * 5)
                             t.ErrString = err.Error()

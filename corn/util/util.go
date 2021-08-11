@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+// Config 创建client需要的配置Struct
 type Config struct {
     Name     string  //平台名称
     Host     string  // url
@@ -31,12 +32,14 @@ type Config struct {
 }
 
 /**
- * @desc NewApi 现货api  目前火币
- * @param *config 配置信息
+ *@title        : NewApi
+ *@desc         : 新建现货货cli
+ *@auth         : small_ant / time(2021/08/11 10:05:44)
+ *@param        : c   / *Config            / `配置文件`
+ *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
  */
 func NewApi(c *Config) (cli goex.API) {
     api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
-
     // 本地使用代理
     // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
     // fmt.Println(fmt.Sprintf("%+v", api), api.GetHttpClient())
@@ -44,12 +47,21 @@ func NewApi(c *Config) (cli goex.API) {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.Build(goex.BINANCE) //创建现货api实例
+    case "ok":
+        cli = api.Build(goex.OKEX)
     default:
         cli = api.Build(goex.HUOBI_PRO) //创建现货api实例
     }
     return
 }
 
+/**
+ *@title        : NewFutrueApi
+ *@desc         : 新建期货cli
+ *@auth         : small_ant / time(2021/08/11 10:05:44)
+ *@param        : c   / *Config            / `配置文件`
+ *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
+ */
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
     api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
         ClientID(c.ClientID).HttpTimeout(time.Second * 60)
@@ -58,6 +70,8 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.BuildFuture(goex.BINANCE_SWAP)
+    case "ok":
+        cli = api.BuildFuture(goex.OKEX_SWAP)
     default:
         // 火币没有期货api
         cli = api.BuildFuture(goex.HUOBI)
@@ -81,13 +95,13 @@ func ProxySock() *builder.APIBuilder {
     return cli
 }
 
-/*
-@title        : UpString
-@desc         : 字符串大写
-@auth         : small_ant                   time(2021/08/04 11:52:33)
-@param        : b string                           ``
-@return       : b string                            ``
-*/
+/**
+ *@title        : UpString
+ *@desc         : 字符串大写
+ *@auth         : small_ant  / time(2021/08/11 10:03:50)
+ *@param        : b / string / `传入字符串`
+ *@return       : b / string / `大写字符串`
+ */
 func UpString(s string) string {
     return strings.ToUpper(s)
 }

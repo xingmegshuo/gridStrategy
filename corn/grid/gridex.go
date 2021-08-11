@@ -165,8 +165,8 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (str
 	log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
 	// 增加一个真实成交
 	if err == nil {
-		t.RealGrids[n-1].Decline = rate
-		t.log(orderId, price, msg, t.base, amount, rate, "卖出")
+		t.RealGrids[n].Decline = rate
+		t.log(orderId, price, msg, n, amount, rate, "卖出")
 		g := map[string]int{orderId: n}
 		t.SellOrder = g
 	}
@@ -191,7 +191,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 			t.amount = t.CountHold()
 			t.pay = t.CountPay()
 			model.RebotUpdateBy(clientOrderId, price, amount.Abs(), fee, t.RealGrids[b-1].TotalBuy, t.hold, "成功", order.ClientId)
-			if b == t.base {
+			if b == 0 {
 				t.over = true
 				model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
 			} else {

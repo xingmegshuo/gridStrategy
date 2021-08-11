@@ -24,6 +24,13 @@ import (
 var exitChan chan os.Signal
 var l sync.Mutex
 
+/**
+ *@title        : exitHandle
+ *@desc         : 结束任务前的操作
+ *@auth         : small_ant / time(2021/08/11 10:09:16)
+ *@param        : / / ``
+ *@return       : / / ``
+ */
 func exitHandle() {
 	<-exitChan
 	fmt.Println("接收到信号")
@@ -35,6 +42,13 @@ func exitHandle() {
 	os.Exit(1) //如果ctrl+c 关不掉程序，使用os.Exit强行关掉
 }
 
+/**
+ *@title        : main
+ *@desc         : 主程序
+ *@auth         : small_ant / time(2021/08/11 10:10:04)
+ *@param        : / / ``
+ *@return       : / / ``
+ */
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	// logs.NoneLog()

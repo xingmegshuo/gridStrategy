@@ -6,19 +6,25 @@
 @Desc        : 获取交易所余额持仓信息等接口
 ****************************/
 
+/**
+ * @title        : package xhttp
+ * @desc         : http 服务包
+ * @auth         : small_ant / time(2021/08/11 10:25:04)
+**/
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
+var INFO = "morning"
 
 func Handler(w http.ResponseWriter) http.ResponseWriter {
     w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域
@@ -27,13 +33,29 @@ func Handler(w http.ResponseWriter) http.ResponseWriter {
     return w
 }
 
+/**
+ * @title        : IndexHandler
+ * @desc         : 测试连接访问
+ * @auth         : small_ant / time(2021/08/11 10:22:15)
+ * @param        : / / ``
+ * @return       : hello world / / ``
+**/
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     // fmt.Println("啥也没干")
     fmt.Fprintln(w, "hello world")
 }
 
-// GetPrice 当前价格
+/*
+    语言是历史的档案……语言是诗歌的化石
+     -  爱献生
+
+     @title   : GetPrice
+     @desc    : http : /price 获取交易对价格
+     @auth    : small_ant / time(2021/08/11 10:12:38)
+     @param   : coin_id / string / `币种id`
+     @return  : status,msg,data / string,string,interface{} / `状态,信息介绍,数据`
+**/
 func GetPrice(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
 
@@ -69,7 +91,13 @@ func GetPrice(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, string(b))
 }
 
-// GetAccount 获取用户信息
+/*
+   @title        : GetAccountHandler
+   @desc         : http : /account 获取用户交易所账户明细
+   @auth         : small_ant / time(2021/08/11 10:12:38)
+   @param        : account_id,category / string,string / `用户id,交易所分类`
+   @return       : status,msg,data / string,string,interface{} / `状态,信息介绍,数据`
+**/
 func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
 
@@ -139,6 +167,13 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, string(b))
 }
 
+/**
+ *@title        : RunServer
+ *@desc         : 开启一个http服务端接收请求
+ *@auth         : small_ant / time(2021/08/11 10:10:40)
+ *@param        : / / ``
+ *@return       : / / ``
+ */
 func RunServer() {
     log.Println("服务开启")
 
@@ -150,7 +185,13 @@ func RunServer() {
     // fmt.Println("服务运行")
 }
 
-// SplitString 交易对
+/**
+ *@title        : SplitString
+ *@desc         : 分割交易对
+ *@auth         : small_ant / time(2021/08/11 10:11:12)
+ *@param        : name / string / `交易对`
+ *@return       : base,quote / string,string / `交易币种，基础币种`
+ */
 func SplitString(name string) (base string, quote string) {
     stringSlince := strings.Split(name, "/")
     return stringSlince[0], stringSlince[1]

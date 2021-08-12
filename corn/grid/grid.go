@@ -16,7 +16,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var GridDone = make(chan int) // 停止策略
+var GridDone = make(chan int32) // 停止策略
 
 var log = logs.Log
 

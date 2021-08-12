@@ -247,11 +247,11 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 	log.Println("等待订单交易.......")
 	start := time.Now()
 	for {
-		time.Sleep(time.Second * 9)
+		time.Sleep(time.Second * 10)
 		if t.SearchOrder(orderId, cli) {
 			return true
 		}
-		if time.Since(start) >= time.Second*60 {
+		if time.Since(start) >= time.Second*100 {
 			return false
 		}
 	}

@@ -32,7 +32,8 @@ func RunWG() {
 			case v := <-model.Ch:
 				if v.Run == 2 || v.Run == 3 {
 					if model.UpdateStatus(v.Id) == 10 {
-						grid.GridDone <- 1
+						log.Printf("向用户%v发送暂停信息", u.ObjectId)
+						grid.GridDone <- u.ObjectId
 					}
 					break OuterLoop
 				}
@@ -78,13 +79,15 @@ func RunStrategy(u model.User) {
 OuterLoop:
 	for {
 		select {
-		case <-grid.GridDone:
-			log.Println("收到消息,暂停策略,exiting ......", u.ObjectId)
-			if model.UpdateStatus(u.ID) == 10 {
-				u.IsRun = 2
-				u.Update()
+		case id := <-grid.GridDone:
+			if id == u.ObjectId {
+				log.Println("收到消息,暂停策略,exiting ......", u.ObjectId)
+				if model.UpdateStatus(u.ID) == 10 {
+					u.IsRun = 2
+					u.Update()
+				}
+				break OuterLoop
 			}
-			break OuterLoop
 		default:
 		}
 		// 执行任务不是一次执行

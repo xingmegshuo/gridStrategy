@@ -1,8 +1,8 @@
 package xhttp
 
 import (
-    "fmt"
-    "testing"
+	"fmt"
+	"testing"
 )
 
 func TestGetMoney(t *testing.T) {

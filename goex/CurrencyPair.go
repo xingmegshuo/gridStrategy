@@ -225,6 +225,10 @@ func NewCurrencyPair(currencyA Currency, currencyB Currency) CurrencyPair {
 }
 
 func NewCurrencyPair2(currencyPairSymbol string) CurrencyPair {
+
+	if NewCurrencyPair3(currencyPairSymbol, "_") == UNKNOWN_PAIR {
+		return NewCurrencyPair3(currencyPairSymbol, "/")
+	}
 	return NewCurrencyPair3(currencyPairSymbol, "_")
 }
 
@@ -234,6 +238,7 @@ func NewCurrencyPair3(currencyPairSymbol string, sep string) CurrencyPair {
 		return CurrencyPair{CurrencyA: NewCurrency(currencys[0], ""),
 			CurrencyB: NewCurrency(currencys[1], "")}
 	}
+
 	return UNKNOWN_PAIR
 }
 

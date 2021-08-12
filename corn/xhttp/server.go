@@ -14,16 +14,17 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"strings"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
+    "strings"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
+
 var INFO = "morning"
 
 func Handler(w http.ResponseWriter) http.ResponseWriter {
@@ -44,6 +45,47 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     // fmt.Println("啥也没干")
     fmt.Fprintln(w, "hello world")
+}
+
+/*
+
+
+     @title   :
+     @desc    :
+     @auth    : small_ant / time(2021/08/12 15:35:50)
+     @param   :  / / ``
+     @return  :  / / ``
+**/
+func CheckSymobl(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+    var (
+        res = map[string]interface{}{}
+        // data = map[string]interface{}{}
+    )
+    res["status"] = "error"
+    res["msg"] = "交易对参数无效"
+    if id := r.FormValue("category_id"); id != "" {
+        categoryName := "币安"
+        if id == "5" {
+            categoryName = "ok"
+        }
+        quote := "USDT"
+        if r.FormValue("usdt") == "false" {
+            quote = "BTC"
+        }
+        if name := r.FormValue("name"); name != "" {
+
+            ex := grid.NewEx(&model.SymbolCategory{Symbol: name, Future: true, Category: categoryName, QuoteCurrency: quote})
+            _, err := ex.GetPrice()
+            if err == nil {
+                res["status"] = "success"
+                res["msg"] = "交易对参数有效"
+            }
+            // fmt.Println(err)
+        }
+    }
+    b, _ := json.Marshal(&res)
+    fmt.Fprintln(w, string(b))
 }
 
 /*
@@ -180,6 +222,7 @@ func RunServer() {
     http.HandleFunc("/", IndexHandler)
     http.HandleFunc("/account", GetAccountHandler)
     http.HandleFunc("/price", GetPrice)
+    http.HandleFunc("/symbol", CheckSymobl)
     go http.ListenAndServe(":80", nil)
 
     // fmt.Println("服务运行")

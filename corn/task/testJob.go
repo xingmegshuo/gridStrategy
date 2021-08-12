@@ -53,6 +53,7 @@ func CrawRun() {
 	go xhttp(Hurl+"/v1/common/symbols", "火币交易对")
 	go xhttpCraw(Hurl+"/market/tickers", 1)
 	go xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
+	go xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
 	crawLock.Unlock()
 }
 
@@ -127,9 +128,10 @@ func xhttpCraw(url string, category int) {
 				}
 			}
 		}
-		if category == 2 {
+		if category == 2 || category == 5 {
 			_ = json.Unmarshal(content, &realData)
 		}
+		// fmt.Println(string(content))
 		go WriteDB(realData, category)
 	}
 }
@@ -141,26 +143,42 @@ func WriteDB(realData []map[string]interface{}, category int) {
 	)
 	model.UserDB.Raw("select name,id from db_task_coin where category_id = ?", category).Scan(&coins)
 	for _, s := range realData {
+		// fmt.Println(s)
 		// a := time.Now()
 		add := true
-		if name := ToMySymbol(s["symbol"].(string)); name != "none" {
+		var (
+			symbol string
+		)
+		if category == 5 {
+			symbol = s["instrument_id"].(string)
+		} else {
+			symbol = s["symbol"].(string)
+		}
+		if name := ToMySymbol(symbol); name != "none" {
 			for _, coin := range coins {
-				if ToMySymbol(s["symbol"].(string)) == coin["name"].(string) {
+				if name == coin["name"].(string) {
+					// fmt.Println(s)
 					var (
 						raf       float64
 						dayAmount string
 						price     float64
 					)
 					if category == 1 {
-						raf = (s["close"].(float64) - s["open"].(float64)) / s["open"].(float64) * 100
-						dayAmount = fmt.Sprintf("%2f", s["amount"].(float64)*s["close"].(float64)*float64(6.5)/100000000)
 						price = s["close"].(float64)
+						raf = (price - s["open"].(float64)) / s["open"].(float64) * 100
+						dayAmount = fmt.Sprintf("%.2f", s["amount"].(float64)*price*float64(6.5)/100000000)
 					}
 					if category == 2 {
-						raf = (model.ParseStringFloat(s["lastPrice"].(string)) - model.ParseStringFloat(s["openPrice"].(string))) / model.ParseStringFloat(s["openPrice"].(string)) * 100
-						dayAmount = fmt.Sprintf("%2f", model.ParseStringFloat(s["volume"].(string))*model.ParseStringFloat(s["lastPrice"].(string))*float64(6.5)/100000000)
 						price = model.ParseStringFloat(s["lastPrice"].(string))
+						raf = (price - model.ParseStringFloat(s["openPrice"].(string))) / model.ParseStringFloat(s["openPrice"].(string)) * 100
+						dayAmount = fmt.Sprintf("%.2f", model.ParseStringFloat(s["volume"].(string))*price*float64(6.5)/100000000)
 					}
+					if category == 5 {
+						price = model.ParseStringFloat(s["last"].(string))
+						raf = (price - model.ParseStringFloat(s["open_utc8"].(string))) / model.ParseStringFloat(s["open_utc8"].(string)) * 100
+						dayAmount = fmt.Sprintf("%.2f", model.ParseStringFloat(s["quote_volume_24h"].(string))*6.5/100000000)
+					}
+
 					base := "+"
 					if raf < 0 {
 						base = ""
@@ -172,6 +190,7 @@ func WriteDB(realData []map[string]interface{}, category int) {
 						"day_amount": dayAmount,
 						"raf":        base + r + "%",
 					}
+
 					model.UserDB.Table("db_task_coin").Where("id = ?", coin["id"]).Updates(&value)
 					add = false
 				}
@@ -185,7 +204,7 @@ func WriteDB(realData []map[string]interface{}, category int) {
 				model.UserDB.Table("db_task_coin").Create(&data)
 			}
 		}
-		// fmt.Println(time.Since(a))
+		// // fmt.Println(time.Since(a))
 	}
 	// fmt.Println(time.Since(start), "结束")
 }
@@ -204,7 +223,11 @@ func proxyHttp() *http.Client {
 // 把数据库交易对转换成api交易对
 func ToMySymbol(name string) string {
 	d := len(name) - 4
+	p := len(name) - 5
 	// fmt.Println(name)
+	if name[p:] == "-USDT" {
+		return strings.ToUpper(name[:p]) + "/" + "USDT"
+	}
 	if strings.ToLower(name[d:]) == "usdt" {
 		return strings.ToUpper(name[:d]) + "/" + strings.ToUpper(name[d:])
 	}

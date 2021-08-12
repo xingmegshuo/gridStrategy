@@ -1,13 +1,13 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -99,17 +99,19 @@ func (t *ExTrader) Trade(ctx context.Context) {
                             t.u.IsRun = 1
                         }
                         t.u.BasePrice = p
+                        t.u.RealGrids = "***"
+                        // t.u.Base = 0
+                        t.u.Update()
+                        model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
+                        log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
+
                         model.RunOver(t.u.Custom, p, float64(t.u.ObjectId))
                         if p > 0 {
                             model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
                                 t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
                         }
-
-                        t.u.RealGrids = "***"
-                        t.u.Base = 0
-                        t.u.Update()
-                        model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
-                        GridDone <- t.u.ObjectId
+                        log.Println("任务结束",t.u.ObjectId)
+                        // GridDone <- t.u.ObjectId
                     }
                 }
             }
@@ -381,7 +383,7 @@ func (t *ExTrader) AllSellMy() {
     log.Println("一键平仓：", t.u.ObjectId)
     t.arg.AllSell = false
     t.u.Arg = model.ToStringJson(&t.arg)
-    // t.u.Update()
+    t.u.Update()
     model.OneSell(t.u.ObjectId)
 }
 

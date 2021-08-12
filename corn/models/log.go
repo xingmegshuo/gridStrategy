@@ -175,17 +175,17 @@ func AddModelLog(r *RebotLog, m float64) {
 		if r.AddNum+1 == 1 {
 			mes = fmt.Sprintf("首单买入,开仓---")
 		} else {
-			mes = fmt.Sprintf("当前第%d买入,跌幅:%f", r.AddNum+1, r.AddRate) + "%"
+			mes = fmt.Sprintf("当前第%d买入,跌幅:%.2f", r.AddNum+1, r.AddRate) + "%"
 		}
 	} else {
 		data["type"] = 1
 		if r.AddNum == 0 {
-			mes = fmt.Sprintf("清仓操作----,盈利%f", r.AddRate) + "%"
+			mes = fmt.Sprintf("清仓---,盈利%.2f", r.AddRate) + "%"
 		} else {
-			mes = fmt.Sprintf("当前第%d单卖出,盈利:%f", r.AddNum, r.AddRate) + "%"
+			mes = fmt.Sprintf("当前第%d单卖出,盈利:%.2f", r.AddNum, r.AddRate) + "%"
 		}
 	}
-	data["remark"] = mes + fmt.Sprintf(",您的交易所账户可交易余额:%v", m)
+	data["remark"] = mes + fmt.Sprintf(",您的交易所账户可交易余额:%2f", m)
 	data["jy_coin_id"] = 1
 	data["js_coin_id"] = 1
 	data["coin_name"] = "币币交易"                    // 币种名字

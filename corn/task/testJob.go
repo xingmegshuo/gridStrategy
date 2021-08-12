@@ -222,8 +222,17 @@ func proxyHttp() *http.Client {
 
 // 把数据库交易对转换成api交易对
 func ToMySymbol(name string) string {
-	d := len(name) - 4
-	p := len(name) - 5
+	var (
+		d int
+		p int
+	)
+	if len(name) > 4 {
+		d = len(name) - 4
+	}
+
+	if len(name) > 5 {
+		p = len(name) - 5
+	}
 	// fmt.Println(name)
 	if name[p:] == "-USDT" {
 		return strings.ToUpper(name[:p]) + "/" + "USDT"

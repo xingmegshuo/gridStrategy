@@ -128,7 +128,15 @@ func (t *ExTrader) CountNeed() (moneyNeed decimal.Decimal) {
 	return
 }
 
-// 买入
+/*
+
+
+	 @title   : buy
+	 @desc    : 买入操作
+	 @auth    : small_ant / time(2021/08/12 10:06:40)
+	 @param   : price,amount,rate / decimal,decimal,float64 / `价格,数量,跌幅`
+	 @return  :  / string,string,err / `orderid，clientid，错误`
+**/
 func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, string, error) {
 	orderType := BuyL
 	msg := "限价买入"

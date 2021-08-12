@@ -119,6 +119,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 
 // setupGridOrders 测试
 func (t *ExTrader) setupGridOrders(ctx context.Context) {
+    errorCount := 0
     count := 0
     t.GetLastPrice()
     log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "策略开始", "用户:", t.u.ObjectId, "限价启动:", t.arg.LimitHigh)
@@ -132,9 +133,15 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         time.Sleep(time.Millisecond * 500) // 间隔0.5秒查询
         price, err := t.goex.GetPrice()    // 获取当前价格
         if err != nil {
-            t.ErrString = err.Error()
-            log.Println(err, t.u.ObjectId)
-            return
+            errorCount++
+            if errorCount > 10 {
+                t.ErrString = err.Error()
+                log.Println(err, t.u.ObjectId)
+                return
+            } else {
+                time.Sleep(time.Second * 3)
+                continue
+            }
         }
         low, high = ChangeHighLow(price, high, low)
         // 计算盈利
@@ -183,15 +190,21 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             } else if !t.arg.IsLimit && count > 50 {
                 time.Sleep(time.Second * 2)
                 willbuy = true
-
             }
             if willbuy {
                 log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
                 err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
                 if err != nil {
-                    log.Printf("买入错误: %d, err: %s", t.base, err)
-                    time.Sleep(time.Second * 5)
-                    t.over = true
+                    errorCount++
+                    if errorCount > 10 {
+                        log.Printf("买入错误: %d, err: %s", t.base, err)
+                        t.ErrString = err.Error()
+                        time.Sleep(time.Second * 5)
+                        t.over = true
+                    } else {
+                        time.Sleep(time.Second * 10)
+                        continue
+                    }
                 } else {
                     high = price
                     low = price
@@ -208,10 +221,16 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 log.Printf("第%d买入信息:{价格:%v,数量:%v,用户:%v,钱:%v,跌幅:%v}", t.base+1, price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy, die)
                 err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
                 if err != nil {
-                    log.Printf("买入错误: %d, err: %s", t.base, err)
-                    time.Sleep(time.Second * 5)
-                    t.ErrString = err.Error()
-                    t.over = true
+                    errorCount++
+                    if errorCount > 10 {
+                        log.Printf("买入错误: %d, err: %s", t.base, err)
+                        t.ErrString = err.Error()
+                        time.Sleep(time.Second * 5)
+                        t.over = true
+                    } else {
+                        time.Sleep(time.Second * 10)
+                        continue
+                    }
                 } else {
                     high = price
                     low = price
@@ -225,16 +244,32 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         // 智乘方
         if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
             if err := t.setupBi(win, reduce, price); err != nil {
-                t.ErrString = err.Error()
-                t.over = true
+                errorCount++
+                if errorCount > 10 {
+                    log.Printf("卖出错误: %d, err: %s", t.base, err)
+                    t.ErrString = err.Error()
+                    time.Sleep(time.Second * 5)
+                    t.over = true
+                } else {
+                    time.Sleep(time.Second * 10)
+                    continue
+                }
             }
             if t.arg.AllSell {
                 log.Printf("%v用户智乘方清仓", t.u.ObjectId)
                 t.AllSellMy()
                 err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
                 if err != nil {
-                    time.Sleep(time.Second * 5)
-                    t.ErrString = err.Error()
+                    errorCount++
+                    if errorCount > 10 {
+                        log.Printf("清仓错误: %d, err: %s", t.base, err)
+                        t.ErrString = err.Error()
+                        time.Sleep(time.Second * 5)
+                        t.over = true
+                    } else {
+                        time.Sleep(time.Second * 10)
+                        continue
+                    }
                 } else {
                     t.Tupdate()
                 }
@@ -244,8 +279,16 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         // 智多元
         if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
             if t.SetupBeMutiple(price, reduce, win) != nil {
-                t.ErrString = "卖出错误"
-                t.over = true
+                errorCount++
+                if errorCount > 10 {
+                    log.Printf("买入错误: %d, err: %s", t.base, err)
+                    t.ErrString = err.Error()
+                    time.Sleep(time.Second * 5)
+                    t.over = true
+                } else {
+                    time.Sleep(time.Second * 10)
+                    continue
+                }
             }
             if t.HaveOver() {
                 t.over = true
@@ -257,10 +300,16 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     for _, g := range t.RealGrids {
                         err := t.WaitSell(price, t.SellCount(g.AmountBuy), win*100, g.Id-1)
                         if err != nil {
-                            time.Sleep(time.Second * 5)
-                            t.ErrString = err.Error()
-                            t.over = true
-                            break
+                            errorCount++
+                            if errorCount > 10 {
+                                log.Printf("清仓错误: %d, err: %s", t.base, err)
+                                t.ErrString = err.Error()
+                                time.Sleep(time.Second * 5)
+                                t.over = true
+                            } else {
+                                time.Sleep(time.Second * 10)
+                                continue
+                            }
                         } else {
                             t.Tupdate()
                         }
@@ -282,10 +331,16 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
             model.OneBuy(t.u.ObjectId)
             err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
             if err != nil {
-                log.Printf("买入错误: %d, err: %s", t.base, err)
-                time.Sleep(time.Second * 5)
-                t.ErrString = err.Error()
-                t.over = true
+                errorCount++
+                if errorCount > 10 {
+                    log.Printf("买入错误: %d, err: %s", t.base, err)
+                    t.ErrString = err.Error()
+                    time.Sleep(time.Second * 5)
+                    t.over = true
+                } else {
+                    time.Sleep(time.Second * 10)
+                    continue
+                }
             } else {
                 high = price
                 low = price

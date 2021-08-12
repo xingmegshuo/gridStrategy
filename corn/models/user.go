@@ -100,7 +100,7 @@ func NewUser() {
 				switch order["status"].(float64) {
 				case 0:
 					// 发送暂停
-					Ch <- JobChan{Id: u.ID, Run: 2}
+					Ch <- JobChan{Id: uint(u.ObjectId), Run: 2}
 				case 3:
 					log.Println("nothing")
 					// Ch <- JobChan{Id: u.ID, Run: 3}

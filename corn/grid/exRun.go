@@ -1,13 +1,13 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -29,7 +29,7 @@ func RunEx(ctx context.Context, u model.User) {
                     u.Error = "api 请求超时，或api接口更改"
                     log.Println(u.Error)
                     u.Update()
-                    GridDone <- 1
+                    GridDone <- u.ObjectId
                 } else {
                     g.u = u
                     go g.Trade(ctx)
@@ -77,7 +77,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                     log.Println(err, t.u.ObjectId)
                     t.u.Update()
                     // 执行报错就关闭
-                    GridDone <- 1
+                    GridDone <- t.u.ObjectId
                 } else {
                     t.setupGridOrders(ctx)
                     if t.ErrString != "" {
@@ -87,7 +87,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         t.u.Update()
                         model.StrategyError(t.u.ObjectId, t.ErrString)
                         // 执行报错就关闭
-                        GridDone <- 1
+                        GridDone <- t.u.ObjectId
                     } else if t.over {
                         // 策略执行完毕 to do 计算盈利
                         log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
@@ -109,7 +109,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         t.u.Base = 0
                         t.u.Update()
                         model.DB.Exec("update users set base = 0 where id = ?", t.u.ID)
-                        GridDone <- 1
+                        GridDone <- t.u.ObjectId
                     }
                 }
             }

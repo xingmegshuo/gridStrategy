@@ -32,8 +32,10 @@ func RunWG() {
 			case v := <-model.Ch:
 				if v.Run == 2 || v.Run == 3 {
 					if model.UpdateStatus(v.Id) == 10 {
-						log.Printf("向用户%v发送暂停信息", u.ObjectId)
-						grid.GridDone <- u.ObjectId
+						if u.ObjectId == int32(v.Id) {
+							log.Printf("向用户%v发送暂停信息", u.ObjectId)
+							grid.GridDone <- u.ObjectId
+						}
 					}
 					break OuterLoop
 				}

@@ -122,7 +122,7 @@ func RunOver(id float64, b float64, orderId float64) {
 	}
 	if b > 0 {
 		data["total_profit"] = b + old
-		// GotMoney(b, id)
+		GotMoney(b, id)
 	}
 	UpdateOrder(orderId, data)
 }

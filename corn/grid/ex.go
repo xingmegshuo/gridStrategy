@@ -10,7 +10,6 @@ package grid
 
 import (
 	"encoding/json"
-	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/util"
 	"zmyjobs/goex"
@@ -64,7 +63,7 @@ func NewFromOrder(order *goex.Order) *OneOrder {
 	}
 }
 
-// 期货类型转换
+// 期货交易类型转换
 func FutureTypeString(b interface{}, t bool) (r interface{}) {
 	// 类型转数字
 	if t {
@@ -95,10 +94,10 @@ func FutureTypeString(b interface{}, t bool) (r interface{}) {
 
 // NewFromFutureOrder 期货订单
 func NewFromFutureOrder(order *goex.FutureOrder) *OneOrder {
-	fmt.Println(fmt.Sprintf("%+v", order))
-	OrdType := "限价"
-	if order.AlgoType == 2 {
-		OrdType = "市价"
+	// fmt.Println(fmt.Sprintf("%+v", order))
+	OrdType := "市价"
+	if order.AlgoType == 1 {
+		OrdType = "限价"
 	}
 	return &OneOrder{
 		Amount:   order.DealAmount,
@@ -124,13 +123,13 @@ func NewFromFutureOrder(order *goex.FutureOrder) *OneOrder {
 func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
 		Host: symbol.Host, ClientID: symbol.Label, Lever: symbol.Lever}
-	// fmt.Println(symbol.Future)
 	if symbol.Future {
 		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
 	} else {
 		cli = &Cliex{Ex: util.NewApi(&c), symbol: symbol}
 	}
 	cli.Currency = cli.MakePair()
+	// fmt.Println(cli.Currency, "生成的交易对")
 	return
 }
 
@@ -142,15 +141,13 @@ func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
  *@return       : r/money/coin bool/decimal/decimal    `正确与否/余额/币种数量`
  */
 func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decimal) {
+	// fmt.Println(c.symbol.Future)
 	if c.symbol.Future {
 		var (
-			p   []goex.FuturePosition
-			err error
-			acc *goex.FutureAccount
+			p []goex.FuturePosition
 		)
-		acc, err = c.Future.GetFutureUserinfo()
+		acc, err := c.Future.GetFutureUserinfo(c.Currency)
 		if err == nil {
-			// fmt.Println(acc)
 			for _, u := range acc.FutureSubAccounts {
 				if u.Currency.String() == c.symbol.QuoteCurrency {
 					r = true
@@ -158,7 +155,6 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 				}
 			}
 		}
-
 		if c.symbol.QuoteCurrency == "USDT" {
 			p, err = c.Future.GetFuturePosition(c.Currency, goex.SWAP_USDT_CONTRACT)
 		} else {
@@ -233,7 +229,7 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 			}
 		}
 		if err == nil {
-			return FutureOrder.OrderID2, FutureOrder.ClientOid, err
+			return FutureOrder.ClientOid, FutureOrder.OrderID2, err
 		}
 	} else {
 		switch name {
@@ -272,9 +268,17 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 		FOrder *goex.FutureOrder
 	)
 	if c.symbol.Future {
-		if FOrder, err = c.Future.GetFutureOrder(orderId, c.Currency, goex.SWAP_USDT_CONTRACT); FOrder != nil {
-			o = NewFromFutureOrder(FOrder)
+		// fmt.Println(c.symbol.QuoteCurrency)
+		if c.symbol.QuoteCurrency == "USDT" {
+			if FOrder, err = c.Future.GetFutureOrder(orderId, c.Currency, goex.SWAP_USDT_CONTRACT); FOrder != nil {
+				o = NewFromFutureOrder(FOrder)
+			}
+		} else {
+			if FOrder, err = c.Future.GetFutureOrder(orderId, c.Currency, goex.SWAP_CONTRACT); FOrder != nil {
+				o = NewFromFutureOrder(FOrder)
+			}
 		}
+
 	} else {
 		if order, err = c.Ex.GetOneOrder(orderId, c.Currency); order != nil {
 			o = NewFromOrder(order)
@@ -332,7 +336,8 @@ func (c *Cliex) CancelOrder(orderId string) bool {
 */
 func (c *Cliex) MakePair() goex.CurrencyPair {
 	if c.symbol.Future {
-		return goex.NewCurrencyPair2(c.symbol.Symbol)
+		currency := goex.NewCurrencyPair2(c.symbol.Symbol)
+		return currency
 	}
 	return goex.CurrencyPair{
 		CurrencyA:      MakeCurrency(util.UpString(c.symbol.BaseCurrency)),
@@ -351,16 +356,4 @@ func (c *Cliex) MakePair() goex.CurrencyPair {
 */
 func MakeCurrency(name string) goex.Currency {
 	return goex.Currency{Symbol: name, Desc: ""}
-}
-
-/**
- *@title        : FutureAccount
- *@desc         : 获取期货账户资金
- *@auth         : small_ant / time(2021/08/06 14:49:09)
- *@param        : t / string / `输入参数为u本位合约或币本位合约`
- *@return       : / / ``
- */
-func (c *Cliex) FutureAccount(t string) {
-	account, err := c.Future.GetFutureUserinfo()
-	fmt.Println(account, err)
 }

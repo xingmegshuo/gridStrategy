@@ -3,7 +3,6 @@ package grid
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 	model "zmyjobs/corn/models"
 
@@ -39,6 +38,7 @@ type Grid struct {
 	AmountSell decimal.Decimal // 卖出数量
 	TotalBuy   decimal.Decimal // money
 	Order      string          // 订单id
+	Mesure     decimal.Decimal // b本位计量单位张
 }
 
 // log 交易日志
@@ -96,6 +96,7 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
 		if moneyNeed.Cmp(moneyHeld) == 1 {
 			return errors.New("no enough money")
 		}
+
 	} else {
 		b, moneyHeld, coinHeld = t.goex.GetAccount()
 		if b {
@@ -145,17 +146,30 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 		amount = t.grids[t.base].TotalBuy
 		msg = "市价买入"
 	}
+	if t.goex.symbol.Future && t.arg.Crile == 3 {
+		orderType = OpenDL
+		amount = t.grids[t.base].TotalBuy
+		msg = "开多"
+	} else if t.goex.symbol.Future && t.arg.Crile == 4 {
+		orderType = OpenLL
+		amount = t.grids[t.base].TotalBuy
+		msg = "开空"
+	}
 	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
 	log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
 	// 增加一个真实成交
 	if err == nil {
-		fmt.Println("已经挂单的买入", t.u.ObjectId)
+		// fmt.Println("已经挂单的买入", t.u.ObjectId)
 		t.log(orderId, price, msg, t.base, amount, rate, "买入")
-		t.RealGrids = append(t.RealGrids, Grid{
+		g := Grid{
 			Id:      t.base + 1,
 			Decline: rate,
 			Order:   orderId,
-		})
+		}
+		if t.u.Future > 0 {
+			g.Mesure = t.grids[t.base].AmountBuy
+		}
+		t.RealGrids = append(t.RealGrids, g)
 	}
 	return orderId, clientId, err
 }
@@ -168,6 +182,16 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (str
 		orderType = SellM
 		price = decimal.Decimal{}
 		msg = "市价卖出"
+	}
+	if t.goex.symbol.Future && t.arg.Crile == 3 {
+		msg = "平多"
+		orderType = OpenDM
+	} else if t.goex.symbol.Future && t.arg.Crile == 4 {
+		orderType = OpenLM
+		msg = "平空"
+	}
+	if t.u.Future == 2 || t.u.Future == 4 {
+		amount = t.CountMesure()
 	}
 	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
 	log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
@@ -189,6 +213,9 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 		price := decimal.NewFromFloat(order.Price)
 		amount := decimal.NewFromFloat(order.Amount)
 		fee := decimal.NewFromFloat(order.Fee)
+		if t.u.Future == 2 || t.u.Future == 4 {
+			amount = decimal.NewFromFloat(order.Cash)
+		}
 		t.hold = t.myMoney()
 		log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 		if b, ok := t.SellOrder[clientOrderId]; ok {
@@ -209,6 +236,9 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 			t.RealGrids[t.base].AmountBuy = amount.Sub(fee)
 			t.RealGrids[t.base].Price = price
 			t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(fee))
+			if t.u.Future == 1 || t.u.Future == 3 {
+				t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
+			}
 			t.amount = t.CountHold()
 			t.pay = t.CountPay()
 			t.cost = t.pay.Div(t.amount)
@@ -326,5 +356,15 @@ func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
 		coin = c
 	}
 	coin = t.ToPrecision(coin)
+	return
+}
+
+// CountMesure 币本位计算卖出
+func (t *ExTrader) CountMesure() (amount decimal.Decimal) {
+	for _, g := range t.RealGrids {
+		if g.AmountSell.Cmp(decimal.Decimal{}) < 1 {
+			amount = amount.Add(g.Mesure)
+		}
+	}
 	return
 }

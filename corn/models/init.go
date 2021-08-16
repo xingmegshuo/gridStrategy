@@ -21,15 +21,18 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var log = logs.Log
+var (
+	DB      *gorm.DB
+	UserDB  *gorm.DB
+	CacheDB *redis.Client
 
-var DB *gorm.DB
-
-var UserDB *gorm.DB
-
-//var CacheDB
-var ctx = context.Background()
-var CacheDB *redis.Client
+	ctx         = context.Background()
+	log         = logs.Log
+	HuobiSymbol = GetSymbols("火币")
+	BianSymbol  = GetSymbols("币安")
+	BianFutureU = GetSymbols("币安u")
+	BianFutureB = GetSymbols("币安b")
+)
 
 var ConfigMap = map[string]string{
 	"jobType1":    "间隔任务",

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -49,6 +50,7 @@ type OrderInfoResponse struct {
 	Type          string  `json:"type"`
 	Time          int64   `json:"time"`
 	UpdateTime    int64   `json:"updateTime"`
+	Cumbase       string  `json:"cumBase"`
 }
 
 type PositionRiskResponse struct {
@@ -109,6 +111,26 @@ func (bs *BinanceFutures) SetBaseUri(uri string) {
 
 func (bs *BinanceFutures) GetExchangeName() string {
 	return BINANCE_FUTURES
+}
+
+func (bs *BinanceFutures) ChangeLever(currency CurrencyPair, contractType string) bool {
+	uri := bs.base.apiV1 + "leverage"
+	symbol := currency.ToSymbol("")
+	if _, err := strconv.ParseFloat(symbol[len(symbol)-1:], 64); err != nil {
+		symbol = fmt.Sprintf("%s_PERP", currency.ToSymbol(""))
+	}
+	// fmt.Println(symbol)
+	data := url.Values{}
+	data.Set("symbol", symbol)
+	data.Set("leverage", strconv.Itoa(bs.Level))
+	bs.base.buildParamsSigned(&data)
+
+	_, err := HttpPostForm2(bs.base.httpClient, uri, data,
+		map[string]string{"X-MBX-APIKEY": bs.apikey})
+	if err == nil {
+		return true
+	}
+	return false
 }
 
 func (bs *BinanceFutures) GetFutureTicker(currencyPair CurrencyPair, contractType string) (*Ticker, error) {
@@ -277,6 +299,8 @@ func (bs *BinanceFutures) GetFutureUserinfo(currencyPair ...CurrencyPair) (*Futu
 }
 
 func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, leverRate float64) (string, error) {
+	// fmt.Println("买币咯", currencyPair)
+	// fmt.Println(bs.GetFutureUserinfo(currencyPair))
 	apiPath := "order"
 	symbol, err := bs.adaptToSymbol(currencyPair, contractType)
 	if err != nil {
@@ -288,7 +312,16 @@ func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractTy
 	param.Set("newClientOrderId", GenerateOrderClientId(32))
 	param.Set("quantity", amount)
 	param.Set("newOrderRespType", "ACK")
-
+	if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
+		param.Set("positionSide", p[0].ContractType)
+	} else {
+		if OPEN_BUY == openType || CLOSE_BUY == openType {
+			param.Set("positionSide", "LONG")
+		}
+		if OPEN_SELL == openType || CLOSE_SELL == openType {
+			param.Set("positionSide", "SHORT")
+		}
+	}
 	if matchPrice == 0 {
 		param.Set("type", "LIMIT")
 		param.Set("timeInForce", "GTC")
@@ -303,17 +336,14 @@ func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractTy
 	case OPEN_SELL, CLOSE_BUY:
 		param.Set("side", "SELL")
 	}
-
+	// fmt.Println(param)
 	bs.base.buildParamsSigned(&param)
 
 	resp, err := HttpPostForm2(bs.base.httpClient, fmt.Sprintf("%s%s", bs.base.apiV1, apiPath), param,
 		map[string]string{"X-MBX-APIKEY": bs.apikey})
-
 	if err != nil {
 		return "", err
 	}
-
-	logger.Debug(string(resp))
 
 	var response struct {
 		BaseResponse
@@ -493,6 +523,8 @@ func (bs *BinanceFutures) GetFutureOrder(orderId string, currencyPair CurrencyPa
 		OType:        bs.adaptOType(getOrderInfoResponse.Side, getOrderInfoResponse.PositionSide),
 		ContractName: contractType,
 		FinishedTime: getOrderInfoResponse.UpdateTime / 1000,
+		Cash:         ToFloat64(getOrderInfoResponse.Cumbase),
+		LeverRate:    float64(bs.Level),
 	}, nil
 }
 

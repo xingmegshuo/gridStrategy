@@ -47,13 +47,13 @@ func CrawRun() {
 	// log.Println("working for data clone ......")
 	crawLock.Lock()
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	h := model.Host{}
-	h.Get("火币")
-	Hurl := "https://" + h.Url
-	go xhttp(Hurl+"/v1/common/symbols", "火币交易对")
-	go xhttpCraw(Hurl+"/market/tickers", 1)
-	go xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
-	go xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
+	// h := model.Host{}
+	// h.Get("火币")
+	// Hurl := "https://" + h.Url
+	// go xhttp(Hurl+"/v1/common/symbols", "火币交易对")
+	// go xhttpCraw(Hurl+"/market/tickers", 1)
+	// go xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
+	// go xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
 	crawLock.Unlock()
 }
 

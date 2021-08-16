@@ -1,13 +1,14 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
+    "zmyjobs/goex"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -24,7 +25,7 @@ func RunEx(ctx context.Context, u model.User) {
             if status == 0 {
                 status = 1
                 g := NewExStrategy(u)
-                if len(g.grids) != int(u.Number) {
+                if g == nil || len(g.grids) != int(u.Number) {
                     u.IsRun = -10
                     u.Error = "api 请求超时，或api接口更改"
                     log.Println(u.Error)
@@ -51,6 +52,16 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
         arg:       &arg,
         RealGrids: realGrid,
         goex:      NewEx(&symbol),
+    }
+    if u.Future == 2 || u.Future == 4 {
+        if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) {
+            return nil
+        }
+    }
+    if u.Future == 1 || u.Future == 3 {
+        if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_USDT_CONTRACT) {
+            return nil
+        }
     }
     return
 }
@@ -93,7 +104,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
                         p, _ := t.CalCulateProfit().Float64()
                         // 盈利ctx
-                        if t.arg.Crile {
+                        if t.arg.Crile > 2 {
                             t.u.IsRun = 100
                         } else {
                             t.u.IsRun = 1
@@ -110,7 +121,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                             model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
                                 t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
                         }
-                        log.Println("任务结束",t.u.ObjectId)
+                        log.Println("任务结束", t.u.ObjectId)
                         // GridDone <- t.u.ObjectId
                     }
                 }
@@ -189,7 +200,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Sub(decimal.NewFromFloat(1))) < 0 {
                 log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动")
                 willbuy = true
-            } else if !t.arg.IsLimit && count > 50 {
+            } else if !t.arg.IsLimit && count > 10 {
                 time.Sleep(time.Second * 2)
                 willbuy = true
             }

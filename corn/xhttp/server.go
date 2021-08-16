@@ -14,15 +14,16 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	"zmyjobs/corn/util"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -59,7 +60,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 func CheckSymobl(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     var (
-        res = map[string]interface{}{}
+        res      = map[string]interface{}{}
         // data = map[string]interface{}{}
     )
     res["status"] = "error"
@@ -71,15 +72,16 @@ func CheckSymobl(w http.ResponseWriter, r *http.Request) {
         }
         quote := "USDT"
         if r.FormValue("usdt") == "false" {
-            quote = "BTC"
+            quote = "USD"
         }
         if name := r.FormValue("name"); name != "" {
-
+            coinType := util.SwitchCoinType(name)
             ex := grid.NewEx(&model.SymbolCategory{Symbol: name, Future: true, Category: categoryName, QuoteCurrency: quote})
             _, err := ex.GetPrice()
             if err == nil {
                 res["status"] = "success"
                 res["msg"] = "交易对参数有效"
+                res["data"] = coinType
             }
             // fmt.Println(err)
         }

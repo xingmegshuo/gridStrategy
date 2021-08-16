@@ -254,8 +254,8 @@ func (pair *CurrencyPair) SetPriceTickSize(tickSize int) CurrencyPair {
 
 func (pair CurrencyPair) ToSymbol(joinChar string) string {
 	// fmt.Println(pair.CurrencyA.Symbol, pair.CurrencyB.Symbol)
-	if _, err := strconv.ParseFloat(pair.CurrencyB.Symbol, 64); err == nil {
-		joinChar = "_"
+	if _, err := strconv.ParseFloat(pair.CurrencyB.Symbol[len(pair.CurrencyB.Symbol)-1:], 64); err != nil {
+		joinChar = ""
 	}
 	return strings.Join([]string{pair.CurrencyA.Symbol, pair.CurrencyB.Symbol}, joinChar)
 }

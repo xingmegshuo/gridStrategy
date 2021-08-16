@@ -27,11 +27,6 @@ func UserJobRun() {
 	go RunWG()
 }
 
-// // LoadUser 数据库读入缓存
-// func LoadUser() {
-
-// }
-
 func userData() {
 	updateCount.Lock()
 	user.Count++
@@ -53,13 +48,16 @@ func WriteCache(name string, t time.Duration) {
 			db.Raw("select `id`,`name` from db_task_category").Scan(&Data)
 		case "db_task_order":
 			db.Raw("select * from db_task_order").Scan(&Data)
-			coin := ""
+			coin := map[string]interface{}{}
 			for _, v := range Data {
-				db.Raw("select `name` from db_task_coin where `en_name` = ?", v["task_coin_name"]).Scan(&coin)
-				v["task_coin_name"] = coin
+				db.Raw("select `name`,`coin_type` from db_task_coin where `id` = ?", v["task_coin_id"]).Scan(&coin)
+				v["task_coin_name"] = coin["name"]
+				v["coin_type"] = coin["coin_type"]
 			}
+			// fmt.Println(Data)
 		}
 		byteData, _ := json.Marshal(Data)
+		// fmt.Println(Data)
 		model.SetCache(name, string(byteData), t)
 	}
 }

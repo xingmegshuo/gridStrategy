@@ -33,7 +33,7 @@ type User struct {
 	BasePrice float64 // 基础价格
 	Money     float64 // 钱
 	Base      int     // 当前第几单
-	Type      float64 // 类型
+	Type      float64 // 类型 1 单次 2 循环
 	Strategy  string  // 策略内容
 	IsRun     int64   // -1 待开始,10 正在运行, 1 运行完毕, 2 暂停, -2 启动失败,-10 运行策略失败 100 等待重新开始
 	Name      string  // 交易对
@@ -52,6 +52,7 @@ type User struct {
 	RealGrids string  // 实际执行策略
 	Arg       string  // 策略参数
 	Symbol    string  // 交易对参数
+	Future    int     // 期货标识
 }
 
 // NewUser 从缓存获取如果数据库不存在就添加
@@ -60,11 +61,10 @@ func NewUser() {
 	if GetCache("火币交易对") == "" {
 		time.Sleep(time.Second)
 	}
-
 	for _, order := range orders {
 		var u User
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
-		if u.ObjectId == 0 || errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
 			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
 			if b {
@@ -75,7 +75,7 @@ func NewUser() {
 					ApiKey:   api,
 					Secret:   sec,
 					Category: cate,
-					Name:     ParseSymbol(order["task_coin_name"].(string)),
+					Name:     order["task_coin_name"].(string),
 					IsRun:    -1,
 					Strategy: parseInput(order),
 					// MinPrice: order["price_stop"].(string),
@@ -87,9 +87,15 @@ func NewUser() {
 					Status: 1,
 					Base:   0,
 					Custom: order["customer_id"].(float64),
+					Future: int(order["coin_type"].(float64)),
 				}
 				u = UpdateUser(u)
-				DB.Create(&u)
+				// u.Name = ParseSymbol(u.Name)
+				result = DB.Exec("select id from users where object_id = ?", order["id"])
+				// fmt.Printf("%+v", result)
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
+					DB.Create(&u)
+				}
 			}
 		} else {
 			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
@@ -100,11 +106,18 @@ func NewUser() {
 				switch order["status"].(float64) {
 				case 0:
 					// 发送暂停
-					Ch <- JobChan{Id: uint(u.ObjectId), Run: 2}
+					log.Printf("用户%v暂停", u.ObjectId)
+					if UpdateStatus(u.ID) == 10 {
+						Ch <- JobChan{Id: uint(u.ObjectId), Run: 2}
+					} else {
+						u.Status = 1
+						u.Update()
+					}
 				case 3:
 					log.Println("nothing")
 					// Ch <- JobChan{Id: u.ID, Run: 3}
 				case 1:
+					log.Printf("用户%v启动", u.ObjectId)
 					u.Status = 2
 					if u.IsRun == 2 {
 						u.IsRun = -1
@@ -122,17 +135,16 @@ func NewUser() {
 				if u.IsRun == -10 {
 					StrategyError(u.ObjectId, u.Error)
 				}
-				if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
-					old := ParseStrategy(u)
-					u.Strategy = parseInput(order)
-					if old.StopBuy {
-						log.Println("发送恢复买入", u.ObjectId)
-						// log.Println("更新用户策略配置:", u.ObjectId)
-						// u = UpdateUser(u)
-						// u.Update()
-						OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
-					}
+			}
+			if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
+				old := ParseStrategy(u)
+				u.Strategy = parseInput(order)
+				if old.StopBuy {
+					log.Println("发送恢复买入", u.ObjectId)
+					OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
 				}
+				u = UpdateUser(u)
+				u.Update()
 			}
 		}
 	}
@@ -166,32 +178,33 @@ func StopUser() {
 // parseSymbol 解析交易对
 func ParseSymbol(s string) string {
 	s = strings.Replace(s, "/", "", 1)
-	return strings.ToLower(s)
+	return s
 }
 
 // parseInput 策略输入处理
 func parseInput(order map[string]interface{}) string {
 	var strategy = map[string]interface{}{}
-	strategy["FirstBuy"] = order["price"]          // 首单数量
-	strategy["rate"] = order["price_rate"]         // 补仓比例
-	strategy["growth"] = order["price_growth"]     // 补仓增幅比例
-	strategy["callback"] = order["price_callback"] // 回调比例
-	strategy["reduce"] = order["price_reduce"]     // 回降比例
-	strategy["Type"] = order["frequency"]          // 类型，等于1为单次，等于2为循环执行
-	strategy["stop"] = order["price_stop"]         // 止盈比例
-	strategy["Strategy"] = order["strategy_id"]    // 策略分类
-	strategy["NowPrice"] = order["now_price"]      // 当前价格
-	strategy["add"] = order["price_add"]           // 加仓金额
-	strategy["reset"] = order["price_repair"]      // 补仓复位
-	strategy["frequency"] = order["frequency"]     // 是否为循环策略
-	strategy["decline"] = order["decline"]         // 跌幅比例
-	strategy["allSell"] = order["one_sell"]        // 一键平仓
-	strategy["one_buy"] = order["one_buy"]         // 一键补仓
-	strategy["double"] = order["double_first"]     // 首单加倍
-	strategy["limit_high"] = order["limit_high"]   // 限高
-	strategy["high_price"] = order["high_price"]   // 限高价格
-	strategy["stop_buy"] = order["stop_buy"]       // 停止买入
-	strategy["order_type"] = order["order_type"]   // 手动自动
+	strategy["FirstBuy"] = order["price"]             // 首单数量
+	strategy["rate"] = order["price_rate"]            // 补仓比例
+	strategy["growth"] = order["price_growth"]        // 补仓增幅比例
+	strategy["callback"] = order["price_callback"]    // 回调比例
+	strategy["reduce"] = order["price_reduce"]        // 回降比例
+	strategy["Type"] = order["frequency"]             // 类型，等于1为单次，等于2为循环执行
+	strategy["stop"] = order["price_stop"]            // 止盈比例
+	strategy["Strategy"] = order["strategy_id"]       // 策略分类
+	strategy["NowPrice"] = order["now_price"]         // 当前价格
+	strategy["add"] = order["price_add"]              // 加仓金额
+	strategy["reset"] = order["price_repair"]         // 补仓复位
+	strategy["frequency"] = order["frequency"]        // 是否为循环策略
+	strategy["decline"] = order["decline"]            // 跌幅比例
+	strategy["allSell"] = order["one_sell"]           // 一键平仓
+	strategy["one_buy"] = order["one_buy"]            // 一键补仓
+	strategy["double"] = order["double_first"]        // 首单加倍
+	strategy["limit_high"] = order["limit_high"]      // 限高
+	strategy["high_price"] = order["high_price"]      // 限高价格
+	strategy["stop_buy"] = order["stop_buy"]          // 停止买入
+	strategy["order_type"] = order["order_type"]      // 手动自动
+	strategy["add_type"] = order["price_growth_type"] // 补仓增幅类型
 	return ToStringJson(strategy)
 }
 
@@ -279,8 +292,8 @@ func LoadStrategy(u User) (*[]Grid, bool) {
 // UpdateUser  更新u
 func UpdateUser(u User) User {
 	log.Println("开始解析参数", u.ObjectId)
-	u.Arg = ToStringJson(ParseStrategy(u))
 	u.Symbol = ToStringJson(NewSymbol(u))
+	u.Arg = ToStringJson(ParseStrategy(u))
 	if grid, e := SourceStrategy(u, true); e == nil {
 		s, _ := json.Marshal(grid)
 		u.Grids = string(s)

@@ -26,7 +26,7 @@ func TestGetMoney(t *testing.T) {
 		// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
 		// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
 		Host:            "api.huobi.de.com",
-		BaseCurrency:    "LTC",
+		BaseCurrency:    "DOGE",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 4,
 		PricePrecision:  2,
@@ -63,7 +63,7 @@ func TestGetMoney(t *testing.T) {
 
 	price := decimal.NewFromFloat(152.93)
 	// 买入
-	amount := decimal.NewFromFloat(0.6096)
+	amount := decimal.NewFromFloat(40.31)
 	cliId, orderId, err := ex.Exchanges(amount, price, SellM, false)
 	fmt.Println(cliId, err, orderId, amount, price)
 
@@ -145,10 +145,10 @@ func TestGetMoney(t *testing.T) {
 
 func TestFutureAccount(t *testing.T) {
 	u := model.User{
-		Symbol: `{"Category":"币安","Symbol":"btc_usdt","AmountPrecision":2,
+		Symbol: `{"Category":"币安","Symbol":"ETH_USDT","AmountPrecision":2,
 			"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"cIiIZnQ8L77acyTkSAH6je0rDAZGoFcoHSlMHaWYUNDjJhKNtu0Gb8nR9MjLSaws",
 			"Secret":"dnc7LwiB1Vgy6zDOqwuqodIxL8FwltVlxhfEVLvrgmfozezrW9JvnHStpmB4Lymx","Host":"","MinTotal":"5","MinAmount":"1",
-			"BaseCurrency":"BTC","QuoteCurrency":"USDT","future":true,"lever":20}`,
+			"BaseCurrency":"ETH","QuoteCurrency:"USDT","future":true,"lever":5}`,
 		Arg: `{"FirstBuy": 6, "FirstDouble": false, "Price": 0.196562, "IsChange": false, "Rate": 20,
 				"MinBuy": 6, "AddRate": 50, "NeedMoney": 0, "MinPrice": 0, "Callback": 0.2, "Reduce": 0.2, "Stop": 5,
 				"AddMoney": 0, "Decline": 0.5, "Out": false, "OrderType": 0, "IsLimit": false, "LimitHigh": 0, "StrategyType": 1,
@@ -166,25 +166,46 @@ func TestFutureAccount(t *testing.T) {
 	symbol := model.StringSymobol(u.Symbol)
 	cli := NewEx(&symbol)
 	// b := goex.NewCurrencyPair2(symbol.Symbol)
-	r, m, c := cli.GetAccount()
-	fmt.Println(fmt.Sprintf("%+v", r), m, c)
-
-	p, err := cli.GetPrice()
-	fmt.Println(p, err)
+	// fmt.Println(b.String())
+	// cli.Future.ChangeLever(b, goex.SWAP_CONTRACT)
+	// fmt.Println(cli.Currency)
+	// cl := util.Config{Name: "币安"}
+	// p, err := cl.GetPrice("ETH/USD", true)
+	// fmt.Println(p, err)
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
+
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
 	// fmt.Println(fmt.Sprintf("%+v", p), err)
-	// o	cli.Exchanges(decimal.NewFromFloat(200), decimal.NewFromFloat(30000), OpenLM, false)
-
+	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
+	// fmt.Println(o, err)
+	// orderid, clientId, result := cli.Exchanges(decimal.NewFromFloat(1.00000), decimal.Decimal{}, OpenDL, false)
+	// fmt.Println(orderid, clientId, result)
+	// orderId := "13041934796"
 	// b, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("%+v", o, b, r))
+	// fmt.Println(fmt.Sprintf("%+v", o), b, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)
-	// orderId := "28159660429"
-	// h,over,o := cli.SearchOrder(orderId)
-	// fmt.Println(h,over,o)
+	orderId := "8389765504833933312"
+	h, over, o := cli.SearchOrder(orderId)
+	fmt.Println(h, over, o)
 
 	// b := cli.CancelOrder(orderId)
 	// fmt.Println(b)
+}
+
+func TestOk(t *testing.T) {
+	ok := model.SymbolCategory{
+		Key:    "76141669-f4cf-4f45-ad6d-82522539749b", //我的
+		Secret: "02AE5E8DAA50D40ABC0EB4E5882D8EB6",     // 我的
+		// Host:            "api.huobi.de.com",
+		Category:        "ok",
+		BaseCurrency:    "LTC",
+		QuoteCurrency:   "USDT",
+		AmountPrecision: 4,
+		PricePrecision:  2,
+	}
+	ex := NewEx(&ok)
+	b, m, coin := ex.GetAccount()
+	fmt.Println(b, m, coin)
 }

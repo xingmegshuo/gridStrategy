@@ -196,7 +196,7 @@ func AddModelLog(r *RebotLog, m float64) {
 	data["handing_fee"] = r.TransactFee           //手续费
 	data["status"] = 1                            // 1启用
 	data["left_amount"] = decimal.NewFromFloat(m) // 账户余额
-	data["extra"] = ""
+	data["extra"] = "手动策略"                        // 策略类型
 	data["create_time"] = time.Now().Unix()
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_profit").Create(&data)
@@ -303,7 +303,7 @@ func GotMoney(money float64, uId float64) {
 						}
 					}
 					if thisLevel == 6 {
-						log.Println(thisLevel, baseLevel)
+						// log.Println(thisLevel, baseLevel)
 						// l.Println("我要60%")
 						if f {
 							if thisLevel-baseLevel == 1 {
@@ -327,8 +327,6 @@ func GotMoney(money float64, uId float64) {
 					// levelMoney -= myMoney
 					thisLog.Amount = myMoney
 					thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
-					log.Println(fmt.Sprintf("之前余额:%v---之后余额:%v----用户:%v", thisLog.BeforeAmount, thisLog.AfterAmount, u["id"]))
-					log.Println("--------------")
 					// thisLog.Write(UserDB)
 					// tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
 					if myMoney > 0 {
@@ -380,8 +378,8 @@ func LogStrategy(name interface{}, coin_name interface{}, order interface{}, mem
 		categroy = map[string]interface{}{}
 		coin     = map[string]interface{}{}
 	)
-	UserDB.Raw("select id from db_task_category where `name` like ?", "火币").Scan(&categroy)
-	UserDB.Raw("select id from db_task_coin where `en_name` like ?", "doge").Scan(&coin)
+	UserDB.Raw("select id from db_task_category where `name` like ?", name).Scan(&categroy)
+	UserDB.Raw("select id from db_task_coin where `en_name` like ? and category_id = ?", coin_name, categroy["id"]).Scan(&coin)
 	// log.Println(categroy, coin, c, d)
 	data["category_id"] = categroy["id"]
 	data["coin_id"] = coin["id"]

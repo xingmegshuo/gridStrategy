@@ -31,6 +31,15 @@ type SymbolCategory struct {
 	Lever           float64         // 杠杆倍数
 }
 
+type CategorySymbols struct {
+	BaseCurrency    string          // 交易币种
+	QuoteCurrency   string          // 交易基础币种
+	AmountPrecision int32           // 精度
+	PricePrecision  int32           // 价格精度
+	MinTotal        decimal.Decimal // 最小交易钱
+	MinAmount       decimal.Decimal // 最小交易数量
+}
+
 // Args 策略输入参数
 type Args struct {
 	FirstBuy     float64 // 首单
@@ -39,6 +48,7 @@ type Args struct {
 	IsChange     bool    // 是否为固定加仓金额
 	Rate         float64 // 补仓比例
 	MinBuy       float64 // 最少买入
+	IsAdd        bool    // 是否固定增幅
 	AddRate      float64 // 补仓增幅
 	NeedMoney    float64 // 需要NeedMoney
 	MinPrice     float64 // 最小价格
@@ -52,7 +62,7 @@ type Args struct {
 	IsLimit      bool    // 是否限高
 	LimitHigh    float64 // 限高价格
 	StrategyType int64   // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市
-	Crile        bool    // 是否循环
+	Crile        float64 // 是否循环
 	OneBuy       bool    // 一键补仓
 	AllSell      bool    // 一键平仓
 	StopBuy      bool    // 停止买入

@@ -128,16 +128,12 @@ func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
 
 func GetPriceSymbol(symbol string) (decimal.Decimal, error) {
 	hb := new(client.MarketClient).Init("api.huobi.de.com")
-
 	optionalRequest := market.GetCandlestickOptionalRequest{Period: "1min", Size: 1}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
 	if err != nil {
-		log.Println(err)
 		return decimal.NewFromFloat(0), err
 	}
 	for _, candlestick := range candlesticks {
-		// log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
-		// 	candlestick.Open, candlestick.High, candlestick.Low, candlestick.Close)
 		return candlestick.Close, nil
 	}
 

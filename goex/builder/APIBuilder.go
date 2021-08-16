@@ -13,7 +13,6 @@ import (
 	"zmyjobs/goex/bitmex"
 	"zmyjobs/goex/bitstamp"
 	"zmyjobs/goex/bittrex"
-	"zmyjobs/goex/coinbene"
 	"zmyjobs/goex/coinex"
 	"zmyjobs/goex/gdax"
 	"zmyjobs/goex/hitbtc"
@@ -259,62 +258,62 @@ func (builder *APIBuilder) Build(exName string) (api API) {
 
 func (builder *APIBuilder) BuildFuture(exName string) (api FutureRestAPI) {
 	switch exName {
-	case BITMEX:
-		return bitmex.New(&APIConfig{
-			//Endpoint:     "https://www.bitmex.com/",
-			Endpoint:     builder.futuresEndPoint,
-			HttpClient:   builder.client,
-			ApiKey:       builder.apiKey,
-			ApiSecretKey: builder.secretkey})
-	case BITMEX_TEST:
-		return bitmex.New(&APIConfig{
-			HttpClient:   builder.client,
-			Endpoint:     "https://testnet.bitmex.com",
-			ApiKey:       builder.apiKey,
-			ApiSecretKey: builder.secretkey,
-		})
-	case OKEX_FUTURE, OKEX_V3:
-		//return okcoin.NewOKEx(builder.client, builder.apiKey, builder.secretkey)
-		return okex.NewOKEx(&APIConfig{
-			HttpClient: builder.client,
-			//	Endpoint:      "https://www.okex.com",
-			Endpoint:      builder.futuresEndPoint,
-			ApiKey:        builder.apiKey,
-			ApiSecretKey:  builder.secretkey,
-			ApiPassphrase: builder.apiPassphrase,
-			Lever:         builder.futuresLever}).OKExFuture
-	case HBDM:
-		return huobi.NewHbdm(&APIConfig{
-			HttpClient:   builder.client,
-			Endpoint:     builder.futuresEndPoint,
-			ApiKey:       builder.apiKey,
-			ApiSecretKey: builder.secretkey,
-			Lever:        builder.futuresLever})
-	case HBDM_SWAP:
-		return huobi.NewHbdmSwap(&APIConfig{
-			HttpClient:   builder.client,
-			Endpoint:     builder.endPoint,
-			ApiKey:       builder.apiKey,
-			ApiSecretKey: builder.secretkey,
-			Lever:        builder.futuresLever,
-		})
-	case OKEX_SWAP:
-		return okex.NewOKEx(&APIConfig{
-			HttpClient:    builder.client,
-			Endpoint:      builder.futuresEndPoint,
-			ApiKey:        builder.apiKey,
-			ApiSecretKey:  builder.secretkey,
-			ApiPassphrase: builder.apiPassphrase,
-			Lever:         builder.futuresLever}).OKExSwap
-	case COINBENE:
-		return coinbene.NewCoinbeneSwap(APIConfig{
-			HttpClient: builder.client,
-			//	Endpoint:     "http://openapi-contract.coinbene.com",
-			Endpoint:     builder.futuresEndPoint,
-			ApiKey:       builder.apiKey,
-			ApiSecretKey: builder.secretkey,
-			Lever:        builder.futuresLever,
-		})
+	// case BITMEX:
+	// 	return bitmex.New(&APIConfig{
+	// 		//Endpoint:     "https://www.bitmex.com/",
+	// 		Endpoint:     builder.futuresEndPoint,
+	// 		HttpClient:   builder.client,
+	// 		ApiKey:       builder.apiKey,
+	// 		ApiSecretKey: builder.secretkey})
+	// case BITMEX_TEST:
+	// 	return bitmex.New(&APIConfig{
+	// 		HttpClient:   builder.client,
+	// 		Endpoint:     "https://testnet.bitmex.com",
+	// 		ApiKey:       builder.apiKey,
+	// 		ApiSecretKey: builder.secretkey,
+	// 	})
+	// case OKEX_FUTURE, OKEX_V3:
+	// 	//return okcoin.NewOKEx(builder.client, builder.apiKey, builder.secretkey)
+	// 	return okex.NewOKEx(&APIConfig{
+	// 		HttpClient: builder.client,
+	// 		//	Endpoint:      "https://www.okex.com",
+	// 		Endpoint:      builder.futuresEndPoint,
+	// 		ApiKey:        builder.apiKey,
+	// 		ApiSecretKey:  builder.secretkey,
+	// 		ApiPassphrase: builder.apiPassphrase,
+	// 		Lever:         builder.futuresLever}).OKExFuture
+	// case HBDM:
+	// 	return huobi.NewHbdm(&APIConfig{
+	// 		HttpClient:   builder.client,
+	// 		Endpoint:     builder.futuresEndPoint,
+	// 		ApiKey:       builder.apiKey,
+	// 		ApiSecretKey: builder.secretkey,
+	// 		Lever:        builder.futuresLever})
+	// case HBDM_SWAP:
+	// 	return huobi.NewHbdmSwap(&APIConfig{
+	// 		HttpClient:   builder.client,
+	// 		Endpoint:     builder.endPoint,
+	// 		ApiKey:       builder.apiKey,
+	// 		ApiSecretKey: builder.secretkey,
+	// 		Lever:        builder.futuresLever,
+	// 	})
+	// case OKEX_SWAP:
+	// 	return okex.NewOKEx(&APIConfig{
+	// 		HttpClient:    builder.client,
+	// 		Endpoint:      builder.futuresEndPoint,
+	// 		ApiKey:        builder.apiKey,
+	// 		ApiSecretKey:  builder.secretkey,
+	// 		ApiPassphrase: builder.apiPassphrase,
+	// 		Lever:         builder.futuresLever}).OKExSwap
+	// case COINBENE:
+	// 	return coinbene.NewCoinbeneSwap(APIConfig{
+	// 		HttpClient: builder.client,
+	// 		//	Endpoint:     "http://openapi-contract.coinbene.com",
+	// 		Endpoint:     builder.futuresEndPoint,
+	// 		ApiKey:       builder.apiKey,
+	// 		ApiSecretKey: builder.secretkey,
+	// 		Lever:        builder.futuresLever,
+	// 	})
 
 	case BINANCE_SWAP:
 		return binance.NewBinanceSwap(&APIConfig{

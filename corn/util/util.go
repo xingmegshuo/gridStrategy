@@ -18,6 +18,7 @@ import (
     "zmyjobs/goex"
     "zmyjobs/goex/builder"
 
+    "github.com/shopspring/decimal"
     "golang.org/x/net/proxy"
 )
 
@@ -29,6 +30,7 @@ type Config struct {
     Secreet  string  // 秘钥
     ClientID string  // 连接id
     Lever    float64 // 期货杠杆倍数
+    Passhare string  // ok 需要
 }
 
 /**
@@ -48,6 +50,7 @@ func NewApi(c *Config) (cli goex.API) {
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.Build(goex.BINANCE) //创建现货api实例
     case "ok":
+        api = api.ApiPassphrase("528012")
         cli = api.Build(goex.OKEX)
     default:
         cli = api.Build(goex.HUOBI_PRO) //创建现货api实例
@@ -63,15 +66,15 @@ func NewApi(c *Config) (cli goex.API) {
  *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
  */
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-        ClientID(c.ClientID).HttpTimeout(time.Second * 60)
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+    //     ClientID(c.ClientID).HttpTimeout(time.Second * 60)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(5)
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.BuildFuture(goex.BINANCE_SWAP)
-    case "ok":
-        cli = api.BuildFuture(goex.OKEX_SWAP)
+    // case "ok":
+    //     cli = api.BuildFuture(goex.OKEX_SWAP)
     default:
         // 火币没有期货api
         cli = api.BuildFuture(goex.HUOBI)
@@ -104,4 +107,41 @@ func ProxySock() *builder.APIBuilder {
  */
 func UpString(s string) string {
     return strings.ToUpper(s)
+}
+
+func (c *Config) GetPrice(symbol string, f bool) (price decimal.Decimal, err error) {
+    var b *goex.Ticker
+    // fmt.Println(goex.NewCurrencyPair2(symbol))
+    if f {
+        cli := NewFutrueApi(c)
+        c := SwitchCoinType(symbol)
+        if c == 1 || c == 3 {
+            b, err = cli.GetFutureTicker(goex.NewCurrencyPair2(symbol), goex.SWAP_USDT_CONTRACT)
+        } else {
+            b, err = cli.GetFutureTicker(goex.NewCurrencyPair2(symbol), goex.SWAP_CONTRACT)
+        }
+    } else {
+        cli := NewApi(c)
+        b, err = cli.GetTicker(goex.NewCurrencyPair2(symbol))
+    }
+    if err == nil {
+        price = decimal.NewFromFloat(b.Last)
+    }
+    return
+}
+
+func SwitchCoinType(name string) int {
+    if name[len(name)-4:] == "usdt" || name[len(name)-4:] == "USDT" {
+        return 1
+    }
+    if strings.Contains(name, "USDT") || strings.Contains(name, "usdt") {
+        return 3
+    }
+    if name[len(name)-4:] == "usd" || name[len(name)-4:] == "USD" {
+        return 2
+    }
+    if strings.Contains(name, "USD") || strings.Contains(name, "usd") {
+        return 4
+    }
+    return 0
 }

@@ -98,6 +98,16 @@ type FutureRestAPI interface {
 	 */
 	GetFee() (float64, error)
 
+	/*
+
+		 @title   : ChangeLever
+		 @desc    : 修改下单杠杆
+		 @auth    : small_ant / time(2021/08/16 14:52:56)
+		 @param   :  / / ``
+		 @return  :  / / ``
+	**/
+	ChangeLever(currency CurrencyPair, contractType string) bool
+
 	/**
 	 *获取交易所的美元人民币汇率
 	 */

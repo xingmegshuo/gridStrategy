@@ -80,6 +80,27 @@ func (bs *BinanceSwap) GetFutureEstimatedPrice(currencyPair CurrencyPair) (float
 	panic("not supported.")
 }
 
+func (bs *BinanceSwap) ChangeLever(currency CurrencyPair, contractType string) bool {
+	if contractType == SWAP_CONTRACT {
+		return bs.f.ChangeLever(currency, contractType)
+	} else {
+		uri := bs.apiV1 + "leverage"
+		symbol := currency.ToSymbol("")
+		fmt.Println(symbol)
+		data := url.Values{}
+		data.Set("symbol", symbol)
+		data.Set("leverage", strconv.Itoa(bs.f.Level))
+		bs.buildParamsSigned(&data)
+
+		_, err := HttpPostForm2(bs.httpClient, uri, data,
+			map[string]string{"X-MBX-APIKEY": bs.f.apikey})
+		if err == nil {
+			return true
+		}
+	}
+	return false
+}
+
 func (bs *BinanceSwap) GetFutureTicker(currency CurrencyPair, contractType string) (*Ticker, error) {
 	if contractType == SWAP_CONTRACT {
 		return bs.f.GetFutureTicker(currency.AdaptUsdtToUsd(), SWAP_CONTRACT)
@@ -335,7 +356,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	if contractType != SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
-
 	clientOid := GenerateOrderClientId(32)
 	fOrder := &FutureOrder{
 		Currency:     currencyPair,
@@ -356,7 +376,12 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
 		params.Set("positionSide", p[0].ContractType)
 	} else {
-		return nil, err
+		if OPEN_BUY == openType || CLOSE_BUY == openType {
+			params.Set("positionSide", "LONG")
+		}
+		if OPEN_SELL == openType || CLOSE_SELL == openType {
+			params.Set("positionSide", "SHORT")
+		}
 	}
 	switch openType {
 	case OPEN_BUY, CLOSE_SELL:
@@ -371,10 +396,12 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	} else {
 		params.Set("type", "MARKET")
 	}
-	// fmt.Println(params)
-	bs.buildParamsSigned(&params)
+
+	err := bs.buildParamsSigned(&params)
+
 	resp, err := HttpPostForm2(bs.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bs.accessKey})
+	// fmt.Println(resp, err)
 	if err != nil {
 		return fOrder, err
 	}
@@ -616,7 +643,6 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	if contractType == SWAP_CONTRACT {
 		return bs.f.GetFutureOrder(orderId, currencyPair.AdaptUsdtToUsd(), contractType)
 	}
-
 	if contractType != SWAP_USDT_CONTRACT {
 		return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
 	}
@@ -738,7 +764,6 @@ func (bs *BinanceSwap) GetUnfinishFutureOrders(currencyPair CurrencyPair, contra
 
 	orders := make([]FutureOrder, 0)
 	for _, info := range result {
-
 		_ord := info.(map[string]interface{})
 		if _ord["symbol"].(string) != currencyPair1.ToSymbol("") {
 			continue

@@ -1,14 +1,14 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
-    "zmyjobs/goex"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
+	"zmyjobs/goex"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -63,7 +63,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
             return nil
         }
     }
-    log.Panicln("交易对", ex.goex.Currency)
+    log.Println("交易对", ex.goex.Currency)
     return
 }
 

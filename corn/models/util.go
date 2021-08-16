@@ -11,6 +11,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -212,6 +213,7 @@ func GetPrice(u User) decimal.Decimal {
 	if u.Future > 1 {
 		f = true
 	}
+	fmt.Println("获取价格", u.Name, u.ObjectId)
 	price, err := c.GetPrice(u.Name, f)
 	// fmt.Println(price, err)
 	if err == nil {

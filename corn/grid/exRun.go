@@ -63,6 +63,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
             return nil
         }
     }
+    log.Panicln("交易对", ex.goex.Currency)
     return
 }
 

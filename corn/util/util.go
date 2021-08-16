@@ -111,7 +111,6 @@ func UpString(s string) string {
 
 func (c *Config) GetPrice(symbol string, f bool) (price decimal.Decimal, err error) {
     var b *goex.Ticker
-    // fmt.Println(goex.NewCurrencyPair2(symbol))
     if f {
         cli := NewFutrueApi(c)
         c := SwitchCoinType(symbol)

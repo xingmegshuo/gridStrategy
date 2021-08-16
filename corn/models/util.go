@@ -180,7 +180,7 @@ func ParseStrategy(u User) *Args {
 			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
 		}
 	}
-	if data["add_type"].(float64) == 2 {
+	if data["add_type"] != nil && data["add_type"].(float64) == 2 {
 		arg.IsAdd = true
 	}
 	if data["limit_high"].(float64) == 2 {

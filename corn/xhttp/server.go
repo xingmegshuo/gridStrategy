@@ -60,7 +60,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 func CheckSymobl(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     var (
-        res      = map[string]interface{}{}
+        res = map[string]interface{}{}
         // data = map[string]interface{}{}
     )
     res["status"] = "error"
@@ -125,6 +125,7 @@ func GetPrice(w http.ResponseWriter, r *http.Request) {
             } else {
                 res["msg"] = err.Error()
             }
+
         } else {
             res["msg"] = "获取信息出错"
         }
@@ -239,5 +240,8 @@ func RunServer() {
  */
 func SplitString(name string) (base string, quote string) {
     stringSlince := strings.Split(name, "/")
-    return stringSlince[0], stringSlince[1]
+    if len(stringSlince) > 0 {
+        return stringSlince[0], stringSlince[1]
+    }
+    return "", ""
 }

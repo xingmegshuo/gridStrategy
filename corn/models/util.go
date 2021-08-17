@@ -220,7 +220,7 @@ func GetPrice(u User) decimal.Decimal {
 		return price
 	} else {
 		log.Println(err)
-	}
+	}0
 	// fmt.Println(price, err)
 	return decimal.NewFromFloat(1)
 }

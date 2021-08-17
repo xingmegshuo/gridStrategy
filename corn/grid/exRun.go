@@ -119,7 +119,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 
                         model.RunOver(t.u.Custom, p, float64(t.u.ObjectId))
                         if p > 0 {
-                            model.LogStrategy(t.goex.symbol.Category, t.goex.symbol.QuoteCurrency, t.u.ObjectId,
+                            model.LogStrategy(t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
                                 t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
                         }
                         log.Println("任务结束", t.u.ObjectId)

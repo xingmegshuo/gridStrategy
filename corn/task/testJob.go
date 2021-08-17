@@ -234,7 +234,7 @@ func ToMySymbol(name string) string {
 		p = len(name) - 5
 	}
 	// fmt.Println(name)
-	if name[p:] == "-USDT" {
+	if name[p:] == "USDT" {
 		return strings.ToUpper(name[:p]) + "/" + "USDT"
 	}
 	if strings.ToLower(name[d:]) == "usdt" {

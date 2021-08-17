@@ -544,12 +544,6 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 		return bs.f.GetFuturePosition(currencyPair, contractType)
 	}
 
-	// if contractType != SWAP_USDT_CONTRACT {
-	// 	return nil, errors.New("contract is error,please incoming SWAP_CONTRACT or SWAP_USDT_CONTRACT")
-	// }
-
-	// currencyPair1 := bs.adaptCurrencyPair(currencyPair)
-	// fmt.Println(currencyPair1)
 	params := url.Values{}
 	bs.buildParamsSigned(&params)
 	path := bs.apiV1 + "positionRisk?" + params.Encode()
@@ -559,23 +553,27 @@ func (bs *BinanceSwap) GetFuturePosition(currencyPair CurrencyPair, contractType
 	if err != nil {
 		return nil, err
 	}
-	thisSybol := currencyPair.ToSymbol("")
-	// if contractType == goex.QUARTER_CONTRACT {
-	// 	thisSybol = currencyPair.ToSymbol("_")
-	// }
-	// fmt.Println(thisSybol)
+	thisSymbol := ""
+	if currencyPair != UNKNOWN_PAIR {
+		thisSymbol = currencyPair.ToSymbol("")
+	}
+
 	var positions []FuturePosition
 	for _, info := range result {
 		cont := info.(map[string]interface{})
-		if cont["symbol"] != thisSybol {
+		if thisSymbol != "" && cont["symbol"] != thisSymbol {
 			continue
 		}
 		p := FuturePosition{
 			LeverRate:      ToFloat64(cont["leverage"]),
-			Symbol:         currencyPair,
 			ForceLiquPrice: ToFloat64(cont["liquidationPrice"]),
 			ContractType:   cont["positionSide"].(string),
 			Money:          ToFloat64(cont["isolatedMargin"]),
+			Symbol:         currencyPair,
+		}
+		if thisSymbol == "" {
+			s := cont["symbol"].(string)
+			p.Symbol = NewCurrencyPair(Currency{Symbol: s[:len(s)-4]}, Currency{Symbol: s[len(s)-4:]})
 		}
 		amount := ToFloat64(cont["positionAmt"])
 		price := ToFloat64(cont["entryPrice"])

@@ -178,17 +178,17 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(fmt.Sprintf("%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
-	// orderid, clientId, result := cli.Exchanges(decimal.NewFromFloat(1.00000), decimal.Decimal{}, OpenDL, false)
-	// fmt.Println(orderid, clientId, result)
+	orderid, clientId, result := cli.Exchanges(decimal.NewFromFloat(1.00000), decimal.Decimal{}, OpenDL, false)
+	fmt.Println(orderid, clientId, result)
 	// orderId := "13041934796"
 	// b, r, o := cli.SearchOrder(orderId)
 	// fmt.Println(fmt.Sprintf("%+v", o), b, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)
-	orderId := "8389765504833933312"
-	h, over, o := cli.SearchOrder(orderId)
-	fmt.Println(h, over, o)
+	// orderId := "8389765504833933312"
+	// h, over, o := cli.SearchOrder(orderId)
+	// fmt.Println(h, over, o)
 
 	// b := cli.CancelOrder(orderId)
 	// fmt.Println(b)

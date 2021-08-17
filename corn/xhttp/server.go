@@ -22,6 +22,7 @@ import (
 	grid "zmyjobs/corn/grid"
 	model "zmyjobs/corn/models"
 	"zmyjobs/corn/util"
+	"zmyjobs/goex"
 
 	"github.com/shopspring/decimal"
 )
@@ -145,7 +146,6 @@ func GetPrice(w http.ResponseWriter, r *http.Request) {
 **/
 func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
-
     var (
         response = map[string]interface{}{}
         res      = map[string]interface{}{}
@@ -212,6 +212,91 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, string(b))
 }
 
+/*
+
+
+     @title   : FutureAccount
+     @desc    :
+     @auth    : small_ant / time(2021/08/17 13:43:11)
+     @param   :  / / ``
+     @return  :  / / ``
+**/
+func GetFuture(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+    var (
+        response = map[string]interface{}{}
+        // res      = map[string]interface{}{}
+        // list     = []map[string]interface{}{}
+        // sumMoney decimal.Decimal
+    )
+    response["status"] = "success"
+    response["msg"] = "获取用户合约持仓"
+    // response["data"] = "none"
+    if id := r.FormValue("account_id"); id != "" {
+        category := r.FormValue("category")
+        if category == "" {
+            category = "2"
+        }
+        // fmt.Println(id,category)
+        b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
+        // fmt.Println("获取合约持仓")
+
+        // fmt.Println(b, name, key)
+        if b {
+            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
+            // fmt.Println(fmt.Sprintf("%+v", c))
+            data, err := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_USDT_CONTRACT)
+            if err == nil {
+                var u = []map[string]interface{}{}
+                for _, v := range data {
+                    var one = map[string]interface{}{}
+                    one["amount"] = v.BuyAmount
+                    one["symbol"] = v.Symbol.String()
+                    one["unprofit"] = v.BuyProfitReal
+                    one["level"] = v.LeverRate
+                    if v.ContractType == "LNOG" {
+                        one["slide"] = "做多"
+                    } else {
+                        one["slide"] = "做空"
+                    }
+                    u = append(u, one)
+                }
+                response["U"] = u
+            } else {
+                response["status"] = "error"
+                response["msg"] = err.Error()
+            }
+            Bdata, Berr := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_CONTRACT)
+            if Berr == nil {
+                var u = []map[string]interface{}{}
+                for _, v := range Bdata {
+                    var one = map[string]interface{}{}
+                    one["amount"] = v.BuyAmount
+                    one["symbol"] = v.Symbol.String()
+                    one["unprofit"] = v.BuyProfitReal
+                    one["level"] = v.LeverRate
+                    if v.ContractType == "LNOG" {
+                        one["slide"] = "做多"
+                    } else {
+                        one["slide"] = "做空"
+                    }
+                    u = append(u, one)
+                }
+                response["B"] = u
+            } else {
+                response["status"] = "error"
+                response["msg"] = err.Error()
+            }
+        } else {
+            response["msg"] = "获取信息出错"
+        }
+    } else {
+        response["msg"] = "参数解析出错"
+    }
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
+}
+
 /**
  *@title        : RunServer
  *@desc         : 开启一个http服务端接收请求
@@ -226,6 +311,8 @@ func RunServer() {
     http.HandleFunc("/account", GetAccountHandler)
     http.HandleFunc("/price", GetPrice)
     http.HandleFunc("/symbol", CheckSymobl)
+    http.HandleFunc("/future", GetFuture)
+
     go http.ListenAndServe(":80", nil)
 
     // fmt.Println("服务运行")

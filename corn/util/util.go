@@ -9,17 +9,17 @@
 package util
 
 import (
-    "fmt"
-    "net/http"
-    "os"
-    "strings"
-    "time"
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 
-    "zmyjobs/goex"
-    "zmyjobs/goex/builder"
+	"zmyjobs/goex"
+	"zmyjobs/goex/builder"
 
-    "github.com/shopspring/decimal"
-    "golang.org/x/net/proxy"
+	"github.com/shopspring/decimal"
+	"golang.org/x/net/proxy"
 )
 
 // Config 创建client需要的配置Struct
@@ -66,9 +66,9 @@ func NewApi(c *Config) (cli goex.API) {
  *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
  */
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
-    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-    //     ClientID(c.ClientID).HttpTimeout(time.Second * 60)
-    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(5)
+    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+        ClientID(c.ClientID).HttpTimeout(time.Second * 60).FuturesLever(c.Lever)
+    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(5)
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api

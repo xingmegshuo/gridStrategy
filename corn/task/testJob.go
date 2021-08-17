@@ -47,13 +47,13 @@ func CrawRun() {
 	// log.Println("working for data clone ......")
 	crawLock.Lock()
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	// h := model.Host{}
-	// h.Get("火币")
-	// Hurl := "https://" + h.Url
-	// go xhttp(Hurl+"/v1/common/symbols", "火币交易对")
-	// go xhttpCraw(Hurl+"/market/tickers", 1)
-	// go xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
-	// go xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
+	h := model.Host{}
+	h.Get("火币")
+	Hurl := "https://" + h.Url
+	go xhttp(Hurl+"/v1/common/symbols", "火币交易对")
+	go xhttpCraw(Hurl+"/market/tickers", 1)
+	go xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
+	go xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
 	crawLock.Unlock()
 }
 
@@ -179,16 +179,16 @@ func WriteDB(realData []map[string]interface{}, category int) {
 						dayAmount = fmt.Sprintf("%.2f", model.ParseStringFloat(s["quote_volume_24h"].(string))*6.5/100000000)
 					}
 
-					base := "+"
-					if raf < 0 {
-						base = ""
-					}
+					// base := "+"
+					// if raf < 0 {
+					// 	base = ""
+					// }
 					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
 					value := map[string]interface{}{
 						"price_usd":  price,
 						"price":      price * 6.5,
 						"day_amount": dayAmount,
-						"raf":        base + r + "%",
+						"raf":        r,
 					}
 
 					model.UserDB.Table("db_task_coin").Where("id = ?", coin["id"]).Updates(&value)

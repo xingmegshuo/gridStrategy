@@ -415,13 +415,10 @@ func (bs *BinanceFutures) FutureCancelOrder(currencyPair CurrencyPair, contractT
 }
 
 func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
-	// symbol, err := bs.adaptToSymbol(currencyPair, contractType)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	symbol := currencyPair.ToSymbol("_")
-	// fmt.Println(symbol)
+	symbol := ""
+	if currencyPair != UNKNOWN_PAIR {
+		symbol = currencyPair.ToSymbol("_")
+	}
 	params := url.Values{}
 	bs.base.buildParamsSigned(&params)
 	path := bs.base.apiV1 + "positionRisk?" + params.Encode()
@@ -442,9 +439,8 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 		logger.Errorf("response body: %s", string(respBody))
 		return nil, err
 	}
-
 	for _, info := range positionRiskResponse {
-		if info.Symbol != symbol {
+		if symbol != "" && info.Symbol != symbol {
 			continue
 		}
 		p := FuturePosition{
@@ -452,9 +448,12 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 			Symbol:         currencyPair,
 			ForceLiquPrice: info.LiquidationPrice,
 		}
-
-		if info.PositionAmt > 0 {
-			p.BuyAmount = info.PositionAmt
+		if symbol == "" {
+			s := info.Symbol
+			p.Symbol = NewCurrencyPair(Currency{Symbol: s[:len(s)-4]}, Currency{Symbol: s[len(s)-4:]})
+		}
+		if info.PositionAmt != 0 {
+			p.BuyAmount = math.Abs(info.PositionAmt)
 			p.BuyAvailable = info.PositionAmt
 			p.BuyPriceAvg = info.EntryPrice
 			p.BuyPriceCost = info.EntryPrice
@@ -462,16 +461,16 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 			p.BuyProfitReal = info.UnRealizedProfit
 			positions = append(positions, p)
 
-		} else if info.PositionAmt < 0 {
-			p.SellAmount = math.Abs(info.PositionAmt)
-			p.SellAvailable = math.Abs(info.PositionAmt)
-			p.SellPriceAvg = info.EntryPrice
-			p.SellPriceCost = info.EntryPrice
-			p.SellProfit = info.UnRealizedProfit
-			p.SellProfitReal = info.UnRealizedProfit
-			positions = append(positions, p)
 		}
-		// fmt.Println(fmt.Sprintf("%+v", p))
+		// else if info.PositionAmt < 0 {
+		// 	p.SellAmount = math.Abs(info.PositionAmt)
+		// 	p.SellAvailable = math.Abs(info.PositionAmt)
+		// 	p.SellPriceAvg = info.EntryPrice
+		// 	p.SellPriceCost = info.EntryPrice
+		// 	p.SellProfit = info.UnRealizedProfit
+		// 	p.SellProfitReal = info.UnRealizedProfit
+		// 	positions = append(positions, p)
+		// }
 	}
 
 	return positions, nil

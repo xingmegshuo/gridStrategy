@@ -51,6 +51,7 @@ type AmountLog struct {
 	Hash           string  // 默认值
 	Remark         string  // 说明
 	CustomerId     float64 // 账号
+	CreateTime     int64
 }
 
 func (r *RebotLog) New() {
@@ -232,6 +233,7 @@ func GotMoney(money float64, uId float64) {
 			AfterAmount:    t - realMoney,
 			Hash:           "000",
 			Remark:         "盈利扣款",
+			CreateTime:     time.Now().Unix(),
 		}
 		log.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v", ownLog.BeforeAmount, ownLog.AfterAmount))
 		ownLog.Write(UserDB)
@@ -264,6 +266,7 @@ func GotMoney(money float64, uId float64) {
 					FromCustomerId: uId,
 					CustomerId:     float64(u["id"].(int32)),
 					BeforeAmount:   GetAccount(float64(u["id"].(int32))),
+					CreateTime:     time.Now().Unix(),
 				}
 
 				if thisLevel > baseLevel && after > 0 {

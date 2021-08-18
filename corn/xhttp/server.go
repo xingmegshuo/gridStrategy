@@ -14,18 +14,18 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -311,14 +311,14 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
         var coin_type = map[string]interface{}{}
         condintaion := 0
         model.UserDB.Raw("select coin_type from db_task_coin where id = ?", s["task_coin_id"]).Scan(&coin_type)
-        if t == "1" {
+        if t == "0" {
             response["msg"] = "获取现货自动策略"
         }
-        if t == "2" {
+        if t == "1" {
             response["msg"] = "获取u本位自动策略"
             condintaion = 1
         }
-        if t == "3" {
+        if t == "2" {
             response["msg"] = "获取b本位自动策略"
             condintaion = 2
         }

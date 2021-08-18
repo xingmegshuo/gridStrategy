@@ -305,6 +305,7 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
     t := r.FormValue("type")
     cate := r.FormValue("category_id")
     account := r.FormValue("account_id")
+    search := r.FormValue("search")
     var strategy []map[string]interface{}
     model.UserDB.Raw("select * from db_task_strategy where category_id = ?", cate).Scan(&strategy)
     for _, s := range strategy {
@@ -326,15 +327,17 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
             fmt.Println(s["id"])
             var num int
             model.UserDB.Raw("select count(*) from db_task_order where task_strategy_id = ? and status != 3 and customer_id = ? ", s["id"], account).Scan(&num)
-            fmt.Println(num)
             if num > 0 {
                 s["can"] = false
             } else {
                 s["can"] = true
+                if strings.Contains(s["name"].(string), search) {
+                    result = append(result, s)
+                }
             }
-            result = append(result, s)
         }
     }
+
     response["data"] = result
     b, _ := json.Marshal(&response)
     fmt.Fprintln(w, string(b))
@@ -351,6 +354,7 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
     data := util.HttpGet(url)
     response["status"] = "success"
     response["msg"] = "获取币安市场u本位合约交易对"
+    search := r.FormValue("search")
     if id := r.FormValue("db"); id == "true" {
         response["msg"] = "获取自选u本位合约交易对"
     }
@@ -376,11 +380,16 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
                 model.UserDB.Raw("select name from db_task_coin where coin_type = ? or coin_type = ?", 1, 3).Scan(&coinDB)
                 for _, c := range coinDB {
                     if coin.Name == c["name"] {
-                        coins = append(coins, coin)
+                        if strings.Contains(coin.Name, search) {
+                            coins = append(coins, coin)
+                        }
                     }
+
                 }
             } else {
-                coins = append(coins, coin)
+                if strings.Contains(coin.Name, search) {
+                    coins = append(coins, coin)
+                }
             }
 
         }
@@ -400,6 +409,7 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
     data := util.HttpGet(url)
     response["status"] = "success"
     response["msg"] = "获取b本位合约交易对"
+    search := r.FormValue("search")
     if id := r.FormValue("db"); id == "true" {
         response["msg"] = "获取自选b本位合约交易对"
     }
@@ -425,13 +435,18 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
                 model.UserDB.Raw("select name from db_task_coin where coin_type = ? or coin_type = ?", 2, 4).Scan(&coinDB)
                 for _, c := range coinDB {
                     if coin.Name == c["name"] {
-                        coins = append(coins, coin)
+                        if strings.Contains(coin.Name, search) {
+                            coins = append(coins, coin)
+                        }
                     }
                 }
             } else {
-                coins = append(coins, coin)
+                if strings.Contains(coin.Name, search) {
+                    coins = append(coins, coin)
+                }
             }
         }
+
         response["data"] = coins
     }
     b, _ := json.Marshal(&response)
@@ -447,7 +462,6 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
  */
 func RunServer() {
     log.Println("服务开启")
-
     http.HandleFunc("/", IndexHandler)
     http.HandleFunc("/account", GetAccountHandler)
     http.HandleFunc("/price", GetPrice)

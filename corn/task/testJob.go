@@ -192,14 +192,14 @@ func WriteDB(realData []map[string]interface{}, category int) {
 					add = false
 				}
 			}
-			if add {
-				var data = map[string]interface{}{}
-				data["name"] = name
-				data["coin_name"] = name
-				data["en_name"] = name[:len(name)-5]
-				data["category_id"] = category
-				model.UserDB.Table("db_task_coin").Create(&data)
-			}
+			// if add {
+			// 	var data = map[string]interface{}{}
+			// 	data["name"] = name
+			// 	data["coin_name"] = name
+			// 	data["en_name"] = name[:len(name)-5]
+			// 	data["category_id"] = category
+			// 	model.UserDB.Table("db_task_coin").Create(&data)
+			// }
 		}
 		// // fmt.Println(time.Since(a))
 	}

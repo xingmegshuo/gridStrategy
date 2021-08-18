@@ -14,18 +14,18 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -377,9 +377,10 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
             coin.CreateTime = int(time.Now().Unix())
             if id := r.FormValue("db"); id == "true" {
                 var coinDB []map[string]interface{}
-                model.UserDB.Raw("select name from db_task_coin where coin_type = ? or coin_type = ?", 1, 3).Scan(&coinDB)
+                model.UserDB.Raw("select name,id from db_task_coin where coin_type = ? or coin_type = ?", 1, 3).Scan(&coinDB)
                 for _, c := range coinDB {
                     if coin.Name == c["name"] {
+                        coin.Id = c["id"]
                         if strings.Contains(coin.Name, search) {
                             coins = append(coins, coin)
                         }
@@ -421,6 +422,7 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
             var coin model.Coin
             one := v.(map[string]interface{})
             coin.CategoryId = 2
+
             coin.Name = util.ToMySymbol(one["symbol"].(string))
             coin.PriceUsd = model.ParseStringFloat(one["lastPrice"].(string))
             coin.Price = coin.PriceUsd * 6.5
@@ -432,9 +434,10 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
             coin.CoinName = coin.Name
             if id := r.FormValue("db"); id == "true" {
                 var coinDB []map[string]interface{}
-                model.UserDB.Raw("select name from db_task_coin where coin_type = ? or coin_type = ?", 2, 4).Scan(&coinDB)
+                model.UserDB.Raw("select name,id from db_task_coin where coin_type = ? or coin_type = ?", 2, 4).Scan(&coinDB)
                 for _, c := range coinDB {
                     if coin.Name == c["name"] {
+                        coin.Id = c["id"]
                         if strings.Contains(coin.Name, search) {
                             coins = append(coins, coin)
                         }

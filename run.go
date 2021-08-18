@@ -57,11 +57,9 @@ func main() {
 	signal.Notify(exitChan, os.Interrupt, syscall.SIGTERM)
 	go exitHandle()
 	xhttp.RunServer()
-	for{
-		;
-	}
-	// job.Init()
-	// job.C.Start()
-	// defer job.C.Stop()
-	// job.Wg.Wait()
+
+	job.Init()
+	job.C.Start()
+	defer job.C.Stop()
+	job.Wg.Wait()
 }

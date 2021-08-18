@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"strings"
 
-	util "zmyjobs/corn/util"
+	util "zmyjobs/corn/uti"
 
 	"github.com/shopspring/decimal"
 )

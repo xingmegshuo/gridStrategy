@@ -1,14 +1,14 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
-	"zmyjobs/goex"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
+    "zmyjobs/goex"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -28,7 +28,6 @@ func RunEx(ctx context.Context, u model.User) {
                 if g == nil || len(g.grids) != int(u.Number) {
                     u.IsRun = -10
                     u.Error = "api 请求超时，或api接口更改"
-                    log.Println(u.Error)
                     u.Update()
                     GridDone <- u.ObjectId
                 } else {
@@ -63,7 +62,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
             return nil
         }
     }
-    log.Println("交易对", ex.goex.Currency)
+    log.Println("交易对", ex.goex.Currency, u.Future)
     return
 }
 
@@ -112,18 +111,16 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         }
                         t.u.BasePrice = p
                         t.u.RealGrids = "***"
-                        // t.u.Base = 0
+
                         t.u.Update()
                         model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
                         log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
-
                         model.RunOver(t.u.Custom, p, float64(t.u.ObjectId))
-                        if p > 0 {
-                            model.LogStrategy(t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
-                                t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
-                        }
+                        // if p > 0 {
+                        model.LogStrategy(t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
+                            t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+                        // }
                         log.Println("任务结束", t.u.ObjectId)
-                        // GridDone <- t.u.ObjectId
                     }
                 }
             }

@@ -56,7 +56,7 @@ func init() {
 		},
 	)
 	// serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	// dsn := "root:528012@tcp(127.0.0.1:3306)/zmy?charset=utf8mb4&parseTime=True&loc=Local"
 
 	// server
 	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")

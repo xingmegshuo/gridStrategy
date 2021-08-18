@@ -19,9 +19,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 	grid "zmyjobs/corn/grid"
 	model "zmyjobs/corn/models"
-	"zmyjobs/corn/util"
+	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
 
 	"github.com/shopspring/decimal"
@@ -50,8 +51,6 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-
-
      @title   :
      @desc    :
      @auth    : small_ant / time(2021/08/12 15:35:50)
@@ -84,7 +83,6 @@ func CheckSymobl(w http.ResponseWriter, r *http.Request) {
                 res["msg"] = "交易对参数有效"
                 res["data"] = coinType
             }
-            // fmt.Println(err)
         }
     }
     b, _ := json.Marshal(&res)
@@ -149,7 +147,7 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
     var (
         response = map[string]interface{}{}
         res      = map[string]interface{}{}
-        list     = []map[string]interface{}{}
+        list     []map[string]interface{}
         sumMoney decimal.Decimal
     )
     response["status"] = "error"
@@ -214,7 +212,6 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 /*
 
-
      @title   : FutureAccount
      @desc    :
      @auth    : small_ant / time(2021/08/17 13:43:11)
@@ -239,7 +236,6 @@ func GetFuture(w http.ResponseWriter, r *http.Request) {
         }
         // fmt.Println(id,category)
         b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
-        // fmt.Println("获取合约持仓")
 
         // fmt.Println(b, name, key)
         if b {
@@ -297,6 +293,151 @@ func GetFuture(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, string(b))
 }
 
+// 获取自动策略列表
+func GetStrategy(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+    var (
+        response = map[string]interface{}{}
+        result   []map[string]interface{}
+    )
+    response["status"] = "success"
+    response["msg"] = "获取自动策略列表"
+    t := r.FormValue("type")
+    cate := r.FormValue("category_id")
+    account := r.FormValue("account_id")
+    var strategy []map[string]interface{}
+    model.UserDB.Raw("select * from db_task_strategy where category_id = ?", cate).Scan(&strategy)
+    for _, s := range strategy {
+        var coin_type = map[string]interface{}{}
+        condintaion := 0
+        model.UserDB.Raw("select coin_type from db_task_coin where id = ?", s["task_coin_id"]).Scan(&coin_type)
+        if t == "1" {
+            response["msg"] = "获取现货自动策略"
+        }
+        if t == "2" {
+            response["msg"] = "获取u本位自动策略"
+            condintaion = 1
+        }
+        if t == "3" {
+            response["msg"] = "获取b本位自动策略"
+            condintaion = 2
+        }
+        if coin_type["coin_type"].(int8) == int8(condintaion) {
+            fmt.Println(s["id"])
+            var num int
+            model.UserDB.Raw("select count(*) from db_task_order where task_strategy_id = ? and status != 3 and customer_id = ? ", s["id"], account).Scan(&num)
+            fmt.Println(num)
+            if num > 0 {
+                s["can"] = false
+            } else {
+                s["can"] = true
+            }
+            result = append(result, s)
+        }
+    }
+    response["data"] = result
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
+}
+
+// 获取u交易对
+func GetFutureU(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+    var (
+        response = map[string]interface{}{}
+    )
+
+    url := "https://fapi.binance.com/fapi/v1/ticker/24hr"
+    data := util.HttpGet(url)
+    response["status"] = "success"
+    response["msg"] = "获取币安市场u本位合约交易对"
+    if id := r.FormValue("db"); id == "true" {
+        response["msg"] = "获取自选u本位合约交易对"
+    }
+    if data == nil {
+        response["status"] = "error"
+    } else {
+        var coins []model.Coin
+        for _, v := range data.([]interface{}) {
+            var coin model.Coin
+            one := v.(map[string]interface{})
+            coin.CategoryId = 2
+            coin.Name = util.ToMySymbol(one["symbol"].(string))
+            coin.PriceUsd = model.ParseStringFloat(one["lastPrice"].(string))
+            coin.Price = coin.PriceUsd * 6.5
+            coin.DayAmount = model.ParseStringFloat(one["quoteVolume"].(string)) * 6.5 / 100000000
+            coin.Raf = model.ParseStringFloat(one["priceChangePercent"].(string))
+            coin.CoinType = util.SwitchCoinType(coin.Name)
+            coin.EnName = coin.Name
+            coin.CoinName = coin.Name
+            coin.CreateTime = int(time.Now().Unix())
+            if id := r.FormValue("db"); id == "true" {
+                var coinDB []map[string]interface{}
+                model.UserDB.Raw("select name from db_task_coin where coin_type = ? or coin_type = ?", 1, 3).Scan(&coinDB)
+                for _, c := range coinDB {
+                    if coin.Name == c["name"] {
+                        coins = append(coins, coin)
+                    }
+                }
+            } else {
+                coins = append(coins, coin)
+            }
+
+        }
+        response["data"] = coins
+    }
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
+}
+
+// 获取b交易对
+func GetFutureB(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+    var (
+        response = map[string]interface{}{}
+    )
+    url := "https://dapi.binance.com/dapi/v1/ticker/24hr"
+    data := util.HttpGet(url)
+    response["status"] = "success"
+    response["msg"] = "获取b本位合约交易对"
+    if id := r.FormValue("db"); id == "true" {
+        response["msg"] = "获取自选b本位合约交易对"
+    }
+    if data == nil {
+        response["status"] = "error"
+    } else {
+        var coins []model.Coin
+        for _, v := range data.([]interface{}) {
+            var coin model.Coin
+            one := v.(map[string]interface{})
+            coin.CategoryId = 2
+            coin.Name = util.ToMySymbol(one["symbol"].(string))
+            coin.PriceUsd = model.ParseStringFloat(one["lastPrice"].(string))
+            coin.Price = coin.PriceUsd * 6.5
+            coin.DayAmount = model.ParseStringFloat(one["baseVolume"].(string)) * coin.Price / 100000000
+            coin.Raf = model.ParseStringFloat(one["priceChangePercent"].(string))
+            coin.CoinType = util.SwitchCoinType(coin.Name)
+            coin.CreateTime = int(time.Now().Unix())
+            coin.EnName = coin.Name
+            coin.CoinName = coin.Name
+            if id := r.FormValue("db"); id == "true" {
+                var coinDB []map[string]interface{}
+                model.UserDB.Raw("select name from db_task_coin where coin_type = ? or coin_type = ?", 2, 4).Scan(&coinDB)
+                for _, c := range coinDB {
+                    if coin.Name == c["name"] {
+                        coins = append(coins, coin)
+                    }
+                }
+            } else {
+                coins = append(coins, coin)
+            }
+        }
+        response["data"] = coins
+    }
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
+}
+
 /**
  *@title        : RunServer
  *@desc         : 开启一个http服务端接收请求
@@ -312,6 +453,9 @@ func RunServer() {
     http.HandleFunc("/price", GetPrice)
     http.HandleFunc("/symbol", CheckSymobl)
     http.HandleFunc("/future", GetFuture)
+    http.HandleFunc("/strategy", GetStrategy)
+    http.HandleFunc("/u", GetFutureU)
+    http.HandleFunc("/b", GetFutureB)
 
     go http.ListenAndServe(":80", nil)
 

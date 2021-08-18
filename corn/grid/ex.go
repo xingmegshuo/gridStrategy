@@ -11,7 +11,7 @@ package grid
 import (
 	"encoding/json"
 	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/util"
+	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
 
 	"github.com/shopspring/decimal"

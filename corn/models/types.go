@@ -80,6 +80,23 @@ type Grid struct {
 	Order      uint64          // 订单id
 }
 
+// coin
+type Coin struct {
+	CategoryId int     `json:"category_id"` // 平台分类CategoryId
+	Name       string  `json:"name"`
+	EnName     string  `json:"en_name"`
+	CoinName   string  `json:"coin_name"`
+	Price      float64 `json:"price"`
+	PriceUsd   float64 `json:"price_usd"`
+	Raf        float64 `json:"raf"`
+	DayAmount  float64 `json:"day_amount"`
+	Img        string  `json:"img"`
+	Type       string  `json:"type"`
+	Enable     int     `json:"enble"`
+	CoinType   int     `json:"coin_type"`
+	CreateTime int     `json:"create_time"`
+}
+
 var (
 	a = goex.SWAP_CONTRACT      // 币本位合约
 	c = goex.SWAP_USDT_CONTRACT // u 本位合约

@@ -13,14 +13,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 	model "zmyjobs/corn/models"
-
-	"golang.org/x/net/proxy"
+	util "zmyjobs/corn/uti"
 )
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
@@ -79,21 +76,21 @@ func xhttp(url string, name string) {
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int) {
 	client := http.Client{Timeout: 10 * time.Second}
-	// client := proxyHttp()
+	// client := util.ProxyHttp()
 	resp, err := client.Get(url)
 	// fmt.Println(err)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)
 		var data = make(map[string]interface{})
-		var realData = []map[string]interface{}{}
+		var realData []map[string]interface{}
 		if category == 1 {
 			_ = json.Unmarshal(content, &data)
 			byteData, _ := json.Marshal(data["data"])
 			_ = json.Unmarshal(byteData, &realData)
 
 			if !model.CheckCache("coin") {
-				var coin = []map[string]interface{}{}
+				var coin []map[string]interface{}
 				model.UserDB.Raw("select id,en_name from db_coin").Scan(&coin)
 				byteData, _ := json.Marshal(coin)
 				model.SetCache("coins", string(byteData), time.Second*60)
@@ -139,9 +136,9 @@ func xhttpCraw(url string, category int) {
 func WriteDB(realData []map[string]interface{}, category int) {
 	// start := time.Now()
 	var (
-		coins = []map[string]interface{}{}
+		coins []map[string]interface{}
 	)
-	model.UserDB.Raw("select name,id from db_task_coin where category_id = ?", category).Scan(&coins)
+	model.UserDB.Raw("select name,id from db_task_coin where category_id = ? and coin_type = ?", category, 0).Scan(&coins)
 	for _, s := range realData {
 		// fmt.Println(s)
 		// a := time.Now()
@@ -154,7 +151,7 @@ func WriteDB(realData []map[string]interface{}, category int) {
 		} else {
 			symbol = s["symbol"].(string)
 		}
-		if name := ToMySymbol(symbol); name != "none" {
+		if name := util.ToMySymbol(symbol); name != "none" {
 			for _, coin := range coins {
 				if name == coin["name"].(string) {
 					// fmt.Println(s)
@@ -207,38 +204,4 @@ func WriteDB(realData []map[string]interface{}, category int) {
 		// // fmt.Println(time.Since(a))
 	}
 	// fmt.Println(time.Since(start), "结束")
-}
-
-func proxyHttp() *http.Client {
-	dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1123", nil, proxy.Direct)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
-	}
-	// setup a http client
-	httpTransport := &http.Transport{}
-	httpTransport.Dial = dialer.Dial
-	return &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
-}
-
-// 把数据库交易对转换成api交易对
-func ToMySymbol(name string) string {
-	var (
-		d int
-		p int
-	)
-	if len(name) > 4 {
-		d = len(name) - 4
-	}
-
-	if len(name) > 5 {
-		p = len(name) - 5
-	}
-	// fmt.Println(name)
-	if name[p:] == "-USDT" {
-		return strings.ToUpper(name[:p]) + "/" + "USDT"
-	}
-	if strings.ToLower(name[d:]) == "usdt" {
-		return strings.ToUpper(name[:d]) + "/" + strings.ToUpper(name[d:])
-	}
-	return "none"
 }

@@ -31,13 +31,7 @@ func init() {
 		fmt.Println(err.Error())
 	}
 	logFileName := "log.log"
-	//日志文件
-	// fileName := path.Join(logFilePath, logFileName)
-	// if _, err := os.Stat(fileName); err != nil {
-	// 	if _, err := os.Create(fileName); err != nil {
-	// 		fmt.Println(err.Error())
-	// 	}
-	// }
+
 	//写入文件
 	// src, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	writer, err := rotatelogs.New(

@@ -9,7 +9,9 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -143,4 +145,56 @@ func SwitchCoinType(name string) int {
         return 4
     }
     return 0
+}
+
+func ProxyHttp() *http.Client {
+    dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1123", nil, proxy.Direct)
+    if err != nil {
+        fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+    }
+    // setup a http client
+    httpTransport := &http.Transport{}
+    httpTransport.Dial = dialer.Dial
+    return &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
+}
+
+// ToMySymbol 把数据库交易对转换成api交易对
+func ToMySymbol(name string) string {
+    var (
+        d int
+        p int
+    )
+    if len(name) > 4 {
+        d = len(name) - 4
+    }
+
+    if len(name) > 5 {
+        p = len(name) - 5
+    }
+    // fmt.Println(name)
+    if name[p:] == "-USDT" {
+        return strings.ToUpper(name[:p]) + "/" + "USDT"
+    }
+    if name[len(name)-3:] == "USD" {
+        return strings.ToUpper(name[:len(name)-3]) + "/" + "USD"
+    }
+    if name[p:] == "_PERP" {
+        return ToMySymbol(name[:p])
+    }
+    if strings.ToLower(name[d:]) == "usdt" {
+        return strings.ToUpper(name[:d]) + "/" + strings.ToUpper(name[d:])
+    }
+    return name
+}
+
+func HttpGet(url string) (d interface{}) {
+    client := http.Client{Timeout: 10 * time.Second}
+    // client := ProxyHttp()
+    resp, err := client.Get(url)
+    if err == nil {
+        defer resp.Body.Close()
+        content, _ := ioutil.ReadAll(resp.Body)
+        _ = json.Unmarshal(content, &d)
+    }
+    return d
 }

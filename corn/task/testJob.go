@@ -142,7 +142,7 @@ func WriteDB(realData []map[string]interface{}, category int) {
 	for _, s := range realData {
 		// fmt.Println(s)
 		// a := time.Now()
-		add := true
+		// add := true
 		var (
 			symbol string
 		)
@@ -189,7 +189,7 @@ func WriteDB(realData []map[string]interface{}, category int) {
 					}
 
 					model.UserDB.Table("db_task_coin").Where("id = ?", coin["id"]).Updates(&value)
-					add = false
+					// add = false
 				}
 			}
 			// if add {

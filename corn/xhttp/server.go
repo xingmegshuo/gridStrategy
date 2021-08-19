@@ -468,16 +468,26 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     var (
         response = map[string]interface{}{}
+        all      = "0"
     )
     response["status"] = "success"
     response["msg"] = "获取用户任务列表"
     search := r.FormValue("search")
-    if id := r.FormValue("account_id"); id != "" {
+    status := r.FormValue("status")
+    category := r.FormValue("category_id")
+    all = r.FormValue("order_type")
+    if id := r.FormValue("account_id"); id != "" && status != "" {
         var (
             res  []map[string]interface{}
             task []map[string]interface{}
         )
-        model.UserDB.Raw("select * from db_task_order where customer_id = ? and status < 3", id).Scan(&task)
+        s := model.UserDB.Table("db_task_order").Where("customer_id = ? and status = ? and category_id = ?", id, status, category)
+        if all == "0" {
+            s.Find(&task)
+        } else {
+            s.Where("order_type = ?", all).Find(&task)
+        }
+
         for _, v := range task {
             // var strategy = map[string]interface{}{}
             // model.UserDB.Raw("select * from db_task_strategy where id = ?", v["task_strategy_id"]).Scan(&strategy)
@@ -487,6 +497,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
                 // } else {
                 //     strategy["id"] = v["id"] // 赋值order表中的id
                 //     v["name"] = strategy["name"]
+                v["label"] = util.SwitchCoinType(v["task_coin_name"].(string))
                 res = append(res, v)
                 // }
             }

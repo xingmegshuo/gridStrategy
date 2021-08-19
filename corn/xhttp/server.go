@@ -468,41 +468,78 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     var (
         response = map[string]interface{}{}
+        result   = map[string]interface{}{}
+        info     = map[string]interface{}{}
         all      = "0"
+        category = "0"
     )
     response["status"] = "success"
     response["msg"] = "获取用户任务列表"
     search := r.FormValue("search")
     status := r.FormValue("status")
-    category := r.FormValue("category_id")
+    category = r.FormValue("category_id")
     all = r.FormValue("order_type")
     if id := r.FormValue("account_id"); id != "" && status != "" {
         var (
-            res  []map[string]interface{}
-            task []map[string]interface{}
+            res         []map[string]interface{}
+            task        []map[string]interface{}
+            status0     int
+            status1     int
+            status2     int
+            total_sum   float64
+            total_today float64
         )
-        s := model.UserDB.Table("db_task_order").Where("customer_id = ? and status = ? and category_id = ?", id, status, category)
-        if all == "0" {
-            s.Find(&task)
-        } else {
-            s.Where("order_type = ?", all).Find(&task)
+        if all == "" && category == "" {
+            model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? ", id, status).Scan(&task)
+        } else if all != "" && category != "" {
+            model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ? and order_type = ?", id, status, category, all).Scan(&task)
+        } else if all != "" {
+            model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ?", id, status, category).Scan(&task)
+        } else if category != "" {
+            model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and order_type = ?", id, status, all).Scan(&task)
         }
 
+        model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 0", id).Scan(&status0)
+        model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 1", id).Scan(&status1)
+        model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 1", id).Scan(&status2)
+        model.UserDB.Raw("select sum(av_amount) from db_task_order_log where member_id = ?", id).Scan(&total_sum)
+        currentTime := time.Now()
+        zeroTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, currentTime.Location())
+
+        old1Time := zeroTime.AddDate(0, 0, -1).Unix()
+        model.UserDB.Raw("select sum(av_amount) from db_task_order_log where member_id = ? and create_time >= ? ", id, old1Time).Scan(&total_today)
+        info["total_status0"] = status0
+        info["total_status1"] = status1
+        info["total_status2"] = status2
+        info["total_sum"] = total_sum
+        info["total_today"] = total_today
         for _, v := range task {
             // var strategy = map[string]interface{}{}
             // model.UserDB.Raw("select * from db_task_strategy where id = ?", v["task_strategy_id"]).Scan(&strategy)
             if strings.Contains(v["task_coin_name"].(string), util.UpString(search)) {
-                // if strategy == nil {
-                //     res = append(res, v)
-                // } else {
-                //     strategy["id"] = v["id"] // 赋值order表中的id
-                //     v["name"] = strategy["name"]
-                v["label"] = util.SwitchCoinType(v["task_coin_name"].(string))
+                var coin = map[string]interface{}{}
+                model.UserDB.Raw("select coin_type from db_task_coin where id = ?", v["task_coin_id"]).Scan(&coin)
+                if coin["coin_type"].(int8) == int8(0) {
+                    v["label"] = "现货"
+                }
+                if coin["coin_type"].(int8) == int8(1) {
+                    v["label"] = "U本位永续合约"
+                }
+                if coin["coin_type"].(int8) == int8(2) {
+                    v["label"] = "B本位永续合约"
+                }
+                if coin["coin_type"].(int8) == int8(3) {
+                    v["label"] = "U本位交割合约"
+                }
+                if coin["coin_type"].(int8) == int8(4) {
+                    v["label"] = "B本位交割合约"
+                }
                 res = append(res, v)
-                // }
             }
         }
-        response["data"] = res
+        result["data"] = res
+        result["info"] = info
+        response["data"] = result
     } else {
         response["msg"] = "没有必须参数"
     }

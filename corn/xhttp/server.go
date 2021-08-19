@@ -14,20 +14,20 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -489,7 +489,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
             total_sum   float64
             total_today float64
         )
-        if all == "" && category == "" {
+        if all == "" && category == "" || all == "0" && category == "0" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? ", id, status).Scan(&task)
         } else if all != "" && category != "" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ? and order_type = ?", id, status, category, all).Scan(&task)

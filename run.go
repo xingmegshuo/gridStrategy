@@ -38,6 +38,7 @@ func exitHandle() {
 	job.Exit()
 	l.Unlock()
 	logs.Log.Info("退出程序")
+
 	defer job.Exit()
 	os.Exit(1) //如果ctrl+c 关不掉程序，使用os.Exit强行关掉
 }
@@ -51,7 +52,7 @@ func exitHandle() {
  */
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	// logs.NoneLog()
+	logs.NoneLog()
 	logs.Log.Println("what fuck")
 	exitChan = make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt, syscall.SIGTERM)

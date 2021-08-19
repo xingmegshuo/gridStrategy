@@ -23,8 +23,8 @@ var updateCount sync.Mutex
 
 func UserJobRun() {
 	userData()
-	model.NewUser()
-	go RunWG()
+	// model.NewUser()
+	// go RunWG()
 }
 
 func userData() {
@@ -54,10 +54,8 @@ func WriteCache(name string, t time.Duration) {
 				v["task_coin_name"] = coin["name"]
 				v["coin_type"] = coin["coin_type"]
 			}
-			// fmt.Println(Data)
 		}
 		byteData, _ := json.Marshal(Data)
-		// fmt.Println(Data)
 		model.SetCache(name, string(byteData), t)
 	}
 }

@@ -11,7 +11,6 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -207,21 +206,17 @@ func ParseStrategy(u User) *Args {
 }
 
 func GetPrice(u User) decimal.Decimal {
-	// fmt.Println("获取价格")
 	c := util.Config{Name: u.Category}
 	f := false
 	if u.Future > 1 {
 		f = true
 	}
-	fmt.Println("获取价格", u.Name, u.ObjectId)
 	price, err := c.GetPrice(u.Name, f)
-	// fmt.Println(price, err)
 	if err == nil {
 		return price
 	} else {
 		log.Println(err)
 	}
-	// fmt.Println(price, err)
 	return decimal.NewFromFloat(1)
 }
 

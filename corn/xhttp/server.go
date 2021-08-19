@@ -25,6 +25,8 @@ import (
 	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
 
+	"github.com/gorilla/mux"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -101,23 +103,31 @@ func CheckSymobl(w http.ResponseWriter, r *http.Request) {
 **/
 func GetPrice(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
-
     var (
         res  = map[string]interface{}{}
         data = map[string]interface{}{}
+        f    = false
+        name string
     )
     res["status"] = "error"
     res["msg"] = "获取当前价格"
     res["data"] = "none"
 
     if id := r.FormValue("coin_id"); id != "" {
-        model.UserDB.Raw("select name,category_id from db_task_coin where id = ?", id).Scan(&data)
+        model.UserDB.Raw("select name,category_id,coin_type from db_task_coin where id = ?", id).Scan(&data)
+        if data["category_id"].(int) == 1 {
+            name = "火币"
+        }
+        if data["category_id"].(int) == 2 {
+            name = "币安"
+        }
+        if data["coin_type"].(int) != 0 {
+            f = true
+        }
         if data["name"] != nil {
             // 目前获取火币价格
-            symbol := model.SymbolCategory{}
-            symbol.BaseCurrency, symbol.QuoteCurrency = SplitString(data["name"].(string))
-            ex := grid.NewEx(&symbol)
-            price, err := ex.GetPrice()
+            ex := &util.Config{Name: name}
+            price, err := ex.GetPrice(data["name"].(string), f)
             if err == nil {
                 res["status"] = "success"
                 res["data"] = price
@@ -326,12 +336,12 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
         if coin_type["coin_type"].(int8) == int8(condintaion) {
             fmt.Println(s["id"])
             var num int
-            model.UserDB.Raw("select count(*) from db_task_order where task_strategy_id = ? and status != 3 and customer_id = ? ", s["id"], account).Scan(&num)
+            model.UserDB.Raw("select count(*) from db_task_order where task_strategy_id = ? and status < 3 and customer_id = ? ", s["id"], account).Scan(&num)
             if num > 0 {
                 s["can"] = false
             } else {
                 s["can"] = true
-                if strings.Contains(s["name"].(string), search) {
+                if strings.Contains(s["name"].(string), util.UpString(search)) {
                     result = append(result, s)
                 }
             }
@@ -381,18 +391,16 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
                 for _, c := range coinDB {
                     if coin.Name == c["name"] {
                         coin.Id = c["id"]
-                        if strings.Contains(coin.Name, search) {
+                        if strings.Contains(coin.Name, util.UpString(search)) {
                             coins = append(coins, coin)
                         }
                     }
-
                 }
             } else {
-                if strings.Contains(coin.Name, search) {
+                if strings.Contains(coin.Name, util.UpString(search)) {
                     coins = append(coins, coin)
                 }
             }
-
         }
         response["data"] = coins
     }
@@ -438,20 +446,193 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
                 for _, c := range coinDB {
                     if coin.Name == c["name"] {
                         coin.Id = c["id"]
-                        if strings.Contains(coin.Name, search) {
+                        if strings.Contains(coin.Name, util.UpString(search)) {
                             coins = append(coins, coin)
                         }
                     }
                 }
             } else {
-                if strings.Contains(coin.Name, search) {
+                if strings.Contains(coin.Name, util.UpString(search)) {
                     coins = append(coins, coin)
                 }
             }
         }
-
         response["data"] = coins
     }
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
+}
+
+// 获取任务列表
+func GetTask(w http.ResponseWriter, r *http.Request) {
+    w = Handler(w)
+    var (
+        response = map[string]interface{}{}
+    )
+    response["status"] = "success"
+    response["msg"] = "获取用户任务列表"
+    search := r.FormValue("search")
+    if id := r.FormValue("account_id"); id != "" {
+        var (
+            res  []map[string]interface{}
+            task []map[string]interface{}
+        )
+        model.UserDB.Raw("select * from db_task_order where customer_id = ? and status < 3", id).Scan(&task)
+        for _, v := range task {
+            // var strategy = map[string]interface{}{}
+            // model.UserDB.Raw("select * from db_task_strategy where id = ?", v["task_strategy_id"]).Scan(&strategy)
+            if strings.Contains(v["task_coin_name"].(string), util.UpString(search)) {
+                // if strategy == nil {
+                //     res = append(res, v)
+                // } else {
+                //     strategy["id"] = v["id"] // 赋值order表中的id
+                //     v["name"] = strategy["name"]
+                res = append(res, v)
+                // }
+            }
+        }
+        response["data"] = res
+    } else {
+        response["msg"] = "没有必须参数"
+    }
+    b, _ := json.Marshal(&response)
+    fmt.Fprintln(w, string(b))
+}
+
+// 修改手动策略
+func UpdateTask(w http.ResponseWriter, r *http.Request) {
+    r.ParseForm()
+    w = Handler(w)
+    var (
+        response = map[string]interface{}{}
+    )
+    response["status"] = "success"
+    response["msg"] = "修改用户任务列表"
+    var (
+        taskStra []map[string]interface{}
+        s        []map[string]interface{}
+    )
+    // fmt.Println(r.Form)
+    task := model.UserDB.Table("db_task_order").Where("id = ? ", r.Form["id"]).Find(&taskStra) // 要修改的order
+    strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", r.Form["id"]).Find(&s)
+    tasks := model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
+
+    if r.Form["status"] != nil && r.Form["status"][0] == "0" {
+        if taskStra[0]["status"].(int8) == int8(1) {
+            task.Update("status", 0)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("status", 0)
+                tasks.Update("status", 0)
+            }
+        } else {
+            response["status"] = "error"
+            response["msg"] = "策略不处于执行状态"
+        }
+    }
+
+    tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 0)
+    if r.Form["status"] != nil && r.Form["status"][0] == "1" {
+        if taskStra[0]["status"].(int8) == int8(0) {
+            task.Update("status", 1)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("status", 1)
+                tasks.Update("status", 1)
+            }
+        } else {
+            response["status"] = "error"
+            response["msg"] = "策略不处于暂停状态"
+        }
+    }
+    if r.Form["status"] != nil && r.Form["status"][0] == "3" {
+        if taskStra[0]["status"].(int8) == int8(2) {
+            task.Update("status", 3)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("status", 3)
+            }
+        } else {
+            response["status"] = "error"
+            response["msg"] = "策略不处于完成状态"
+        }
+    }
+    tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
+    if r.Form["stop_buy"] != nil && r.Form["stop_buy"][0] == "1" {
+        if taskStra[0]["stop_buy"].(int64) == int64(2) && taskStra[0]["status"].(int8) == int8(1) {
+            task.Update("stop_buy", 1)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("stop_buy", 1)
+                tasks.Update("stop_buy", 1)
+            }
+        } else {
+            response["status"] = "error"
+            response["msg"] = "策略不处于暂停买入状态或策略不处于开启状态"
+        }
+    }
+    if r.Form["stop_buy"] != nil && r.Form["stop_buy"][0] == "2" {
+        if taskStra[0]["stop_buy"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
+            task.Update("stop_buy", 2)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("stop_buy", 2)
+                tasks.Update("stop_buy", 2)
+            }
+        } else {
+            response["status"] = "error"
+            response["msg"] = "策略不处于开启买入状态"
+        }
+    }
+    if r.Form["one_buy"] != nil && r.Form["one_buy"][0] == "2" {
+        if taskStra[0]["one_buy"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
+            task.Update("one_buy", 2)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("one_buy", 2)
+                tasks.Update("one_buy", 2)
+            }
+        } else if taskStra[0]["one_buy"].(int64) == int64(2) {
+            response["status"] = "error"
+            response["msg"] = "其他操作占用"
+        } else {
+            response["status"] = "error"
+            response["msg"] = "重复提交"
+        }
+    } else if r.Form["one_buy"] != nil && r.Form["one_buy"][0] == "1" {
+        response["status"] = "error"
+        response["msg"] = "无效操作"
+    }
+    if r.Form["one_sell"] != nil && r.Form["one_sell"][0] == "2" {
+        if taskStra[0]["one_sell"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
+            task.Update("one_sell", 2)
+            if strategy.RowsAffected > 0 {
+                strategy.Update("one_sell", 2)
+                tasks.Update("one_sell", 2)
+            }
+        } else if taskStra[0]["one_sell"].(int64) == int64(2) {
+            response["status"] = "error"
+            response["msg"] = "其他操作占用"
+        } else {
+            response["status"] = "error"
+            response["msg"] = "重复提交"
+        }
+    } else if r.Form["one_sell"] != nil && r.Form["one_sell"][0] == "1" {
+        response["status"] = "error"
+        response["msg"] = "无效操作"
+    }
+    tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 0)
+    for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
+        "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
+        if r.Form[name] != nil && r.Form[name][0] != taskStra[0][name] {
+            // fmt.Println(name)
+            if taskStra[0]["status"].(int8) == int8(0) {
+                task.Update(name, r.Form[name][0])
+                if strategy.RowsAffected > 0 {
+                    strategy.Update(name, r.Form[name][0])
+                    tasks.Update(name, r.Form[name][0])
+                }
+            } else {
+                response["status"] = "error"
+                response["msg"] = "不处于暂停状态"
+            }
+        }
+    }
+
     b, _ := json.Marshal(&response)
     fmt.Fprintln(w, string(b))
 }
@@ -465,16 +646,19 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
  */
 func RunServer() {
     log.Println("服务开启")
-    http.HandleFunc("/", IndexHandler)
-    http.HandleFunc("/account", GetAccountHandler)
-    http.HandleFunc("/price", GetPrice)
-    http.HandleFunc("/symbol", CheckSymobl)
-    http.HandleFunc("/future", GetFuture)
-    http.HandleFunc("/strategy", GetStrategy)
-    http.HandleFunc("/u", GetFutureU)
-    http.HandleFunc("/b", GetFutureB)
+    router := mux.NewRouter()
+    router.HandleFunc("/", IndexHandler).Methods("GET")
+    router.HandleFunc("/account", GetAccountHandler)
+    router.HandleFunc("/price", GetPrice)
+    router.HandleFunc("/symbol", CheckSymobl)
+    router.HandleFunc("/future", GetFuture)
+    router.HandleFunc("/strategy", GetStrategy)
+    router.HandleFunc("/u", GetFutureU)
+    router.HandleFunc("/b", GetFutureB)
+    router.HandleFunc("/task", GetTask)
+    router.HandleFunc("/task/update", UpdateTask).Methods("POST")
 
-    go http.ListenAndServe(":80", nil)
+    go http.ListenAndServe(":80", router)
 
     // fmt.Println("服务运行")
 }

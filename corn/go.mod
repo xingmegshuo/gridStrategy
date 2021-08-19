@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/go-redis/redis/v8 v8.11.2
+	github.com/gorilla/mux v1.8.0
 	github.com/huobirdcenter/huobi_golang v0.0.0-20210226095227-8a30a95b6d0d
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.5 // indirect

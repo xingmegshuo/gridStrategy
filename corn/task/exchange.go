@@ -41,8 +41,9 @@ func RunWG() {
 				}
 			default:
 			}
+			// fmt.Println(u.Status, u.IsRun)
 			if u.Status == 2 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
-				// log.Println("符合要求", model.UpdateStatus(u.ID))
+				log.Println("符合要求", model.UpdateStatus(u.ID))
 				for i := 1; i < 2; i++ {
 					start = 1
 					log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)

@@ -59,7 +59,7 @@ func (r *RebotLog) New() {
 }
 
 func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
-	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string, cli string) {
+	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string, cli string, f int) {
 	// log.Println(orderId, "------订单成功")
 	money, _ := m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
@@ -67,7 +67,7 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 		Update("pay_money", hold_m).Update("order_id", cli)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", cli).Scan(&r)
-	AddModelLog(&r, money)
+	AddModelLog(&r, money, f)
 }
 
 // asyncData 同步数据
@@ -75,7 +75,7 @@ func AsyncData(id interface{}, amount interface{}, price interface{}, money inte
 	//  同步当前task_order
 	var data = map[string]interface{}{}
 	// UserDB.Raw("select * from db_task_order where `id` = ?", id).Scan(&data)
-	log.Println("同步数据:", amount, price, money, num)
+	log.Printf("同步数据-- 数量:%v;价格:%v;钱:%v;单数:%v", amount, price, money, num)
 	data["hold_num"] = amount
 	data["hold_price"] = price
 	data["hold_amount"] = money // 持仓金额
@@ -114,22 +114,21 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id float64, b float64, orderId float64) {
-	// todo 获取之前盈利加上本次盈利
+func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}) {
 	old := GetOldAmount(orderId)
-	log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b)
+	log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))
 	var data = map[string]interface{}{
 		"status": 2,
 	}
-	if b > 0 {
-		data["total_profit"] = b + old
-		GotMoney(b, id)
+	if b.(float64) > 0 {
+		data["total_profit"] = b.(float64) + old
+		GotMoney(b.(float64), id.(float64), from)
 	}
 	UpdateOrder(orderId, data)
 }
 
 // 获取策略之前盈利
-func GetOldAmount(id float64) (m float64) {
+func GetOldAmount(id interface{}) (m float64) {
 	UserDB.Raw("select `total_profit` from db_task_order where id = ? ", id).Scan(&m)
 	log.Println("之前盈利", m)
 	return
@@ -161,12 +160,12 @@ func UpdateOrder(id interface{}, data map[string]interface{}) {
 }
 
 // AddModelLog 增加日志
-func AddModelLog(r *RebotLog, m float64) {
-	log.Println("add trade-----", r.Price, r.HoldMoney)
+func AddModelLog(r *RebotLog, m float64, f int) {
+	log.Printf("写入日志 价格:%v;持仓:%v;查询币种条件:%v;coin_type:%v", r.Price, r.HoldMoney, r.GetCoin, f)
 	var data = map[string]interface{}{}
 	var coin = map[string]interface{}{}
 	var mes string
-	UserDB.Raw("select id,name from db_task_coin where en_name like ?", r.GetCoin).Scan(&coin)
+	UserDB.Raw("select id,name from db_task_coin where name like ? and coin_type = ?", r.GetCoin, f).Scan(&coin)
 	data["order_sn"] = r.OrderId // 订单号
 	data["category_id"] = 2      // 平台
 	data["order_id"] = r.UserID  //机器人
@@ -206,7 +205,7 @@ func AddModelLog(r *RebotLog, m float64) {
 }
 
 // GotMoney 盈利分红
-func GotMoney(money float64, uId float64) {
+func GotMoney(money float64, uId float64, from interface{}) {
 	t := GetAccount(uId)
 	realMoney := money * 0.2 // 分红盈利
 	log.Println("盈利金额:", money, "账户余额:", t)
@@ -225,7 +224,7 @@ func GotMoney(money float64, uId float64) {
 		ownLog := &AmountLog{
 			FlowType:       62,
 			CustomerId:     uId,
-			FromCustomerId: uId,
+			FromCustomerId: from.(float64),
 			Direction:      1,
 			CoinId:         2,
 			Amount:         realMoney,
@@ -246,6 +245,7 @@ func GotMoney(money float64, uId float64) {
 
 		// 级差分红
 		levelMoney := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.8))
+
 		log.Println("级差分红金额:", levelMoney, "合伙人分红:", friends, "平台收入:", realMoney*0.2)
 
 		f := true
@@ -383,7 +383,6 @@ func LogStrategy(name interface{}, coin_name interface{}, order interface{}, mem
 	)
 	UserDB.Raw("select id from db_task_category where `name` like ?", name).Scan(&categroy)
 	UserDB.Raw("select id from db_task_coin where `en_name` like ? and category_id = ?", coin_name, categroy["id"]).Scan(&coin)
-	// log.Println(categroy, coin, c, d)
 	data["category_id"] = categroy["id"]
 	data["coin_id"] = coin["id"]
 	data["order_id"] = order
@@ -402,4 +401,8 @@ func LogStrategy(name interface{}, coin_name interface{}, order interface{}, mem
 	data["create_time"] = time.Now().Unix()
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_log").Create(&data)
+	var id interface{}
+	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
+
+	RunOver(member, money, order, id)
 }

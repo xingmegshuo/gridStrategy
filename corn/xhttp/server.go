@@ -115,13 +115,13 @@ func GetPrice(w http.ResponseWriter, r *http.Request) {
 
     if id := r.FormValue("coin_id"); id != "" {
         model.UserDB.Raw("select name,category_id,coin_type from db_task_coin where id = ?", id).Scan(&data)
-        if data["category_id"].(int) == 1 {
+        if data["category_id"].(uint32) == 1 {
             name = "火币"
         }
-        if data["category_id"].(int) == 2 {
+        if data["category_id"].(uint32) == 2 {
             name = "币安"
         }
-        if data["coin_type"].(int) != 0 {
+        if data["coin_type"].(int8) != 0 {
             f = true
         }
         if data["name"] != nil {
@@ -317,7 +317,9 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
     account := r.FormValue("account_id")
     search := r.FormValue("search")
     var strategy []map[string]interface{}
+
     model.UserDB.Raw("select * from db_task_strategy where category_id = ?", cate).Scan(&strategy)
+
     for _, s := range strategy {
         var coin_type = map[string]interface{}{}
         condintaion := 0
@@ -479,7 +481,9 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
     status := r.FormValue("status")
     category = r.FormValue("category_id")
     all = r.FormValue("order_type")
-    if id := r.FormValue("account_id"); id != "" && status != "" {
+    task_id := r.FormValue("id")
+    id := r.FormValue("account_id")
+    if id != "" && status != "" || task_id != "" {
         var (
             res         []map[string]interface{}
             task        []map[string]interface{}
@@ -489,6 +493,10 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
             total_sum   float64
             total_today float64
         )
+        if task_id != "" {
+            response["msg"] = "获取单个策略"
+            model.UserDB.Raw("select * from db_task_order where id = ? ", task_id).Scan(&task)
+        }
         if all == "" && category == "" || all == "0" && category == "0" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? ", id, status).Scan(&task)
         } else if all != "" && category != "" {
@@ -539,8 +547,13 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
             }
         }
         result["data"] = res
-        result["info"] = info
         response["data"] = result
+
+        if task_id != "" {
+            response["data"] = res[0]
+        } else {
+            result["info"] = info
+        }
     } else {
         response["msg"] = "没有必须参数"
     }

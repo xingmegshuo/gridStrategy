@@ -31,7 +31,6 @@ func NewSymbol(u User) *SymbolCategory {
 	var (
 		cateSymol CategorySymbols
 	)
-	// fmt.Println(u.Name)
 	name := ParseSymbol(u.Name)
 	if u.Category == "火币" {
 		cateSymol = (*HuobiSymbol)[name]
@@ -48,8 +47,6 @@ func NewSymbol(u User) *SymbolCategory {
 		}
 	}
 
-	// h := Host{}
-	// h.Get(u.Category)
 	symbol := SymbolCategory{
 		Category:        u.Category,
 		Symbol:          u.Name,
@@ -68,7 +65,6 @@ func NewSymbol(u User) *SymbolCategory {
 	if u.Future != 0 {
 		symbol.Future = true
 	}
-	// fmt.Println(fmt.Sprintf("%+v", symbol))
 	return &symbol
 }
 

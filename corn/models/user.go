@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
@@ -26,6 +27,11 @@ type JobChan struct {
 // var cacheNone = map[interface{}]interface{}{}
 
 var Ch = make(chan JobChan)
+
+type userLock struct {
+	lock sync.Mutex
+	id   float64
+}
 
 type User struct {
 	gorm.Model
@@ -63,6 +69,8 @@ func NewUser() {
 	}
 	for _, order := range orders {
 		var u User
+		ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
+		ul.lock.Lock()
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
@@ -146,6 +154,10 @@ func NewUser() {
 				u = UpdateUser(u)
 				u.Update()
 			}
+		}
+		if order["id"].(float64) == ul.id {
+			// fmt.Println("解锁")
+			ul.lock.Lock()
 		}
 	}
 }
@@ -251,7 +263,6 @@ func GetAccount(uId float64) float64 {
 // UpdateStatus 刷新状态
 func UpdateStatus(id uint) (res int64) {
 	DB.Raw("select is_run from users where id = ?", id).Scan(&res)
-	// log.Println("我的状态", res)
 	return
 }
 
@@ -259,7 +270,6 @@ func UpdateStatus(id uint) (res int64) {
 func LoadSymbols(name string) []map[string]interface{} {
 	switch name {
 	case "火币":
-		// fmt.Println(GetCache("火币交易对"))
 		return StringMap(GetCache("火币交易对"))
 	default:
 		return StringMap(GetCache("火币交易对"))

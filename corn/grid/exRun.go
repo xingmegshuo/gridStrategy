@@ -1,14 +1,14 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
-    "zmyjobs/goex"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
+	"zmyjobs/goex"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -39,7 +39,7 @@ func RunEx(ctx context.Context, u model.User) {
     }
 }
 
-// NewGrid 实例化对象，并验证api key的正确性
+//* NewGrid 实例化对象，并验证api key的正确性
 func NewExStrategy(u model.User) (ex *ExTrader) {
     arg := model.StringArg(u.Arg)
     grid, _ := model.SourceStrategy(u, false)
@@ -62,7 +62,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
             return nil
         }
     }
-    log.Println("交易对", ex.goex.Currency, u.Future)
+    log.Printf("交易对:%v;期货标识:%v;策略类型:%v", ex.goex.Currency, u.Future, ex.arg.Crile)
     return
 }
 
@@ -115,7 +115,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         t.u.Update()
                         model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
                         log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
-                        model.RunOver(t.u.Custom, p, float64(t.u.ObjectId))
+
                         // if p > 0 {
                         model.LogStrategy(t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
                             t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
@@ -158,12 +158,22 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         // 计算盈利
         win := float64(0)
         if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
-            win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
+            if t.arg.Crile == 4 {
+                win, _ = (t.pay.Sub(price.Mul(t.amount))).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
+            } else {
+                win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
+            }
         }
         reduce, _ := high.Sub(price).Div(t.last).Float64() // 当前回降
         top, _ := price.Sub(low).Div(t.last).Float64()     // 当前回调
         die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
+        if t.arg.Crile == 4 {
+            die, _ = price.Sub(t.last).Div(t.last).Float64() // 当前跌幅
 
+        }
+        if count == 50 {
+            log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
+        }
         select {
         case <-ctx.Done():
             log.Println("close get price ", t.u.ObjectId)
@@ -219,7 +229,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                 } else {
                     high = price
                     low = price
-                    log.Println("首次买入成功")
+                    log.Printf("用户%v首次买入成功", t.u.ObjectId)
                     t.last = t.RealGrids[0].Price
                     t.base = t.base + 1
                     t.Tupdate()
@@ -370,11 +380,12 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 
 // GetLastPrice 获取上次交易价格
 func (t *ExTrader) GetLastPrice() {
-    if len(t.u.RealGrids) > 0 && t.base > 1 {
+    if len(t.u.RealGrids) > 0 && t.base >= 1 {
         t.last = t.RealGrids[t.base-1].Price
     } else {
         t.last = t.grids[0].Price
     }
+    // fmt.Println(t.last)
 }
 
 // Tupdate 更新数据

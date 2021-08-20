@@ -56,7 +56,7 @@ func init() {
 		},
 	)
 	// serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	// dsn := "roo/t:528012@tcp(127.0.0.1:3306)/zmy?charset=utf8mb4&parseTime=True&loc=Local"
+	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 
 	// server
 	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
@@ -65,12 +65,6 @@ func init() {
 	serverDB.SetMaxIdleConns(2000) //设置最大连接数
 	serverDB.SetMaxOpenConns(2000)
 	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{Logger: newLogger, PrepareStmt: true})
-
-	// db, err := gorm.Open(sqlite.Open("config.db"), &gorm.Config{
-	// 	SkipDefaultTransaction: true,
-	// 	PrepareStmt:            true,
-	// 	Logger:                 newLogger,
-	// })
 
 	if err != nil {
 		panic("failed to connect database")
@@ -82,15 +76,12 @@ func init() {
 	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{
 		Logger:      newLogger,
 		PrepareStmt: true,
-		// SkipDefaultTransaction: true,
 	})
 	if e != nil {
 		panic("failed to connect user database")
 	}
 	UserDB = userDB
-	// .Session(&gorm.Session{PrepareStmt: true})
 	DB = db
-	// .Session(&gorm.Session{PrepareStmt: true})
 
 	db.AutoMigrate(&Job{}, &Host{}, &User{}, &RebotLog{})
 

@@ -567,7 +567,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
         r.ParseForm()
-        fmt.Println("更新数据;", r.Form,r.PostForm)
+        fmt.Println("更新数据;", r.Form,r.PostForm,r.Body)
         var (
             response = map[string]interface{}{}
         )

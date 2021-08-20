@@ -571,7 +571,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         var form map[string]string
         str, _ := ioutil.ReadAll(r.Body)
         json.Unmarshal(str, &form)
-        fmt.Println("更新数据;",form)
+        fmt.Println("更新数据;", form)
         var (
             response = map[string]interface{}{}
         )
@@ -586,7 +586,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if form != nil {
             status = form["status"]
         }
-        task := model.UserDB.Table("db_task_order").Where("id = ? ",form["id"]).Find(&taskStra) // 要修改的order
+        task := model.UserDB.Table("db_task_order").Where("id = ? ", form["id"]).Find(&taskStra) // 要修改的order
         strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", form["id"]).Find(&s)
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
@@ -692,7 +692,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         }
         for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
             "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
-            if form[name] != nil && form[name][0] != taskStra[0][name] {
+            if form[name] != "" && form[name] != taskStra[0][name] {
                 // fmt.Println(name)
                 if taskStra[0]["status"].(int8) == int8(0) {
                     task.Update(name, form[name])

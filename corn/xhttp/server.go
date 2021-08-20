@@ -724,8 +724,9 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         }
         b, _ := json.Marshal(&response)
         fmt.Fprintln(w, string(b))
+    } else {
+        fmt.Fprintln(w, "not allow method")
     }
-    fmt.Fprintln(w, "not allow method")
 }
 
 /**

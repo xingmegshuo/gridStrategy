@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -568,12 +568,13 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
         // r.ParseForm()
-        var form map[string]string
+        var form = map[string]interface{}{}
         str, _ := ioutil.ReadAll(r.Body)
         json.Unmarshal(str, &form)
         fmt.Println("更新数据;", form)
         var (
             response = map[string]interface{}{}
+            status   interface{}
         )
         response["status"] = "success"
         response["msg"] = "修改用户任务列表"
@@ -582,7 +583,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             s        []map[string]interface{}
             tasks    *gorm.DB
         )
-        status := ""
+
         if form != nil {
             status = form["status"]
         }
@@ -592,7 +593,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
         }
 
-        if status != "" && status == "0" {
+        if status != nil && status == 0 {
             if taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("status", 0)
                 if strategy.RowsAffected > 0 {
@@ -607,7 +608,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 0)
         }
-        if status != "" && status == "1" {
+        if status != nil && status == 1 {
             if taskStra[0]["status"].(int8) == int8(0) {
                 task.Update("status", 1)
                 if strategy.RowsAffected > 0 {
@@ -619,7 +620,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "策略不处于暂停状态"
             }
         }
-        if status != "" && status == "3" {
+        if status != nil && status == 3 {
             if taskStra[0]["status"].(int8) != int8(1) {
                 task.Update("status", 3)
                 if strategy.RowsAffected > 0 {
@@ -633,7 +634,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
         }
-        if status != "" && status == "4" {
+        if status != nil && status == 4 {
             if taskStra[0]["stop_buy"].(int64) == int64(2) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("stop_buy", 1)
                 if strategy.RowsAffected > 0 {
@@ -645,7 +646,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "策略不处于暂停买入状态或策略不处于开启状态"
             }
         }
-        if status != "" && status == "5" {
+        if status != nil && status == 5 {
             if taskStra[0]["stop_buy"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("stop_buy", 2)
                 if strategy.RowsAffected > 0 {
@@ -657,7 +658,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "策略不处于开启买入状态"
             }
         }
-        if status != "" && status == "7" {
+        if status != nil && status == 7 {
             if taskStra[0]["one_buy"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("one_buy", 2)
                 if strategy.RowsAffected > 0 {
@@ -672,7 +673,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "重复提交"
             }
         }
-        if status != "" && status == "9" {
+        if status != nil && status == 9 {
             if taskStra[0]["one_sell"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("one_sell", 2)
                 if strategy.RowsAffected > 0 {
@@ -692,7 +693,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         }
         for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
             "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
-            if form[name] != "" && form[name] != taskStra[0][name] {
+            if form[name] != nil && form[name] != taskStra[0][name] {
                 // fmt.Println(name)
                 if taskStra[0]["status"].(int8) == int8(0) {
                     task.Update(name, form[name])

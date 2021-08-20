@@ -498,16 +498,15 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
         if task_id != "" {
             response["msg"] = "获取单个策略"
             model.UserDB.Raw("select * from db_task_order where id = ? ", task_id).Scan(&task)
-        }
-        if all == "" && category == "" || all == "0" && category == "0" {
-            fmt.Println(status,"获取任务列表")
+        } else {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? ", id, status).Scan(&task)
-        } else if all != "" && category != "" {
+        }
+        if all != "" && category != "" && all != "0" && category != "0" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ? and order_type = ?", id, status, category, all).Scan(&task)
-        } else if all != "" {
+        } else if all != "" || all != "0" {
             // fmt.Println("e")
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and order_type = ?", id, status, all).Scan(&task)
-        } else if category != "" {
+        } else if category != "" || category != 0 {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ?", id, status, category).Scan(&task)
         }
 

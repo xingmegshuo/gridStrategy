@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -338,7 +338,7 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
             condintaion = 2
         }
         if coin_type["coin_type"].(int8) == int8(condintaion) {
-            fmt.Println(s["id"])
+            // fmt.Println(s["id"])
             var num int
             model.UserDB.Raw("select count(*) from db_task_order where task_strategy_id = ? and status < 3 and customer_id = ? ", s["id"], account).Scan(&num)
             if num > 0 {
@@ -587,7 +587,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if form != nil {
             status = form["status"]
         }
-        fmt.Println(fmt.Sprintf("%T,%v", status, status))
+        // fmt.Println(fmt.Sprintf("%T,%v", status, status))
         task := model.UserDB.Table("db_task_order").Where("id = ? ", form["id"]).Find(&taskStra) // 要修改的order
         strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", form["id"]).Find(&s)
         if strategy.RowsAffected > 0 && len(s) > 0 {

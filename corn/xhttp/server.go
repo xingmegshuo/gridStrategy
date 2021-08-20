@@ -584,8 +584,11 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         fmt.Println("获取数据", r.PostForm, r.Form, form, len(form))
         if len(form) == 0 {
             for k, v := range r.Form {
-                fmt.Println(k)
-                form[k] = v[0]
+                if k == "order_id" {
+                    form["id"] = v[0]
+                } else {
+                    form[k] = v[0]
+                }
             }
         }
         fmt.Println(fmt.Sprintf("%+v", form))
@@ -716,7 +719,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if len(form) > 0 {
             for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
                 "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
-                fmt.Printf("类型：%T，名称:%v", form[name], form["name"])
+                // fmt.Printf("类型：%T，名称:%v", form[name], form["name"])
                 if form[name] != nil && form[name] != taskStra[0][name] {
                     if taskStra[0]["status"].(int8) == int8(0) {
                         task.Update(name, form[name])

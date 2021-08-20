@@ -14,23 +14,23 @@
 package xhttp
 
 import (
-    "database/sql"
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -578,14 +578,15 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             s        []map[string]interface{}
             tasks    *gorm.DB
         )
-
+        r.ParseForm()
+        fmt.Println(r.PostForm, r.Form, len(form))
         if len(form) == 0 {
-            r.ParseForm()
             for k, v := range r.Form {
                 fmt.Println(k)
                 form[k] = v[0]
             }
         }
+        fmt.Println(fmt.Sprintf("%+v", form))
 
         response["status"] = "success"
         response["msg"] = "修改用户任务列表"
@@ -593,7 +594,6 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if form != nil {
             status = form["status"]
         }
-        fmt.Println(fmt.Sprintf("%+v", form))
         task := model.UserDB.Table("db_task_order").Where("id = ? ", form["id"]).Find(&taskStra) // 要修改的order
         strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", form["id"]).Find(&s)
         if strategy.RowsAffected > 0 && len(s) > 0 {

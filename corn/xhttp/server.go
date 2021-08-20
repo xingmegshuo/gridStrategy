@@ -14,23 +14,23 @@
 package xhttp
 
 import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "database/sql"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -519,11 +519,11 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
         zeroTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, currentTime.Location())
         old1Time := zeroTime.AddDate(0, 0, -1).Unix()
         model.UserDB.Raw("select sum(av_amount) from db_task_order_log where member_id = ? and create_time >= ? ", id, old1Time).Scan(&total_today)
-        info["total_status0"] = status0
-        info["total_status1"] = status1
-        info["total_status2"] = status2
-        info["total_sum"] = total_sum
-        info["total_today"] = total_today
+        info["total_status0"] = status0.Int64
+        info["total_status1"] = status1.Int64
+        info["total_status2"] = status2.Int64
+        info["total_sum"] = total_sum.Float64
+        info["total_today"] = total_today.Float64
         for _, v := range task {
             // var strategy = map[string]interface{}{}
             // model.UserDB.Raw("select * from db_task_strategy where id = ?", v["task_strategy_id"]).Scan(&strategy)

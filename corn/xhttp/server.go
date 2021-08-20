@@ -579,7 +579,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     // fmt.Println(r.Form)
     task := model.UserDB.Table("db_task_order").Where("id = ? ", r.Form["id"]).Find(&taskStra) // 要修改的order
     strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", r.Form["id"]).Find(&s)
-    if strategy.RowsAffected > 0 {
+    if strategy.RowsAffected > 0 && len(s) > 0 {
         tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
     }
 

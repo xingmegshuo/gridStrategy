@@ -14,20 +14,21 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -573,11 +574,14 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     var (
         taskStra []map[string]interface{}
         s        []map[string]interface{}
+        tasks    *gorm.DB
     )
     // fmt.Println(r.Form)
     task := model.UserDB.Table("db_task_order").Where("id = ? ", r.Form["id"]).Find(&taskStra) // 要修改的order
     strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", r.Form["id"]).Find(&s)
-    tasks := model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
+    if strategy.RowsAffected > 0 {
+        tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
+    }
 
     if r.Form["status"] != nil && r.Form["status"][0] == "0" {
         if taskStra[0]["status"].(int8) == int8(1) {

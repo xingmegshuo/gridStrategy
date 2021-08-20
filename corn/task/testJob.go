@@ -181,7 +181,7 @@ func WriteDB(realData []map[string]interface{}, category int) {
 					// 	base = ""
 					// }
 					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
-					// fmt.Println(r, name)
+					// fmt.Println(r, name)w
 					value := map[string]interface{}{
 						"price_usd":  price,
 						"price":      price * 6.5,

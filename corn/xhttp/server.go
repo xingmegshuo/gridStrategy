@@ -579,7 +579,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             tasks    *gorm.DB
         )
         r.ParseForm()
-        fmt.Println(r.PostForm, r.Form, len(form))
+        fmt.Println("获取数据", r.PostForm, r.Form, form, len(form))
         if len(form) == 0 {
             for k, v := range r.Form {
                 fmt.Println(k)
@@ -711,19 +711,21 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 0)
         }
-        for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
-            "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
-            fmt.Printf("类型：%T，名称:%v", form[name], form["name"])
-            if form[name] != nil && form[name] != taskStra[0][name] {
-                if taskStra[0]["status"].(int8) == int8(0) {
-                    task.Update(name, form[name])
-                    if strategy.RowsAffected > 0 {
-                        strategy.Update(name, form[name])
-                        tasks.Update(name, form[name])
+        if len(form) > 0 {
+            for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
+                "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
+                fmt.Printf("类型：%T，名称:%v", form[name], form["name"])
+                if form[name] != nil && form[name] != taskStra[0][name] {
+                    if taskStra[0]["status"].(int8) == int8(0) {
+                        task.Update(name, form[name])
+                        if strategy.RowsAffected > 0 {
+                            strategy.Update(name, form[name])
+                            tasks.Update(name, form[name])
+                        }
+                    } else {
+                        response["status"] = "error"
+                        response["msg"] = "不处于暂停状态"
                     }
-                } else {
-                    response["status"] = "error"
-                    response["msg"] = "不处于暂停状态"
                 }
             }
         }

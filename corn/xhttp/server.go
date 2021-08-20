@@ -14,22 +14,23 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -489,11 +490,11 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
         var (
             res         []map[string]interface{}
             task        []map[string]interface{}
-            status0     int
-            status1     int
-            status2     int
-            total_sum   float64
-            total_today float64
+            status0     sql.NullInt64
+            status1     sql.NullInt64
+            status2     sql.NullInt64
+            total_sum   sql.NullFloat64
+            total_today sql.NullFloat64
         )
         if task_id != "" {
             response["msg"] = "获取单个策略"
@@ -581,6 +582,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if form == nil {
             r.ParseForm()
             for k, v := range r.Form {
+                fmt.Println(k)
                 form[k] = v[0]
             }
         }

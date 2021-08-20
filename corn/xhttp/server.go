@@ -14,21 +14,21 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -565,7 +565,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 // 修改手动策略
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
-
+    w.Header().Set("access-control-allow-methods", "POST")
     r.ParseForm()
     fmt.Println("更新数据;", r.Form)
     var (
@@ -582,7 +582,6 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     if r.Form["status"] != nil {
         status = r.Form["status"][0]
     }
-    // fmt.Println(r.Form)
     task := model.UserDB.Table("db_task_order").Where("id = ? ", r.Form["id"]).Find(&taskStra) // 要修改的order
     strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", r.Form["id"]).Find(&s)
     if strategy.RowsAffected > 0 && len(s) > 0 {

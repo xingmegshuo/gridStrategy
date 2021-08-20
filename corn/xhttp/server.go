@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -566,7 +566,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
-        // r.ParseForm()
+        r.ParseForm()
         var form = map[string]interface{}{}
         str, _ := ioutil.ReadAll(r.Body)
         json.Unmarshal(str, &form)
@@ -586,7 +586,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if form != nil {
             status = form["status"]
         }
-        fmt.Println(fmt.Sprintf("%+v", form))
+        fmt.Println(fmt.Sprintf("%+v,%+v", form,r.Forms))
         task := model.UserDB.Table("db_task_order").Where("id = ? ", form["id"]).Find(&taskStra) // 要修改的order
         strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", form["id"]).Find(&s)
         if strategy.RowsAffected > 0 && len(s) > 0 {

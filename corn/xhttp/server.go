@@ -14,21 +14,21 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -567,7 +567,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
         r.ParseForm()
-        fmt.Println("更新数据;", r.Form)
+        fmt.Println("更新数据;", r.Form,r.PostForm)
         var (
             response = map[string]interface{}{}
         )

@@ -511,7 +511,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 
         model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 0", id).Scan(&status0)
         model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 1", id).Scan(&status1)
-        model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 1", id).Scan(&status2)
+        model.UserDB.Raw("select count(*) from db_task_order where customer_id = ? and status = 2", id).Scan(&status2)
         model.UserDB.Raw("select sum(av_amount) from db_task_order_log where member_id = ?", id).Scan(&total_sum)
         currentTime := time.Now()
         zeroTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, currentTime.Location())

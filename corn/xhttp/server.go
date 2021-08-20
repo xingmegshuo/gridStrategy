@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -503,10 +503,10 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
         }
         if all != "" && category != "" && all != "0" && category != "0" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ? and order_type = ?", id, status, category, all).Scan(&task)
-        } else if all != "" || all != "0" {
+        } else if all != "" && all != "0" {
             // fmt.Println("e")
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and order_type = ?", id, status, all).Scan(&task)
-        } else if category != "" || category != 0 {
+        } else if category != "" && category != "0" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ?", id, status, category).Scan(&task)
         }
 

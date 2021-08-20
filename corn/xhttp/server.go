@@ -492,8 +492,8 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
             status0     int
             status1     int
             status2     int
-            total_sum   interface{}
-            total_today interface{}
+            total_sum   float64
+            total_today float64
         )
         if task_id != "" {
             response["msg"] = "获取单个策略"
@@ -566,7 +566,6 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
-        r.ParseForm()
         var form = map[string]interface{}{}
         str, _ := ioutil.ReadAll(r.Body)
         json.Unmarshal(str, &form)
@@ -574,19 +573,25 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         var (
             response = map[string]interface{}{}
             status   interface{}
-        )
-        response["status"] = "success"
-        response["msg"] = "修改用户任务列表"
-        var (
             taskStra []map[string]interface{}
             s        []map[string]interface{}
             tasks    *gorm.DB
         )
 
+        if form == nil {
+            r.ParseForm()
+            for k, v := range r.Form {
+                form[k] = v[0]
+            }
+        }
+
+        response["status"] = "success"
+        response["msg"] = "修改用户任务列表"
+
         if form != nil {
             status = form["status"]
         }
-        fmt.Println(fmt.Sprintf("%+v,%+v", form, r.Form))
+        fmt.Println(fmt.Sprintf("%+v", form))
         task := model.UserDB.Table("db_task_order").Where("id = ? ", form["id"]).Find(&taskStra) // 要修改的order
         strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", form["id"]).Find(&s)
         if strategy.RowsAffected > 0 && len(s) > 0 {
@@ -693,7 +698,6 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     tasks.Update("one_sell", 2)
                 }
                 response["msg"] = "清仓"
-
             } else if taskStra[0]["one_sell"].(int64) == int64(2) {
                 response["status"] = "error"
                 response["msg"] = "其他操作占用"
@@ -707,6 +711,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         }
         for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
             "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
+            fmt.Printf("类型：%T，名称:%v", form[name], form["name"])
             if form[name] != nil && form[name] != taskStra[0][name] {
                 if taskStra[0]["status"].(int8) == int8(0) {
                     task.Update(name, form[name])

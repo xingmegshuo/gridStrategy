@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -38,6 +38,7 @@ func Handler(w http.ResponseWriter) http.ResponseWriter {
     w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域
     w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
     w.Header().Set("content-type", "application/json")
+    w.Header().Set("referer-policy", "strict-origin-when-cross-origin")
     return w
 }
 

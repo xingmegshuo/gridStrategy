@@ -563,8 +563,8 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 
 // 修改手动策略
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
-    r.ParseForm()
     w = Handler(w)
+    r.ParseForm()
     var (
         response = map[string]interface{}{}
     )

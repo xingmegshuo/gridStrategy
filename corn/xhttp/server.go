@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -500,6 +500,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
             model.UserDB.Raw("select * from db_task_order where id = ? ", task_id).Scan(&task)
         }
         if all == "" && category == "" || all == "0" && category == "0" {
+            fmt.Println(status,"获取任务列表")
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? ", id, status).Scan(&task)
         } else if all != "" && category != "" {
             model.UserDB.Raw("select * from db_task_order where customer_id = ? and status = ? and category_id = ? and order_type = ?", id, status, category, all).Scan(&task)
@@ -611,7 +612,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 0)
         }
-        if status != nil && status.(float64)== 1 {
+        if status != nil && status.(float64) == 1 {
             if taskStra[0]["status"].(int8) == int8(0) {
                 task.Update("status", 1)
                 if strategy.RowsAffected > 0 {

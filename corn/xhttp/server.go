@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -320,8 +320,7 @@ func GetStrategy(w http.ResponseWriter, r *http.Request) {
     account := r.FormValue("account_id")
     search := r.FormValue("search")
     var strategy []map[string]interface{}
-
-    model.UserDB.Raw("select * from db_task_strategy where category_id = ?", cate).Scan(&strategy)
+    model.UserDB.Raw("select * from db_task_strategy where category_id = ? and status < 3", cate).Scan(&strategy)
 
     for _, s := range strategy {
         var coin_type = map[string]interface{}{}

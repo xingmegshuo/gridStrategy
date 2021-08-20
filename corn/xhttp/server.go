@@ -594,7 +594,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
         }
 
-        if status != nil && status == 0 {
+        if status != nil && status.(float64) == 0 {
             if taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("status", 0)
                 if strategy.RowsAffected > 0 {
@@ -611,7 +611,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 0)
         }
-        if status != nil && status == 1 {
+        if status != nil && status.(float64)== 1 {
             if taskStra[0]["status"].(int8) == int8(0) {
                 task.Update("status", 1)
                 if strategy.RowsAffected > 0 {
@@ -625,7 +625,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "策略不处于暂停状态"
             }
         }
-        if status != nil && status == 3 {
+        if status != nil && status.(float64) == 3 {
             if taskStra[0]["status"].(int8) != int8(1) {
                 task.Update("status", 3)
                 if strategy.RowsAffected > 0 {
@@ -641,7 +641,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if strategy.RowsAffected > 0 && len(s) > 0 {
             tasks = model.UserDB.Table("db_task_order").Where("task_strategy_id = ? and status = ?", s[0]["id"], 1)
         }
-        if status != nil && status == 4 {
+        if status != nil && status.(float64) == 4 {
             if taskStra[0]["stop_buy"].(int64) == int64(2) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("stop_buy", 1)
                 if strategy.RowsAffected > 0 {
@@ -655,7 +655,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "策略不处于暂停买入状态或策略不处于开启状态"
             }
         }
-        if status != nil && status == 5 {
+        if status != nil && status.(float64) == 5 {
             if taskStra[0]["stop_buy"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("stop_buy", 2)
                 if strategy.RowsAffected > 0 {
@@ -669,7 +669,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "策略不处于开启买入状态"
             }
         }
-        if status != nil && status == 7 {
+        if status != nil && status.(float64) == 7 {
             if taskStra[0]["one_buy"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("one_buy", 2)
                 if strategy.RowsAffected > 0 {
@@ -686,7 +686,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 response["msg"] = "重复提交"
             }
         }
-        if status != nil && status == 9 {
+        if status != nil && status.(float64) == 9 {
             if taskStra[0]["one_sell"].(int64) == int64(1) && taskStra[0]["status"].(int8) == int8(1) {
                 task.Update("one_sell", 2)
                 if strategy.RowsAffected > 0 {

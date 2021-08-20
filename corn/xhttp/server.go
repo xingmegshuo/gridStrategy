@@ -579,7 +579,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             tasks    *gorm.DB
         )
 
-        if form == nil {
+        if len(form) == 0 {
             r.ParseForm()
             for k, v := range r.Form {
                 fmt.Println(k)

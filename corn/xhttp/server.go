@@ -14,22 +14,22 @@
 package xhttp
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strings"
-	"time"
-	grid "zmyjobs/corn/grid"
-	model "zmyjobs/corn/models"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+    grid "zmyjobs/corn/grid"
+    model "zmyjobs/corn/models"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
+    "github.com/gorilla/mux"
+    "gorm.io/gorm"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -492,8 +492,8 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
             status0     int
             status1     int
             status2     int
-            total_sum   float64
-            total_today float64
+            total_sum   interface{}
+            total_today interface{}
         )
         if task_id != "" {
             response["msg"] = "获取单个策略"
@@ -516,7 +516,6 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
         model.UserDB.Raw("select sum(av_amount) from db_task_order_log where member_id = ?", id).Scan(&total_sum)
         currentTime := time.Now()
         zeroTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, currentTime.Location())
-
         old1Time := zeroTime.AddDate(0, 0, -1).Unix()
         model.UserDB.Raw("select sum(av_amount) from db_task_order_log where member_id = ? and create_time >= ? ", id, old1Time).Scan(&total_today)
         info["total_status0"] = status0
@@ -587,7 +586,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         if form != nil {
             status = form["status"]
         }
-        // fmt.Println(fmt.Sprintf("%T,%v", status, status))
+        fmt.Println(fmt.Sprintf("%+v", form))
         task := model.UserDB.Table("db_task_order").Where("id = ? ", form["id"]).Find(&taskStra) // 要修改的order
         strategy := model.UserDB.Table("db_task_strategy").Where("order_id = ? ", form["id"]).Find(&s)
         if strategy.RowsAffected > 0 && len(s) > 0 {
@@ -709,7 +708,6 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
         for _, name := range []string{"num", "strategy_id", "price", "bc_type", "price_add", "price_rate", "price_repair", "price_growth", "price_callback",
             "price_stop", "price_reduce", "frequency", "price_growth_type", "fixed_type", "double_first", "decline", "limit_high", "high_price"} {
             if form[name] != nil && form[name] != taskStra[0][name] {
-                // fmt.Println(name)
                 if taskStra[0]["status"].(int8) == int8(0) {
                     task.Update(name, form[name])
                     if strategy.RowsAffected > 0 {

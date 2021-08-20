@@ -600,6 +600,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     strategy.Update("status", 0)
                     tasks.Update("status", 0)
                 }
+                response["msg"] = "策略暂停"
+
             } else {
                 response["status"] = "error"
                 response["msg"] = "策略不处于执行状态"
@@ -615,6 +617,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     strategy.Update("status", 1)
                     tasks.Update("status", 1)
                 }
+                response["msg"] = "策略开启"
+
             } else {
                 response["status"] = "error"
                 response["msg"] = "策略不处于暂停状态"
@@ -626,6 +630,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                 if strategy.RowsAffected > 0 {
                     strategy.Update("status", 3)
                 }
+                response["msg"] = "策略删除"
+
             } else {
                 response["status"] = "error"
                 response["msg"] = "策略不处于暂停或完成状态"
@@ -641,6 +647,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     strategy.Update("stop_buy", 1)
                     tasks.Update("stop_buy", 1)
                 }
+                response["msg"] = "恢复买入"
+
             } else {
                 response["status"] = "error"
                 response["msg"] = "策略不处于暂停买入状态或策略不处于开启状态"
@@ -653,6 +661,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     strategy.Update("stop_buy", 2)
                     tasks.Update("stop_buy", 2)
                 }
+                response["msg"] = "关闭买入"
+
             } else {
                 response["status"] = "error"
                 response["msg"] = "策略不处于开启买入状态"
@@ -665,6 +675,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     strategy.Update("one_buy", 2)
                     tasks.Update("one_buy", 2)
                 }
+                response["msg"] = "补仓"
+
             } else if taskStra[0]["one_buy"].(int64) == int64(2) {
                 response["status"] = "error"
                 response["msg"] = "其他操作占用"
@@ -680,6 +692,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
                     strategy.Update("one_sell", 2)
                     tasks.Update("one_sell", 2)
                 }
+                response["msg"] = "清仓"
+
             } else if taskStra[0]["one_sell"].(int64) == int64(2) {
                 response["status"] = "error"
                 response["msg"] = "其他操作占用"

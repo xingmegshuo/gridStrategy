@@ -567,6 +567,8 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
+        r.ParseForm()
+        fmt.Println(r.Form)
         var form = map[string]interface{}{}
         str, _ := ioutil.ReadAll(r.Body)
         json.Unmarshal(str, &form)
@@ -578,7 +580,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             s        []map[string]interface{}
             tasks    *gorm.DB
         )
-        r.ParseForm()
+        // r.ParseForm()
         fmt.Println("获取数据", r.PostForm, r.Form, form, len(form))
         if len(form) == 0 {
             for k, v := range r.Form {

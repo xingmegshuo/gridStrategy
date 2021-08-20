@@ -565,6 +565,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 // 修改手动策略
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
+    
     r.ParseForm()
     var (
         response = map[string]interface{}{}
@@ -727,7 +728,7 @@ func RunServer() {
     router.HandleFunc("/u", GetFutureU)
     router.HandleFunc("/b", GetFutureB)
     router.HandleFunc("/task", GetTask)
-    router.HandleFunc("/task/update", UpdateTask).Methods("POST")
+    router.HandleFunc("/task/update", UpdateTask)
 
     go http.ListenAndServe(":80", router)
 

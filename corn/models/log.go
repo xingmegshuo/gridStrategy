@@ -166,6 +166,7 @@ func AddModelLog(r *RebotLog, m float64, f int) {
 	var coin = map[string]interface{}{}
 	var mes string
 	UserDB.Raw("select id,name from db_task_coin where name like ? and coin_type = ?", r.GetCoin, f).Scan(&coin)
+	log.Printf("获取的coin内容%v", coin)
 	data["order_sn"] = r.OrderId // 订单号
 	data["category_id"] = 2      // 平台
 	data["order_id"] = r.UserID  //机器人
@@ -206,6 +207,7 @@ func AddModelLog(r *RebotLog, m float64, f int) {
 
 // GotMoney 盈利分红
 func GotMoney(money float64, uId float64, from interface{}) {
+	// todo 合伙人分红 创始人分红 合伙人两个限制 10%  创始人 1 个限制 20%  直推 60%
 	t := GetAccount(uId)
 	realMoney := money * 0.2 // 分红盈利
 	log.Println("盈利金额:", money, "账户余额:", t)

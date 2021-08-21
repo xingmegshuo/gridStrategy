@@ -147,6 +147,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 		amount = t.grids[t.base].TotalBuy
 		msg = "市价买入"
 	}
+	log.Println(t.arg.Crile)
 	if t.goex.symbol.Future && t.arg.Crile == 3 {
 		orderType = OpenDL
 		amount = t.grids[t.base].TotalBuy

@@ -224,7 +224,9 @@ func (hbpro *HuoBiPro) GetAccount() (*Account, error) {
 	}
 
 	for k, v := range subAccMap {
-		acc.SubAccounts[k] = *v
+		if v.Amount > 0 {
+			acc.SubAccounts[k] = *v
+		}
 	}
 
 	return acc, nil

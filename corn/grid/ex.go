@@ -168,10 +168,11 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 		d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))
 		b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
 		if err == nil {
+
 			r = true
 			money = decimal.NewFromFloat(info.SubAccounts[b].Amount)
 			coin = decimal.NewFromFloat(info.SubAccounts[d].Amount)
-			log.Printf("用户数据:%+v,%+v", info.SubAccounts[b], info.SubAccounts[d])
+			log.Printf("用户数据:%+v,%+v;%+v", info.SubAccounts[b], info.SubAccounts[d], info.SubAccounts)
 		}
 	}
 	return

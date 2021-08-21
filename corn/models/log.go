@@ -213,8 +213,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 	log.Println("盈利金额:", money, "账户余额:", t)
 	if money > 0 && t > realMoney { // 盈利
 		var (
-			u         = map[string]interface{}{}
-			thisLevel uint8
+			u = map[string]interface{}{}
 		)
 		tx := UserDB                                                                                                                                // 使用事务
 		tx.Raw("select `id`,`profit_mine_amount`,`team_min_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", uId).Scan(&u) // 获取用户
@@ -235,114 +234,68 @@ func GotMoney(money float64, uId float64, from interface{}) {
 			Remark:         "盈利扣款",
 			CreateTime:     time.Now().Unix(),
 		}
-		log.Println(fmt.Sprintf("之前账户余额:%v----之后账户余额:%v", ownLog.BeforeAmount, ownLog.AfterAmount))
+		log.Println(fmt.Sprintf("之前预充值余额:%v----之后预充值余额:%v", ownLog.BeforeAmount, ownLog.AfterAmount))
 		ownLog.Write(UserDB)
 		tx.Table("db_customer").Where("id = ? ", uId).Update("meal_amount", ownLog.AfterAmount)
-		baseLevel := u["level"].(uint8)
+
+		// 直推奖励
+		referralReward := ParseStringFloat(fmt.Sprintf("%.8f", realMoney*0.8*0.6))
 
 		// 合伙人
+		partnerReward := ParseStringFloat(fmt.Sprintf("%.8f", realMoney*0.8*0.1))
 
-		friends := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.2))
+		// 创始人
+		founderReward := ParseStringFloat(fmt.Sprintf("%.8f", realMoney*0.8*0.2))
 
-		// 级差分红
-		levelMoney := ParseStringFloat(fmt.Sprintf("%.2f", realMoney*0.8*0.8))
+		log.Println("直推分红金额:", referralReward, "合伙人分红:", partnerReward, "创始人:", founderReward, "平台收入:", realMoney*0.2)
 
-		log.Println("级差分红金额:", levelMoney, "合伙人分红:", friends, "平台收入:", realMoney*0.2)
-
-		f := true
-		after := levelMoney
+		count := 0
+		after := realMoney * 0.8
 		for {
 			var myMoney float64
 			if u["inviter_id"].(uint32) > 0 {
-				time.Sleep(time.Second)
-				tx.Raw("select `id`,`team_amount`,`profit_mine_amount`,`level`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
-				// ChangeAmount(money, &u, tx, true)
-				thisLevel = u["level"].(uint8)
+				tx.Raw("select `id`,`team_amount`,`profit_mine_amount`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
 				var thisLog = &AmountLog{
-					FlowType:       float64(59),
 					CoinId:         float64(2),
 					Direction:      2,
 					Hash:           "",
-					Remark:         "级差分红",
 					FromCustomerId: uId,
 					CustomerId:     float64(u["id"].(int32)),
-					BeforeAmount:   GetAccount(float64(u["id"].(int32))),
+					BeforeAmount:   GetAccountCach(float64(u["id"].(int32))),
 					CreateTime:     time.Now().Unix(),
 				}
-
-				if thisLevel > baseLevel && after > 0 {
-					// baseLevel = thisLevel // 上级的vip等级，下次分红vip必须大于此等级
-					if thisLevel == 2 {
-						// l.Println("我分25%")
-						myMoney = levelMoney * 0.25
-					}
-					if thisLevel == 3 {
-						// l.Println("我要30%")
-						if thisLevel-baseLevel == 1 {
-							myMoney = levelMoney * 0.05
-						} else {
-							myMoney = levelMoney * 0.3
-						}
-					}
-					if thisLevel == 4 {
-						// l.Println("我要40%")
-						if thisLevel-baseLevel == 1 {
-							myMoney = levelMoney * (0.1)
-						} else if thisLevel-baseLevel == 2 {
-							myMoney = levelMoney * 0.15
-						} else {
-							myMoney = levelMoney * 0.4
-						}
-					}
-					if thisLevel == 5 {
-						// l.Println("我要50%")
-						if thisLevel-baseLevel == 1 {
-							myMoney = levelMoney * (0.1)
-						} else if thisLevel-baseLevel == 2 {
-							myMoney = levelMoney * 0.2
-						} else if thisLevel-baseLevel == 3 {
-							myMoney = levelMoney * 0.25
-						} else {
-							myMoney = levelMoney * 0.5
-						}
-					}
-					if thisLevel == 6 {
-						// log.Println(thisLevel, baseLevel)
-						// l.Println("我要60%")
-						if f {
-							if thisLevel-baseLevel == 1 {
-								myMoney = levelMoney * (0.1)
-							} else if thisLevel-baseLevel == 2 {
-								myMoney = levelMoney * 0.2
-							} else if thisLevel-baseLevel == 3 {
-								myMoney = levelMoney * 0.3
-							} else if thisLevel-baseLevel == 4 {
-								myMoney = levelMoney * 0.35
-							} else {
-								myMoney = levelMoney * 0.6
-							}
-							f = false
-						} else {
-							myMoney = levelMoney * 0.06 //平级
-						}
-					}
-					log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v", myMoney, u["id"], thisLevel))
-
-					// levelMoney -= myMoney
-					thisLog.Amount = myMoney
-					thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
-					// thisLog.Write(UserDB)
-					// tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
-					if myMoney > 0 {
-						baseLevel = thisLevel
-						after -= myMoney
-					}
+				if count == 0 {
+					thisLog.FlowType = float64(63)
+					thisLog.Remark = "直推奖励"
+					log.Printf("用户%v直推奖励%v", u["id"], referralReward)
+					myMoney = referralReward
+					count++
+				} else if 0 < count && count < 3 && u["team_amount"].(float64) > 50000 {
+					thisLog.FlowType = float64(64)
+					thisLog.Remark = "合伙人奖励"
+					log.Printf("用户%v合伙人奖励%v", u["id"], partnerReward)
+					myMoney = partnerReward
+					count++
+				} else if u["team_amount"].(float64) > 100000 {
+					thisLog.FlowType = float64(64)
+					thisLog.Remark = "创始人奖励"
+					log.Printf("用户%v创始人奖励%v", u["id"], founderReward)
+					myMoney = founderReward
+					count++
 				}
+				after -= myMoney
+				thisLog.Amount = myMoney
+				thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
+				thisLog.Write(UserDB)
+				UserDB.Exec("update db_coin_amount set amount = ? where customer_id = ? and coin_id = ?", thisLog.AfterAmount, uId, 2)
 			} else {
 				break
 			}
+			if count >= 4 {
+				break
+			}
 		}
-		log.Println(fmt.Sprintf("级差分红剩余金额:%v--- 合伙人分红剩余:%v---- 平台收入:%2f", after, friends, realMoney*0.2+after+friends))
+		log.Println(fmt.Sprintf("级差分红剩余金额:%v--- 平台收入:%2f", after, after+realMoney*0.2))
 	}
 }
 

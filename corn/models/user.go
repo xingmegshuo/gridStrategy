@@ -265,6 +265,17 @@ func GetAccount(uId float64) float64 {
 	return 0
 }
 
+// GetAccountCach 用户可用余额
+func GetAccountCach(uId float64) float64 {
+	var amount = map[string]interface{}{}
+	UserDB.Raw("select `amount` from db_coin_amount where customer_id = ? and coin_id = ?", uId, 2).Scan(&amount)
+	log.Println(amount, "---预充值金额----用户----", uId)
+	if amount["meal_amount"] != nil {
+		return amount["meal_amount"].(float64)
+	}
+	return 0
+}
+
 // UpdateStatus 刷新状态
 func UpdateStatus(id uint) (res int64) {
 	DB.Raw("select is_run from users where id = ?", id).Scan(&res)

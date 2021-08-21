@@ -104,6 +104,8 @@ func NewUser() {
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 					DB.Create(&u)
 				}
+			} else {
+				log.Println("新建用户失败:", order["id"])
 			}
 		} else {
 			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等

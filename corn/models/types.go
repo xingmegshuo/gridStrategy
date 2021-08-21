@@ -42,6 +42,7 @@ type CategorySymbols struct {
 
 // Args 策略输入参数
 type Args struct {
+	CoinId       interface{}
 	FirstBuy     float64 // 首单
 	FirstDouble  bool    // 首单加倍
 	Price        float64 // 价格

@@ -221,6 +221,7 @@ func parseInput(order map[string]interface{}) string {
 	strategy["order_type"] = order["order_type"]      // 手动自动
 	strategy["add_type"] = order["price_growth_type"] // 补仓增幅类型
 	strategy["leverage"] = order["leverage"]
+	strategy["coin_id"] = order["task_coin_id"]
 	return ToStringJson(strategy)
 }
 

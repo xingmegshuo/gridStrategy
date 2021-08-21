@@ -1,14 +1,14 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
-    "zmyjobs/goex"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
+	"zmyjobs/goex"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -120,7 +120,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
 
                         // if p > 0 {
-                        model.LogStrategy(t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
+                        model.LogStrategy( t.arg.CoinId,t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
                             t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
                         // }
                         log.Println("任务结束", t.u.ObjectId)

@@ -59,7 +59,7 @@ func (r *RebotLog) New() {
 }
 
 func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
-	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string, cli string, f int) {
+	transactFee decimal.Decimal, hold_m decimal.Decimal, m decimal.Decimal, status string, cli string, f int, coin_id interface{}) {
 	// log.Println(orderId, "------订单成功")
 	money, _ := m.Float64()
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
@@ -67,7 +67,7 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 		Update("pay_money", hold_m).Update("order_id", cli)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", cli).Scan(&r)
-	AddModelLog(&r, money, f)
+	AddModelLog(&r, money, f, coin_id)
 }
 
 // asyncData 同步数据
@@ -160,13 +160,13 @@ func UpdateOrder(id interface{}, data map[string]interface{}) {
 }
 
 // AddModelLog 增加日志
-func AddModelLog(r *RebotLog, m float64, f int) {
+func AddModelLog(r *RebotLog, m float64, f int, coin_id interface{}) {
 	log.Printf("写入日志 价格:%v;持仓:%v;查询币种条件:%v;coin_type:%v", r.Price, r.HoldMoney, r.GetCoin, f)
 	var data = map[string]interface{}{}
-	var coin = map[string]interface{}{}
+	// var coin = map[string]interface{}{}
 	var mes string
-	UserDB.Raw("select id,name from db_task_coin where en_name like ? and coin_type = ?", r.GetCoin, f).Scan(&coin)
-	log.Printf("获取的coin内容%v", coin)
+	// UserDB.Raw("select id,name from db_task_coin where en_name like ? and coin_type = ?", r.GetCoin, f).Scan(&coin)
+	// log.Printf("获取的coin内容%v", coin)
 	data["order_sn"] = r.OrderId // 订单号
 	data["category_id"] = 2      // 平台
 	data["order_id"] = r.UserID  //机器人
@@ -190,7 +190,7 @@ func AddModelLog(r *RebotLog, m float64, f int) {
 	data["jy_coin_id"] = 1
 	data["js_coin_id"] = 1
 	data["coin_name"] = "币币交易"                    // 币种名字
-	data["task_coin_id"] = coin["id"]             // 币种id
+	data["task_coin_id"] = coin_id                // 币种id
 	data["price"] = decimal.NewFromFloat(r.Price) // 价格
 	data["num"] = decimal.NewFromFloat(r.HoldNum) // 持仓数量
 	data["amount"] = r.HoldMoney                  // 成交金额
@@ -375,17 +375,17 @@ func DeleteRebotLog(orderId string) {
 }
 
 // LogStrategy 卖出盈利日志
-func LogStrategy(name interface{}, coin_name interface{}, order interface{}, member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}) {
+func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, order interface{}, member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}) {
 	log.Println("盈利日志", name, member, coin_name)
 	var (
 		data     = map[string]interface{}{}
 		categroy = map[string]interface{}{}
-		coin     = map[string]interface{}{}
+		// coin     = map[string]interface{}{}
 	)
 	UserDB.Raw("select id from db_task_category where `name` like ?", name).Scan(&categroy)
-	UserDB.Raw("select id from db_task_coin where `en_name` like ? and category_id = ?", coin_name, categroy["id"]).Scan(&coin)
+	// UserDB.Raw("select id from db_task_coin where `en_name` like ? and category_id = ?", coin_name, categroy["id"]).Scan(&coin)
 	data["category_id"] = categroy["id"]
-	data["coin_id"] = coin["id"]
+	data["coin_id"] = coin_id
 	data["order_id"] = order
 	data["member_id"] = member
 	data["coin_name"] = coin_name

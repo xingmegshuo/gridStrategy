@@ -70,8 +70,8 @@ func NewUser() {
 	for _, order := range orders {
 		log.Println("新建用户检测:", order["id"], len(orders))
 		var u User
-		ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
-		ul.lock.Lock()
+		// ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
+		// ul.lock.Lock()
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
@@ -158,10 +158,10 @@ func NewUser() {
 				u.Update()
 			}
 		}
-		if order["id"].(float64) == ul.id {
-			// fmt.Println("解锁")
-			ul.lock.Lock()
-		}
+		// if order["id"].(float64) == ul.id {
+		// 	// fmt.Println("解锁")
+		// 	ul.lock.Lock()
+		// }
 	}
 }
 

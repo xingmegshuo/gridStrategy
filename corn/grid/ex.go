@@ -170,8 +170,8 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 		if err == nil {
 
 			r = true
-			for _, account := range info.SubAccounts {
-				log.Printf("%T:%v;%T:%v", account, account, d, d)
+			for k, account := range info.SubAccounts {
+				log.Printf("%T:%v;%T:%v,%v", k, k, d, d, k == d)
 				if account.Currency == d {
 					log.Println("哈哈哈哈", account.Currency, account)
 				}

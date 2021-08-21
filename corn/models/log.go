@@ -221,7 +221,6 @@ func GotMoney(money float64, uId float64, from interface{}) {
 		log.Println(fmt.Sprintf("分红金额:%v----用户id:%v", realMoney, u["id"]))
 		// 修改盈利
 		ChangeAmount(money, &u, tx, true)
-
 		// 扣除分红金额，写日志
 		ownLog := &AmountLog{
 			FlowType:       62,

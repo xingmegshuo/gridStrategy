@@ -169,7 +169,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 		b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
 		if err == nil {
 			r = true
-			for k, account := range info.SubAccounts {
+			for _, account := range info.SubAccounts {
 				// log.Printf("%T:%v;%T:%v,%v", k.Symbol, k.Symbol, d.Symbol, d.Symbol, k.Symbol == d.Symbol)
 				if account.Currency.Symbol == d.Symbol {
 					coin = decimal.NewFromFloat(account.Amount)

@@ -13,7 +13,6 @@ import (
 	"errors"
 	"strings"
 	"sync"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -64,9 +63,9 @@ type User struct {
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
 	orders := StringMap(GetCache("db_task_order"))
-	if GetCache("火币交易对") == "" {
-		time.Sleep(time.Second)
-	}
+	// if GetCache("火币交易对") == "" {
+	// 	time.Sleep(time.Second)
+	// }
 
 	for _, order := range orders {
 		log.Println("新建用户检测:", order["id"], len(orders))

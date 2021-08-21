@@ -68,6 +68,7 @@ func NewUser() {
 		time.Sleep(time.Second)
 	}
 	for _, order := range orders {
+		log.Println("新建用户检测:", order["id"])
 		var u User
 		ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
 		ul.lock.Lock()

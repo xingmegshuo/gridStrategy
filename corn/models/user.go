@@ -67,8 +67,9 @@ func NewUser() {
 	if GetCache("火币交易对") == "" {
 		time.Sleep(time.Second)
 	}
+
 	for _, order := range orders {
-		log.Println("新建用户检测:", order["id"])
+		log.Println("新建用户检测:", order["id"], len(orders))
 		var u User
 		ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
 		ul.lock.Lock()

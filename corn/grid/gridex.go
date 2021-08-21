@@ -83,6 +83,7 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
 	t.base = t.u.Base
 	t.amount = t.CountHold()
 	moneyNeed := t.CountNeed()
+	log.Printf("数量:%v;用户:%v;需要:%v", moneyNeed)
 	for i := 0; i < len(t.RealGrids); i++ {
 		if i < t.base {
 			t.pay = t.pay.Add(t.RealGrids[i].TotalBuy)

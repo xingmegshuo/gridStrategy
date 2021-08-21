@@ -167,6 +167,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 		info, err := c.Ex.GetAccount()
 		d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))
 		b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
+		log.Printf("用户数据:%+v", info)
 		if err == nil {
 			r = true
 			money = decimal.NewFromFloat(info.SubAccounts[b].Amount)

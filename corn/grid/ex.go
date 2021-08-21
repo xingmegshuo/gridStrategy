@@ -168,10 +168,9 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 		d := MakeCurrency(util.UpString(c.symbol.BaseCurrency))
 		b := MakeCurrency(util.UpString(c.symbol.QuoteCurrency))
 		if err == nil {
-
 			r = true
 			for k, account := range info.SubAccounts {
-				log.Printf("%T:%v;%T:%v,%v", k, k, d, d, k == d)
+				log.Printf("%T:%v;%T:%v,%v", k.Symbol, k.Symbol, d.Symbol, d.Symbol, k.Symbol == d.Symbol)
 				if account.Currency == d {
 					log.Println("哈哈哈哈", account.Currency, account)
 				}
@@ -181,7 +180,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 			}
 			money = decimal.NewFromFloat(info.SubAccounts[b].Amount)
 			coin = decimal.NewFromFloat(info.SubAccounts[d].Amount)
-			log.Printf("用户数据:%+v,%+v;%+v", info.SubAccounts[b], info.SubAccounts[d], info.SubAccounts)
+			// log.Printf("用户数据:%+v,%+v;%+v", info.SubAccounts[b], info.SubAccounts[d], info.SubAccounts)
 		}
 	}
 	return

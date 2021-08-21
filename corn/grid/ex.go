@@ -171,15 +171,13 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 			r = true
 			for k, account := range info.SubAccounts {
 				log.Printf("%T:%v;%T:%v,%v", k.Symbol, k.Symbol, d.Symbol, d.Symbol, k.Symbol == d.Symbol)
-				if account.Currency == d {
-					log.Println("哈哈哈哈", account.Currency, account)
+				if account.Currency.Symbol == d.Symbol {
+					coin = decimal.NewFromFloat(account.Amount)
 				}
-				if account.Currency == b {
-					log.Println("啦啦啦", account.Currency, account)
+				if account.Currency.Symbol == b.Symbol {
+					money = decimal.NewFromFloat(account.Amount)
 				}
 			}
-			money = decimal.NewFromFloat(info.SubAccounts[b].Amount)
-			coin = decimal.NewFromFloat(info.SubAccounts[d].Amount)
 			// log.Printf("用户数据:%+v,%+v;%+v", info.SubAccounts[b], info.SubAccounts[d], info.SubAccounts)
 		}
 	}

@@ -355,7 +355,7 @@ func (t *ExTrader) myCoin() (coin decimal.Decimal) {
 func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
 	c := t.myCoin()
 	coin = t.CountHold()
-	if coin.Cmp(c) == 1 {
+	if coin.Cmp(c) == 1 && t.u.Future == 0 {
 		coin = c
 	}
 	coin = t.ToPrecision(coin)

@@ -165,7 +165,7 @@ func AddModelLog(r *RebotLog, m float64, f int) {
 	var data = map[string]interface{}{}
 	var coin = map[string]interface{}{}
 	var mes string
-	UserDB.Raw("select id,name from db_task_coin where name like ? and coin_type = ?", r.GetCoin, f).Scan(&coin)
+	UserDB.Raw("select id,name from db_task_coin where en_name like ? and coin_type = ?", r.GetCoin, f).Scan(&coin)
 	log.Printf("获取的coin内容%v", coin)
 	data["order_sn"] = r.OrderId // 订单号
 	data["category_id"] = 2      // 平台
@@ -377,7 +377,7 @@ func DeleteRebotLog(orderId string) {
 
 // LogStrategy 卖出盈利日志
 func LogStrategy(name interface{}, coin_name interface{}, order interface{}, member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}) {
-	log.Println("盈利日志", name, member)
+	log.Println("盈利日志", name, member, coin_name)
 	var (
 		data     = map[string]interface{}{}
 		categroy = map[string]interface{}{}

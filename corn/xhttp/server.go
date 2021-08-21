@@ -394,7 +394,7 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
                 var coinDB []map[string]interface{}
                 model.UserDB.Raw("select name,id from db_task_coin where coin_type = ? or coin_type = ?", 1, 3).Scan(&coinDB)
                 for _, c := range coinDB {
-                    if coin.Name == c["name"] {
+                    if coin.Name == c["name"] && coin.Name[len(coin.Name)-4:] == "USDT" {
                         coin.Id = c["id"]
                         if strings.Contains(coin.Name, util.UpString(search)) {
                             coins = append(coins, coin)
@@ -402,7 +402,7 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
                     }
                 }
             } else {
-                if strings.Contains(coin.Name, util.UpString(search)) {
+                if strings.Contains(coin.Name, util.UpString(search)) && coin.Name[len(coin.Name)-4:] == "USDT" {
                     coins = append(coins, coin)
                 }
             }
@@ -449,7 +449,7 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
                 var coinDB []map[string]interface{}
                 model.UserDB.Raw("select name,id from db_task_coin where coin_type = ? or coin_type = ?", 2, 4).Scan(&coinDB)
                 for _, c := range coinDB {
-                    if coin.Name == c["name"] {
+                    if coin.Name == c["name"] && coin.Name[len(coin.Name)-3:] == "USD" {
                         coin.Id = c["id"]
                         if strings.Contains(coin.Name, util.UpString(search)) {
                             coins = append(coins, coin)
@@ -457,7 +457,7 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
                     }
                 }
             } else {
-                if strings.Contains(coin.Name, util.UpString(search)) {
+                if strings.Contains(coin.Name, util.UpString(search)) && coin.Name[len(coin.Name)-3:] == "USD" {
                     coins = append(coins, coin)
                 }
             }

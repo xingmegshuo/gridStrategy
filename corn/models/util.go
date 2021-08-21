@@ -65,6 +65,7 @@ func NewSymbol(u User) *SymbolCategory {
 	if u.Future != 0 {
 		symbol.Future = true
 	}
+	log.Println("交易对数据:%+v", symbol)
 	return &symbol
 }
 

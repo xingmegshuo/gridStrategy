@@ -193,6 +193,7 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (str
 	if t.u.Future == 2 || t.u.Future == 4 {
 		amount = t.CountMesure()
 	}
+	log.Printf("类型:%v,数量:%v,价格:%v;用户:%v", msg, amount, price, t.u.ObjectId)
 	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
 	log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
 	// 增加一个真实成交
@@ -242,7 +243,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 			t.amount = t.CountHold()
 			t.pay = t.CountPay()
 			t.cost = t.pay.Div(t.amount)
-			model.RebotUpdateBy(clientOrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId,t.u.Future)
+			model.RebotUpdateBy(clientOrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future)
 			model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 		}
 		t.Tupdate()

@@ -62,7 +62,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
             return nil
         }
     }
-    log.Printf("交易对:%v;期货标识:%v;策略类型:%v", ex.goex.Currency, u.Future, ex.arg.Crile)
+    log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v", u.ObjectId, ex.goex.Currency, u.Future, ex.arg.Crile,ex.RealGrids)
     return
 }
 

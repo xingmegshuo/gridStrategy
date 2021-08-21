@@ -259,6 +259,7 @@ func (t *ExTrader) CountHold() (amount decimal.Decimal) {
 			amount = amount.Add(g.AmountBuy)
 		}
 	}
+	log.Printf("用户%v计算持仓量:%v", t.u.ObjectId, amount)
 	return
 }
 
@@ -357,6 +358,7 @@ func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
 		coin = c
 	}
 	coin = t.ToPrecision(coin)
+	log.Println("用户%v卖出计算:%v", t.u.ObjectId, coin)
 	return
 }
 
@@ -367,5 +369,6 @@ func (t *ExTrader) CountMesure() (amount decimal.Decimal) {
 			amount = amount.Add(g.Mesure)
 		}
 	}
+	log.Println("用户%v卖出计算:%v", t.u.ObjectId, amount)
 	return
 }

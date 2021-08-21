@@ -1,14 +1,14 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
-	"zmyjobs/goex"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
+    "zmyjobs/goex"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -46,6 +46,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
     var realGrid []Grid
     _ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
     symbol := model.StringSymobol(u.Symbol)
+    symbol.Lever = arg.Level.(float64)
     ex = &ExTrader{
         grids:     *grid,
         arg:       &arg,
@@ -55,7 +56,6 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
     if u.Future == 2 || u.Future == 4 {
         if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) {
             log.Println("修改杠杆倍数出错")
-
             return nil
         }
     }

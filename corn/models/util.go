@@ -156,6 +156,7 @@ func ParseStrategy(u User) *Args {
 	arg.Stop = ParseStringFloat(data["stop"].(string))
 	arg.AddMoney = ParseStringFloat(data["add"].(string))
 	arg.StrategyType = int64(data["Strategy"].(float64))
+	arg.Level = data["leverage"]
 	// log.Println("用户修改:", u.ObjectId, u.IsRun)
 	if arg.StrategyType == 1 {
 		arg.IsChange = false

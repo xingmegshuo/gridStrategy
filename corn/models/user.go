@@ -78,7 +78,7 @@ func NewUser() {
 			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
 			if b {
 				// 数据库查找存在与否
-				log.Println("新建用户:", order["id"])
+				// log.Println("新建用户:", order["id"])
 				u = User{
 					ObjectId: int32(order["id"].(float64)),
 					ApiKey:   api,
@@ -220,6 +220,7 @@ func parseInput(order map[string]interface{}) string {
 	strategy["stop_buy"] = order["stop_buy"]          // 停止买入
 	strategy["order_type"] = order["order_type"]      // 手动自动
 	strategy["add_type"] = order["price_growth_type"] // 补仓增幅类型
+	strategy["leverage"] = order["leverage"]
 	return ToStringJson(strategy)
 }
 

@@ -67,6 +67,7 @@ type Args struct {
 	AllSell      bool    // 一键平仓
 	StopBuy      bool    // 停止买入
 	IsHand       bool    // 手动参数 false 自动参数true
+	Level        interface{}
 }
 
 // 策略预览内容

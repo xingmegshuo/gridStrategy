@@ -83,7 +83,7 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
 	t.base = t.u.Base
 	t.amount = t.CountHold()
 	moneyNeed := t.CountNeed()
-	log.Printf("数量:%v;用户:%v;需要:%v", moneyNeed)
+	log.Printf("数量:%v;用户:%v;需要:%v", t.amount, t.u.ObjectId, moneyNeed)
 	for i := 0; i < len(t.RealGrids); i++ {
 		if i < t.base {
 			t.pay = t.pay.Add(t.RealGrids[i].TotalBuy)
@@ -359,7 +359,7 @@ func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
 		coin = c
 	}
 	coin = t.ToPrecision(coin)
-	log.Println("用户%v卖出计算:%v", t.u.ObjectId, coin)
+	log.Printf("用户%v卖出计算:%v", t.u.ObjectId, coin)
 	return
 }
 

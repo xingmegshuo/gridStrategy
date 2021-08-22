@@ -12,7 +12,7 @@ import (
 type ExTrader struct {
 	arg       *model.Args     // 策略参数
 	grids     []model.Grid    // 预设策略
-	RealGrids []Grid          // 成交信息
+	RealGrids []model.Grid    // 成交信息
 	base      int             // 当前单数
 	ErrString string          // 错误信息
 	over      bool            // 是否结束
@@ -37,8 +37,6 @@ type Grid struct {
 	Decline    float64         // 跌幅,或者说盈利
 	AmountSell decimal.Decimal // 卖出数量
 	TotalBuy   decimal.Decimal // money
-	Order      string          // 订单id
-	Mesure     decimal.Decimal // b本位计量单位张
 }
 
 // log 交易日志
@@ -163,7 +161,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 	if err == nil {
 		// fmt.Println("已经挂单的买入", t.u.ObjectId)
 		t.log(orderId, price, msg, t.base, amount, rate, "买入")
-		g := Grid{
+		g := model.Grid{
 			Id:      t.base + 1,
 			Decline: rate,
 			Order:   orderId,

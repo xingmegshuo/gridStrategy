@@ -24,7 +24,7 @@ var updateCount sync.Mutex
 func UserJobRun() {
 	userData()
 	go model.NewUser()
-	go RunWG()
+	// go RunWG()
 }
 
 func userData() {

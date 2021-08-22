@@ -43,7 +43,7 @@ func RunEx(ctx context.Context, u model.User) {
 func NewExStrategy(u model.User) (ex *ExTrader) {
     arg := model.StringArg(u.Arg)
     grid, _ := model.SourceStrategy(u, false)
-    var realGrid []Grid
+    var realGrid []model.Grid
     _ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
     symbol := model.StringSymobol(u.Symbol)
     symbol.Lever = arg.Level.(float64)

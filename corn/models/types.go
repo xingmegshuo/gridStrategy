@@ -78,8 +78,10 @@ type Grid struct {
 	AmountBuy  decimal.Decimal // 买入数量
 	Decline    float64         // 跌幅
 	AmountSell decimal.Decimal // 卖出数量
-	TotalBuy   decimal.Decimal // money
-	Order      uint64          // 订单id
+	TotalBuy   decimal.Decimal // 投入金额
+	Mesure     decimal.Decimal // b本位计量单位张
+	Order      string          // 订单id
+
 }
 
 // coin

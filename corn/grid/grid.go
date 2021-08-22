@@ -294,7 +294,7 @@ func (t *Trader) processClearTrade(trade huobi.Trade) {
 		t.RealGrids[t.base].AmountBuy = trade.Volume.Sub(trade.TransactFee)
 		t.RealGrids[t.base].Price = trade.Price
 		t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].Price.Mul(trade.Volume)
-		t.RealGrids[t.base].Order = uint64(trade.OrderId)
+		// t.RealGrids[t.base].Order = uint64(trade.OrderId)
 		// model.RebotUpdateBy(trade.ClientOrder, t.RealGrids[t.base].Price, t.RealGrids[t.base].AmountBuy, trade.TransactFee, t.RealGrids[t.base].TotalBuy, t.hold, "成功")
 		t.pay = t.pay.Add(t.RealGrids[t.base].TotalBuy)
 		t.amount = t.amount.Add(trade.Volume).Sub(trade.TransactFee)
@@ -325,7 +325,7 @@ func (t *Trader) buy(clientOrderId string, price, amount decimal.Decimal, rate f
 		Id: t.base + 1,
 		// Price:   price,
 		Decline: rate,
-		Order:   orderId,
+		// Order:   orderId,
 	})
 	return orderId, err
 }

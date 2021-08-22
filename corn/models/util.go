@@ -74,8 +74,18 @@ func MakeStrategy(u User) (*[]Grid, error) {
 	// scale := decimal.NewFromFloat(math.Pow(arg.MinPrice/arg.Price, 1.0/float64(number)))
 	arg := StringArg(u.Arg)
 	symbol := StringSymobol(u.Symbol)
-	currentPrice := decimal.NewFromFloat(arg.Price).Round(symbol.PricePrecision)
-	preTotal := decimal.NewFromFloat(arg.FirstBuy).Div(currentPrice).Round(symbol.AmountPrecision)
+	currentPrice := decimal.NewFromFloat(arg.Price).Round(symbol.PricePrecision) // 当前价格
+	var (
+		preTotal decimal.Decimal
+		totalBuy decimal.Decimal
+	)
+	if u.Future == 2 || u.Future == 4 {
+		preTotal = decimal.NewFromFloat(arg.FirstBuy)
+		totalBuy = preTotal
+	} else {
+		preTotal = decimal.NewFromFloat(arg.FirstBuy).Div(currentPrice).Round(symbol.AmountPrecision)
+		totalBuy = decimal.NewFromFloat(arg.FirstBuy).Round(symbol.PricePrecision + symbol.AmountPrecision)
+	}
 	if CheckMinToal(u.Category, decimal.NewFromFloat(arg.FirstBuy)) != nil {
 		if u.Future == 0 {
 			if decimal.NewFromFloat(arg.FirstBuy).Cmp(symbol.MinTotal) < 0 {
@@ -91,7 +101,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 		Price:     currentPrice,
 		Decline:   arg.Decline,
 		AmountBuy: preTotal,
-		TotalBuy:  decimal.NewFromFloat(arg.FirstBuy).Round(symbol.PricePrecision + symbol.AmountPrecision),
+		TotalBuy:  totalBuy,
 	}
 
 	grids = append(grids, currentGrid)
@@ -104,20 +114,27 @@ func MakeStrategy(u User) (*[]Grid, error) {
 		}
 		price := grids[i-2].Price.Sub(currentPrice.Mul(decimal.NewFromFloat(decline * 0.01)))
 		var TotalBuy decimal.Decimal
+		rate := arg.Rate*0.01 + 1 // 补仓比例
 		if arg.IsChange {
 			// 固定金额
 			TotalBuy = grids[i-2].TotalBuy.Add(decimal.NewFromFloat(arg.AddMoney))
 		} else {
-			rate := arg.Rate*0.01 + 1 // 补仓比例
 			TotalBuy = grids[i-2].TotalBuy.Mul(decimal.NewFromFloat(rate))
 		}
-
 		currentGrid = Grid{
 			Id:        i,
 			Price:     price,
 			Decline:   decline,
 			AmountBuy: TotalBuy.Div(price).Round(symbol.AmountPrecision),
 			TotalBuy:  TotalBuy.Round(symbol.PricePrecision + symbol.AmountPrecision),
+		}
+		if u.Future == 2 || u.Future == 4 {
+			if arg.IsChange {
+				currentGrid.AmountBuy = grids[i-2].AmountBuy.Add(decimal.NewFromFloat(arg.AddMoney)).Round(0)
+			} else {
+				currentGrid.AmountBuy = grids[i-2].AmountBuy.Mul(decimal.NewFromFloat(rate)).Round(0)
+			}
+			currentGrid.TotalBuy = currentGrid.AmountBuy
 		}
 		grids = append(grids, currentGrid)
 	}

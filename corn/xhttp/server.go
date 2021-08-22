@@ -14,23 +14,23 @@
 package xhttp
 
 import (
-    "database/sql"
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "strings"
-    "time"
-    grid "zmyjobs/corn/grid"
-    model "zmyjobs/corn/models"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+	grid "zmyjobs/corn/grid"
+	model "zmyjobs/corn/models"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
-    "github.com/gorilla/mux"
-    "gorm.io/gorm"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 var INFO = "morning"
@@ -581,7 +581,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
             tasks    *gorm.DB
         )
         // r.ParseForm()
-        fmt.Println("获取数据", r.PostForm, r.Form, form, len(form))
+        // fmt.Println("获取数据", r.PostForm, r.Form, form, len(form))
         if len(form) == 0 {
             for k, v := range r.Form {
                 if k == "order_id" {

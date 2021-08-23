@@ -271,13 +271,13 @@ func GotMoney(money float64, uId float64, from interface{}) {
 					log.Printf("用户%v直推奖励%v", u["id"], referralReward)
 					myMoney = referralReward
 					count++
-				} else if 0 < count && count < 3 && u["team_amount"].(float64) > 50000 {
+				} else if 0 < count && count < 3 && ParseStringFloat(u["team_amount"].(string)) > 50000 {
 					thisLog.FlowType = float64(64)
 					thisLog.Remark = "合伙人奖励"
 					log.Printf("用户%v合伙人奖励%v", u["id"], partnerReward)
 					myMoney = partnerReward
 					count++
-				} else if u["team_amount"].(float64) > 100000 {
+				} else if ParseStringFloat(u["team_amount"].(string)) > 100000 {
 					thisLog.FlowType = float64(65)
 					thisLog.Remark = "创始人奖励"
 					log.Printf("用户%v创始人奖励%v", u["id"], founderReward)

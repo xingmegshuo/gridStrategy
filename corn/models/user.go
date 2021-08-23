@@ -70,8 +70,7 @@ func NewUser() {
 	for _, order := range orders {
 		// log.Println("新建用户检测:", order["id"], len(orders))
 		var u User
-		// ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
-		// ul.lock.Lock()
+
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
@@ -109,6 +108,8 @@ func NewUser() {
 				log.Println("新建用户失败:", order["id"])
 			}
 		} else {
+			ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
+			ul.lock.Lock()
 			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
 			if order["status"].(float64)+1 != u.Status {
 				log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
@@ -157,6 +158,7 @@ func NewUser() {
 				u = UpdateUser(u)
 				u.Update()
 			}
+			ul.lock.Unlock()
 		}
 		// if order["id"].(float64) == ul.id {
 		// 	// fmt.Println("解锁")
@@ -266,14 +268,11 @@ func GetAccount(uId float64) float64 {
 }
 
 // GetAccountCach 用户可用余额
-func GetAccountCach(uId float64) float64 {
-	var amount = map[string]interface{}{}
+func GetAccountCach(uId float64) (amount float64) {
+
 	UserDB.Raw("select `amount` from db_coin_amount where customer_id = ? and coin_id = ?", uId, 2).Scan(&amount)
-	log.Println(amount, "---预充值金额----用户----", uId)
-	if amount["meal_amount"] != nil {
-		return amount["meal_amount"].(float64)
-	}
-	return 0
+	log.Printf("用户%v的流通余额为%v", uId, amount)
+	return
 }
 
 // UpdateStatus 刷新状态

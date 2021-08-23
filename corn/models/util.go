@@ -65,7 +65,7 @@ func NewSymbol(u User) *SymbolCategory {
 	if u.Future != 0 {
 		symbol.Future = true
 	}
-	log.Println("交易对数据:%+v---------", symbol)
+	log.Printf("交易对数据:%+v", symbol)
 	return &symbol
 }
 
@@ -159,6 +159,8 @@ func MakeStrategy(u User) (*[]Grid, error) {
 
 // ParseStrategy 解析策略
 func ParseStrategy(u User) *Args {
+	// log.Println("arg 解析")
+
 	var data = map[string]interface{}{}
 	var arg Args
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
@@ -174,6 +176,7 @@ func ParseStrategy(u User) *Args {
 	arg.AddMoney = ParseStringFloat(data["add"].(string))
 	arg.StrategyType = int64(data["Strategy"].(float64))
 	arg.Level = data["leverage"]
+	arg.CoinId = data["coin_id"]
 	// log.Println("用户修改:", u.ObjectId, u.IsRun)
 	if arg.StrategyType == 1 {
 		arg.IsChange = false
@@ -181,17 +184,18 @@ func ParseStrategy(u User) *Args {
 
 	arg.Crile = data["frequency"].(float64)
 
-	// log.Println(data)
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
 	if data["allSell"].(float64) == 2 {
 		if UpdateStatus(u.ID) == 10 {
 			log.Println("发送清仓", u.ObjectId)
+			OneSell(u.ObjectId)
 			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
 		}
 	}
 	if data["one_buy"].(float64) == 2 {
 		if UpdateStatus(u.ID) == 10 {
 			log.Println("发送补仓", u.ObjectId)
+			OneBuy(u.ObjectId)
 			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
 		}
 	}
@@ -217,15 +221,18 @@ func ParseStrategy(u User) *Args {
 	if arg.StrategyType == 3 || arg.StrategyType == 4 {
 		arg.OrderType = 2
 	}
+	// log.Printf("arg数据:%+v", arg)
 	return &arg
 }
 
 func GetPrice(u User) decimal.Decimal {
 	c := util.Config{Name: u.Category}
 	f := false
-	if u.Future > 1 {
+	if u.Future > 0 {
 		f = true
 	}
+
+	// log.Println("第一次获取价格", u.Name, f)
 	price, err := c.GetPrice(u.Name, f)
 	if err == nil {
 		return price

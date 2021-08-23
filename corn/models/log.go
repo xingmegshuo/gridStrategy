@@ -116,11 +116,11 @@ func AddRun(id interface{}, b interface{}) {
 // RunOver 运行完成
 func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}) {
 	old := GetOldAmount(orderId)
-	log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))
 	var data = map[string]interface{}{
 		"status": 2,
 	}
 	if b.(float64) > 0 {
+		log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))
 		data["total_profit"] = b.(float64) + old
 		GotMoney(b.(float64), id.(float64), from)
 	}
@@ -224,7 +224,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 		ownLog := &AmountLog{
 			FlowType:       62,
 			CustomerId:     uId,
-			FromCustomerId: from.(float64),
+			FromCustomerId: float64(from.(int64)),
 			Direction:      1,
 			CoinId:         2,
 			Amount:         realMoney,
@@ -255,6 +255,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 			var myMoney float64
 			if u["inviter_id"].(uint32) > 0 {
 				tx.Raw("select `id`,`team_amount`,`profit_mine_amount`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
+				log.Printf("用户:%+v", u)
 				var thisLog = &AmountLog{
 					CoinId:         float64(2),
 					Direction:      2,
@@ -277,7 +278,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 					myMoney = partnerReward
 					count++
 				} else if u["team_amount"].(float64) > 100000 {
-					thisLog.FlowType = float64(64)
+					thisLog.FlowType = float64(65)
 					thisLog.Remark = "创始人奖励"
 					log.Printf("用户%v创始人奖励%v", u["id"], founderReward)
 					myMoney = founderReward
@@ -287,7 +288,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 				thisLog.Amount = myMoney
 				thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
 				thisLog.Write(UserDB)
-				UserDB.Exec("update db_coin_amount set amount = ? where customer_id = ? and coin_id = ?", thisLog.AfterAmount, uId, 2)
+				UserDB.Exec("update db_coin_amount set amount = ? where customer_id = ? and coin_id = ?", thisLog.AfterAmount, u["id"], 2)
 			} else {
 				break
 			}
@@ -295,7 +296,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 				break
 			}
 		}
-		log.Println(fmt.Sprintf("级差分红剩余金额:%v--- 平台收入:%2f", after, after+realMoney*0.2))
+		log.Println(fmt.Sprintf("级差分红剩余金额:%v--- 平台收入:%v", after, after+realMoney*0.2))
 	}
 }
 
@@ -357,6 +358,7 @@ func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, o
 	UserDB.Table("db_task_order_log").Create(&data)
 	var id interface{}
 	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
+
 	m, _ := money.(decimal.Decimal).Float64()
 	RunOver(member, m, order, id)
 }

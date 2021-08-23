@@ -145,14 +145,18 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 		amount = t.grids[t.base].TotalBuy
 		msg = "市价买入"
 	}
-	log.Println(t.arg.Crile)
+	// log.Println(t.arg.Crile)
 	if t.goex.symbol.Future && t.arg.Crile == 3 {
 		orderType = OpenDL
-		amount = t.grids[t.base].TotalBuy
+		if t.u.Future == 2 || t.u.Future == 4 {
+			amount = t.grids[t.base].TotalBuy
+		}
 		msg = "开多"
 	} else if t.goex.symbol.Future && t.arg.Crile == 4 {
 		orderType = OpenLL
-		amount = t.grids[t.base].TotalBuy
+		if t.u.Future == 2 || t.u.Future == 4 {
+			amount = t.grids[t.base].TotalBuy
+		}
 		msg = "开空"
 	}
 	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
@@ -247,6 +251,7 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 			model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 		}
 		t.Tupdate()
+		log.Printf("实际操作%+v", t.RealGrids)
 		return true
 	}
 	return false
@@ -280,6 +285,7 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 		pay = pay.Add(b.TotalBuy)
 		my = my.Add(b.AmountSell)
 	}
+	log.Printf("用户%v投入资金:%v;清仓获得资金:%v", t.u.ObjectId, pay, my)
 	return my.Sub(pay)
 }
 

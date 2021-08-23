@@ -105,7 +105,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
                     } else if t.over {
                         // 策略执行完毕 to do 计算盈利
                         log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
-                        p, _ := t.CalCulateProfit().Float64()
+                        res := t.CalCulateProfit()
+                        p, _ := res.Float64()
                         // 盈利ctx
                         if t.arg.Crile > 2 {
                             t.u.IsRun = 100
@@ -120,8 +121,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
                         log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
 
                         // if p > 0 {
-                        model.LogStrategy( t.arg.CoinId,t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
-                            t.u.Custom, t.amount, t.cost, t.arg.IsHand, t.CalCulateProfit().Abs())
+                        model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
+                            t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res)
                         // }
                         log.Println("任务结束", t.u.ObjectId)
                     }
@@ -352,7 +353,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         if t.arg.OneBuy && t.base < len(t.grids)-1 {
             log.Printf("%v用户一键补仓", t.u.ObjectId)
             t.arg.OneBuy = false
-            model.OneBuy(t.u.ObjectId)
+            // model.OneBuy(t.u.ObjectId)
             err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
             if err != nil {
                 errorCount++
@@ -407,7 +408,7 @@ func (t *ExTrader) AllSellMy() {
     t.arg.AllSell = false
     t.u.Arg = model.ToStringJson(&t.arg)
     t.u.Update()
-    model.OneSell(t.u.ObjectId)
+    // model.OneSell(t.u.ObjectId)
 }
 
 func (t *ExTrader) ToPrecision(p decimal.Decimal) decimal.Decimal {

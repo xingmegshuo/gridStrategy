@@ -70,10 +70,11 @@ func xhttp(url string, name string) {
 // craw
 func craw(coinCache []*redis.Z) {
 	start := time.Now()
-	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1)...)
-	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)...)
-	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)...)
-	// coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)...)
+	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
+	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
+	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
+	coinCache = append(coinCache, xhttpCraw("https://dpi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
+	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
 
 	fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
@@ -85,7 +86,7 @@ func craw(coinCache []*redis.Z) {
 }
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
-func xhttpCraw(url string, category int) []*redis.Z {
+func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 	client := http.Client{Timeout: 10 * time.Second}
 	// client := util.ProxyHttp()
 	resp, err := client.Get(url)
@@ -102,13 +103,13 @@ func xhttpCraw(url string, category int) []*redis.Z {
 		if category == 2 || category == 5 {
 			_ = json.Unmarshal(content, &realData)
 		}
-		return WriteDB(realData, category)
+		return WriteDB(realData, category, coinType)
 	} else {
 		return []*redis.Z{}
 	}
 }
 
-func WriteDB(realData []map[string]interface{}, category int) (coinCache []*redis.Z) {
+func WriteDB(realData []map[string]interface{}, category int, coinType int) (coinCache []*redis.Z) {
 	// start := time.Now()
 	for _, s := range realData {
 		var (
@@ -119,9 +120,14 @@ func WriteDB(realData []map[string]interface{}, category int) (coinCache []*redi
 		} else {
 			symbol = s["symbol"].(string)
 		}
+
 		if name := util.ToMySymbol(symbol); name != "none" {
 			var id interface{}
-			model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ? and category_id = ?", 0, name, category).Scan(&id)
+			if coinType == 0 {
+				model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ? and category_id = ?", 0, name, category).Scan(&id)
+			} else {
+				model.UserDB.Raw("select id from db_task_coin where coin_type != ? and name = ? and category_id = ?", 0, name, category).Scan(&id)
+			}
 			// fmt.Println(id)
 			if id != nil {
 				var (

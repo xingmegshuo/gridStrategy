@@ -45,7 +45,7 @@ func JobExit(job model.Job) {
 
 func CrawRun() {
 	coinCache := []*redis.Z{}
-	go craw(coinCache)
+	craw(coinCache)
 }
 
 // xhttp 缓存信息
@@ -73,6 +73,7 @@ func craw(coinCache []*redis.Z) {
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1)...)
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)...)
 	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)...)
+	// coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)...)
 
 	fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {

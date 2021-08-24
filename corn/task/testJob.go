@@ -17,12 +17,16 @@ import (
 	"time"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
+
+	"github.com/go-redis/redis/v8"
 )
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
-var crawJob = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 5s")
-
-var crawLock sync.Mutex
+var (
+	crawJob   = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 3s")
+	crawLock  sync.Mutex
+	coinCache []*redis.Z
+)
 
 func InitJob(j model.Job, f func()) {
 	err := C.AddFunc(j.Spec, f)
@@ -40,17 +44,7 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
-	// log.Println("working for data clone ......")
-	crawLock.Lock()
-	// runtime.GOMAXPROCS(runtime.NumCPU())
-	h := model.Host{}
-	h.Get("火币")
-	// Hurl := "https://" + h.Url
-	// go xhttp(Hurl+"/v1/common/symbols", "火币交易对")
-	// go xhttpCraw(Hurl+"/market/tickers", 1)
-	// go xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
-	// go xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
-	crawLock.Unlock()
+	craw()
 }
 
 // xhttp 缓存信息
@@ -72,12 +66,26 @@ func xhttp(url string, name string) {
 	}
 }
 
+// craw
+func craw() {
+	start := time.Now()
+	coinCache = []*redis.Z{}
+	xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2)
+	xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5)
+	fmt.Println(len(coinCache), time.Since(start))
+	if len(coinCache) > 0 {
+		model.Del("coins")
+		model.AddCache("coins", coinCache...)
+		coinCache = []*redis.Z{}
+	}
+}
+
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int) {
-	client := http.Client{Timeout: 10 * time.Second}
+	client := http.Client{Timeout: 3 * time.Second}
+	start := time.Now()
 	// client := util.ProxyHttp()
 	resp, err := client.Get(url)
-	// fmt.Println(err)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)
@@ -87,49 +95,15 @@ func xhttpCraw(url string, category int) {
 			_ = json.Unmarshal(content, &data)
 			byteData, _ := json.Marshal(data["data"])
 			_ = json.Unmarshal(byteData, &realData)
-
-			if !model.CheckCache("coin") {
-				var coin []map[string]interface{}
-				model.UserDB.Raw("select id,en_name from db_coin").Scan(&coin)
-				byteData, _ := json.Marshal(coin)
-				model.SetCache("coins", string(byteData), time.Second*60)
-			}
-			coins := model.StringMap(model.GetCache("coins"))
-			for _, v := range coins {
-				for _, s := range realData {
-					if s["symbol"].(string) == model.ParseSymbol(v["en_name"].(string))+"usdt" {
-						var coinPrice = map[string]interface{}{}
-						model.UserDB.Raw("select * from db_coin_price where coin_id = ? ", v["id"].(float64)).Scan(&coinPrice)
-						// log.Println("创建数据:", coinPrice)
-						if len(coinPrice) == 0 {
-							model.UserDB.Table("db_coin_price").Create(map[string]interface{}{"coin_id": v["id"].(float64)})
-							continue
-						}
-						// l.Println(coinPrice, "------old")
-						coinPrice["day_amount"] = s["amount"]          // 成交量
-						coinPrice["open_price"] = s["open"]            // 开盘价
-						coinPrice["before_price"] = coinPrice["price"] // 直前价格
-						coinPrice["price_usd"] = s["close"]            // 当前价格
-						raf := (s["close"].(float64) - s["open"].(float64)) / s["open"].(float64) * 100
-						base := "+"
-						if raf < 0 {
-							base = ""
-						}
-						s := fmt.Sprintf("%.2f", raf) // 涨跌幅
-						coinPrice["raf"] = base + s + "%"
-						coinPrice["update_time"] = time.Now().Unix()
-						// log.Println("更新了----new", v["en_name"], v["id"])
-						model.UserDB.Table("db_coin_price").Where(map[string]interface{}{"coin_id": v["id"]}).Updates(&coinPrice)
-					}
-				}
-			}
 		}
 		if category == 2 || category == 5 {
 			_ = json.Unmarshal(content, &realData)
 		}
-		// fmt.Println(string(content))
-		go WriteDB(realData, category)
+		WriteDB(realData, category)
+	} else {
+		fmt.Println(err)
 	}
+	fmt.Println(fmt.Sprintf("%v时间:%v", category, time.Since(start)))
 }
 
 func WriteDB(realData []map[string]interface{}, category int) {
@@ -139,9 +113,6 @@ func WriteDB(realData []map[string]interface{}, category int) {
 	)
 	model.UserDB.Raw("select name,id from db_task_coin where category_id = ? and coin_type = ?", category, 0).Scan(&coins)
 	for _, s := range realData {
-		// fmt.Println(s)
-		// a := time.Now()
-		// add := true
 		var (
 			symbol string
 		)
@@ -153,7 +124,6 @@ func WriteDB(realData []map[string]interface{}, category int) {
 		if name := util.ToMySymbol(symbol); name != "none" {
 			for _, coin := range coins {
 				if name == coin["name"].(string) {
-					// fmt.Println(s)
 					var (
 						raf       float64
 						dayAmount string
@@ -174,34 +144,22 @@ func WriteDB(realData []map[string]interface{}, category int) {
 						raf = (price - model.ParseStringFloat(s["open_utc8"].(string))) / model.ParseStringFloat(s["open_utc8"].(string)) * 100
 						dayAmount = fmt.Sprintf("%.2f", model.ParseStringFloat(s["quote_volume_24h"].(string))*6.5/100000000)
 					}
-
-					// base := "+"
-					// if raf < 0 {
-					// 	base = ""
-					// }
 					r := fmt.Sprintf("%.2f", raf) // 涨跌幅
-					// fmt.Println(r, name)w
 					value := map[string]interface{}{
 						"price_usd":  price,
-						"price":      price * 6.5,
+						"price":      fmt.Sprintf("%.4f", price*6.5),
 						"day_amount": dayAmount,
 						"raf":        r,
 					}
-
-					model.UserDB.Table("db_task_coin").Where("id = ?", coin["id"]).Updates(&value)
-					// add = false
+					s, _ := json.Marshal(&value)
+					data := &redis.Z{
+						Score:  float64(coin["id"].(int32)),
+						Member: s,
+					}
+					coinCache = append(coinCache, data)
 				}
 			}
-			// if add {
-			// 	var data = map[string]interface{}{}
-			// 	data["name"] = name
-			// 	data["coin_name"] = name
-			// 	data["en_name"] = name[:len(name)-5]
-			// 	data["category_id"] = category
-			// 	model.UserDB.Table("db_task_coin").Create(&data)
-			// }
 		}
-		// // fmt.Println(time.Since(a))
 	}
-	// fmt.Println(time.Since(start), "结束")
+
 }

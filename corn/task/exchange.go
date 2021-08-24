@@ -20,6 +20,8 @@ import (
 
 var log = logs.Log
 
+// todo 删除策略不重新开始，删除策略判断是否清仓
+
 // RunWG 生成用户策略
 func RunWG() {
 	//time.Sleep(time.Second)
@@ -39,7 +41,7 @@ func RunWG() {
 					}
 					break OuterLoop
 				}
-			default:
+				// default:
 			}
 			// fmt.Println(u.Status, u.IsRun)
 			if u.Status == 2 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
@@ -91,7 +93,7 @@ OuterLoop:
 				}
 				break OuterLoop
 			}
-		default:
+			// default:
 		}
 		// 执行任务不是一次执行
 		if model.UpdateStatus(u.ID) == -1 {

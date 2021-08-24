@@ -254,7 +254,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 		for {
 			var myMoney float64
 			if u["inviter_id"].(uint32) > 0 {
-				tx.Raw("select `id`,`team_amount`,`profit_mine_amount`,`inviter_id`,`team_number` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
+				tx.Raw("select `id`,`team_amount`,`profit_mine_amount`,`inviter_id`,`team_number`,`is_meal` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
 				log.Printf("用户:%+v", u)
 				var thisLog = &AmountLog{
 					CoinId:         float64(2),
@@ -265,19 +265,19 @@ func GotMoney(money float64, uId float64, from interface{}) {
 					BeforeAmount:   GetAccountCach(float64(u["id"].(int32))),
 					CreateTime:     time.Now().Unix(),
 				}
-				if count == 0 {
+				if count == 0 && u["is_meal"].(float64) == 1 {
 					thisLog.FlowType = float64(63)
 					thisLog.Remark = "直推奖励"
 					log.Printf("用户%v直推奖励%v", u["id"], referralReward)
 					myMoney = referralReward
 					count++
-				} else if 0 < count && count < 3 && u["team_amount"].(float64) > 50000 {
+				} else if 0 < count && count < 3 && ParseStringFloat(u["team_amount"].(string)) > 50000 && u["is_meal"].(float64) == 1 {
 					thisLog.FlowType = float64(64)
 					thisLog.Remark = "合伙人奖励"
 					log.Printf("用户%v合伙人奖励%v", u["id"], partnerReward)
 					myMoney = partnerReward
 					count++
-				} else if u["team_amount"].(float64) > 100000 {
+				} else if ParseStringFloat(u["team_amount"].(string)) > 100000 && u["is_meal"].(float64) == 1 {
 					thisLog.FlowType = float64(65)
 					thisLog.Remark = "创始人奖励"
 					log.Printf("用户%v创始人奖励%v", u["id"], founderReward)

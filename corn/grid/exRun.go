@@ -1,14 +1,14 @@
 package grid
 
 import (
-	"context"
-	"encoding/json"
-	"runtime"
-	"time"
-	model "zmyjobs/corn/models"
-	"zmyjobs/goex"
+    "context"
+    "encoding/json"
+    "runtime"
+    "time"
+    model "zmyjobs/corn/models"
+    "zmyjobs/goex"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 func RunEx(ctx context.Context, u model.User) {
@@ -18,24 +18,25 @@ func RunEx(ctx context.Context, u model.User) {
         select {
         case <-ctx.Done():
             log.Printf("%v停止交易", u.ObjectId)
+            // runtime.Goexit()
             return
         default:
         }
-        for i := 0; i < 1; i++ {
-            if status == 0 {
-                status = 1
-                g := NewExStrategy(u)
-                if g == nil || len(g.grids) != int(u.Number) {
-                    u.IsRun = -10
-                    u.Error = "api 请求超时，或api接口更改"
-                    u.Update()
-                    GridDone <- u.ObjectId
-                } else {
-                    g.u = u
-                    go g.Trade(ctx)
-                }
+        // for i := 0; i < 1; i++ {
+        if status == 0 {
+            status = 1
+            g := NewExStrategy(u)
+            if g == nil || len(g.grids) != int(u.Number) {
+                u.IsRun = -10
+                u.Error = "api 请求超时，或api接口更改"
+                u.Update()
+                GridDone <- u.ObjectId
+            } else {
+                g.u = u
+                go g.Trade(ctx)
             }
         }
+        // }
     }
 }
 
@@ -203,7 +204,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     }
                 }
             }
-        default:
+        // default:
         }
 
         //  第一单 进场时机无所谓

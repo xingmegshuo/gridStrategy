@@ -10,6 +10,8 @@ package model
 
 import (
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 // SetCache 设置缓存
@@ -17,6 +19,10 @@ func SetCache(name string, data interface{}, t time.Duration) {
 	if !CheckCache(name) {
 		CacheDB.Set(ctx, name, data, t)
 	}
+}
+
+func AddCache(name string, data ...*redis.Z) {
+	CacheDB.ZAdd(ctx, name, data...)
 }
 
 // CheckCache 查看缓存是否过期
@@ -41,4 +47,9 @@ func GetCache(name string) string {
 		return data
 	}
 	return ""
+}
+
+// Del 删除
+func Del(name string) {
+	CacheDB.Del(ctx, name)
 }

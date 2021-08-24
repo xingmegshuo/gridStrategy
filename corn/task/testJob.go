@@ -85,8 +85,8 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int) []*redis.Z {
-	// client := http.Client{Timeout: 10 * time.Second}
-	client := util.ProxyHttp()
+	client := http.Client{Timeout: 10 * time.Second}
+	// client := util.ProxyHttp()
 	resp, err := client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()

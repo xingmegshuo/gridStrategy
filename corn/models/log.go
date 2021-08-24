@@ -207,7 +207,6 @@ func AddModelLog(r *RebotLog, m float64, f int, coin_id interface{}) {
 
 // GotMoney 盈利分红
 func GotMoney(money float64, uId float64, from interface{}) {
-	// todo 合伙人分红 创始人分红 合伙人两个限制 10%  创始人 1 个限制 20%  直推 60%
 	t := GetAccount(uId)
 	realMoney := money * 0.2 // 分红盈利
 	log.Println("盈利金额:", money, "账户余额:", t)

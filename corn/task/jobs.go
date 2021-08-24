@@ -15,11 +15,15 @@ import (
 	"github.com/robfig/cron"
 )
 
-var C = cron.New()
-var Wg sync.WaitGroup
+var (
+	C         = cron.New()
+	Wg        sync.WaitGroup
+	coinCount = 0
+)
 
 // Init 开始任务
 func Init() {
+	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
 	log.Println("start job")
 	Wg.Add(1)
 	// InitJob(*job,TestRun)

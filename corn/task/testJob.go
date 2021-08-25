@@ -107,6 +107,7 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 	}
 }
 
+// WriteDB 解析平台返回数据
 func WriteDB(realData []map[string]interface{}, category int, coinType int) (coinCache []*redis.Z) {
 	for _, s := range realData {
 		var (

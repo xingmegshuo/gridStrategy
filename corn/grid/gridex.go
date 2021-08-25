@@ -150,12 +150,16 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 		orderType = OpenDL
 		if t.u.Future == 2 || t.u.Future == 4 {
 			amount = t.grids[t.base].TotalBuy
+		} else {
+			amount = t.grids[t.base].AmountBuy
 		}
 		msg = "开多"
 	} else if t.goex.symbol.Future && t.arg.Crile == 4 {
 		orderType = OpenLL
 		if t.u.Future == 2 || t.u.Future == 4 {
 			amount = t.grids[t.base].TotalBuy
+		} else {
+			amount = t.grids[t.base].AmountBuy
 		}
 		msg = "开空"
 	}

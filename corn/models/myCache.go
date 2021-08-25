@@ -53,3 +53,7 @@ func GetCache(name string) string {
 func Del(name string) {
 	CacheDB.Del(ctx, name)
 }
+
+func ListCacheGet(name string, op *redis.ZRangeBy) *redis.StringSliceCmd {
+	return CacheDB.ZRangeByScore(ctx, name, op)
+}

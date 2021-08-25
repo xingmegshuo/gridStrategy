@@ -322,6 +322,10 @@ func ParseStringFloat(str string) float64 {
 	return floatValue
 }
 
+func ParseFloatString(f float64) string {
+	return fmt.Sprintf("%.0f", f)
+}
+
 // DeleteRebotLog 删除交易记录
 func DeleteRebotLog(orderId string) {
 	DB.Exec("delete from rebot_logs where order_id = ? ", orderId)

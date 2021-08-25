@@ -86,7 +86,7 @@ func (bs *BinanceSwap) ChangeLever(currency CurrencyPair, contractType string) b
 	} else {
 		uri := bs.apiV1 + "leverage"
 		symbol := currency.ToSymbol("")
-		fmt.Println(symbol)
+		// fmt.Println(symbol)
 		data := url.Values{}
 		data.Set("symbol", symbol)
 		data.Set("leverage", strconv.Itoa(bs.f.Level))

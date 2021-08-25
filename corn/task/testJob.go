@@ -25,7 +25,6 @@ import (
 var (
 	crawJob  = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 3s")
 	crawLock sync.Mutex
-	// coins     []map[string]interface{}
 )
 
 func InitJob(j model.Job, f func()) {
@@ -75,7 +74,6 @@ func craw(coinCache []*redis.Z) {
 	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://dpi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
 	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
-
 	fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
 		fmt.Println("write db")
@@ -87,8 +85,8 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
-	client := http.Client{Timeout: 10 * time.Second}
-	// client := util.ProxyHttp()
+	// client := http.Client{Timeout: 10 * time.Second}
+	client := util.ProxyHttp()
 	resp, err := client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
@@ -110,7 +108,6 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 }
 
 func WriteDB(realData []map[string]interface{}, category int, coinType int) (coinCache []*redis.Z) {
-	// start := time.Now()
 	for _, s := range realData {
 		var (
 			symbol string
@@ -120,7 +117,6 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 		} else {
 			symbol = s["symbol"].(string)
 		}
-
 		if name := util.ToMySymbol(symbol); name != "none" {
 			var id interface{}
 			if coinType == 0 {
@@ -128,7 +124,6 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 			} else {
 				model.UserDB.Raw("select id from db_task_coin where coin_type != ? and name = ? and category_id = ?", 0, name, category).Scan(&id)
 			}
-			// fmt.Println(id)
 			if id != nil {
 				var (
 					raf       float64
@@ -152,7 +147,7 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 				}
 				r := fmt.Sprintf("%.2f", raf) // 涨跌幅
 				value := map[string]interface{}{
-					"price_usd":  price,
+					"price_usd":  fmt.Sprintf("%f", price),
 					"price":      fmt.Sprintf("%.4f", price*6.5),
 					"day_amount": dayAmount,
 					"raf":        r,

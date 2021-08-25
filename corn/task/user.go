@@ -10,31 +10,29 @@ package job
 
 import (
 	"encoding/json"
-	"sync"
 	"time"
 	model "zmyjobs/corn/models"
 )
 
-var user = model.NewJob(model.ConfigMap["jobType1"], "LoadDB", "@every 5s")
-
-var db = model.UserDB
-
-var updateCount sync.Mutex
+var (
+	user = model.NewJob(model.ConfigMap["jobType1"], "LoadDB", "@every 5s")
+	db   = model.UserDB
+)
 
 func UserJobRun() {
-	// userData()
-	// go model.NewUser()
-	// go RunWG()
+	// 	userData()
+	// 	for i := 0; i < 1; i++ {
+	// 		go model.NewUser()
+	// 		go RunWG()
+	// 	}
 }
 
 func userData() {
-	updateCount.Lock()
 	user.Count++
 	user.UpdateJob()
 	WriteCache("db_task_order", time.Second*5)
 	WriteCache("db_task_api", time.Second*5)
 	WriteCache("db_task_category", time.Second*5)
-	updateCount.Unlock()
 }
 
 // WriteCache mysql查询写入redis

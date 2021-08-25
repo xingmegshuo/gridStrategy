@@ -27,10 +27,7 @@ type JobChan struct {
 
 var Ch = make(chan JobChan)
 
-type userLock struct {
-	lock sync.Mutex
-	id   float64
-}
+var mutex = sync.Mutex{}
 
 type User struct {
 	gorm.Model
@@ -63,14 +60,10 @@ type User struct {
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
 	orders := StringMap(GetCache("db_task_order"))
-	// if GetCache("火币交易对") == "" {
-	// 	time.Sleep(time.Second)
-	// }
-
 	for _, order := range orders {
 		// log.Println("新建用户检测:", order["id"], len(orders))
+		mutex.Lock()
 		var u User
-
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
@@ -98,18 +91,13 @@ func NewUser() {
 					Future: int(order["coin_type"].(float64)),
 				}
 				u = UpdateUser(u)
-				// u.Name = ParseSymbol(u.Name)
+
 				result = DB.Exec("select id from users where object_id = ?", order["id"])
-				// fmt.Printf("%+v", result)
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 					DB.Create(&u)
 				}
-			} else {
-				log.Println("新建用户失败:", order["id"])
 			}
 		} else {
-			ul := userLock{id: order["id"].(float64), lock: sync.Mutex{}}
-			ul.lock.Lock()
 			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
 			if order["status"].(float64)+1 != u.Status {
 				log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
@@ -158,12 +146,8 @@ func NewUser() {
 				u = UpdateUser(u)
 				u.Update()
 			}
-			ul.lock.Unlock()
 		}
-		// if order["id"].(float64) == ul.id {
-		// 	// fmt.Println("解锁")
-		// 	ul.lock.Lock()
-		// }
+		mutex.Unlock()
 	}
 }
 

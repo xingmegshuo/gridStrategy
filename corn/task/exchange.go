@@ -41,33 +41,35 @@ func RunWG() {
 					}
 					break OuterLoop
 				}
-				// default:
-			}
-			// fmt.Println(u.Status, u.IsRun)
-			if u.Status == 2 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
-				log.Println("符合要求", model.UpdateStatus(u.ID))
-				for i := 1; i < 2; i++ {
-					start = 1
-					log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)
-					go RunStrategy(u)
+			default:
+				time.Sleep(time.Millisecond * 100)
+				// fmt.Println(u.Status, u.IsRun)
+				if u.Status == 2 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
+					log.Println("符合要求", model.UpdateStatus(u.ID))
+					for i := 1; i < 2; i++ {
+						start = 1
+						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)
+						go RunStrategy(u)
+					}
+				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 3 {
+					log.Println("等待重新开始", u.ObjectId)
+					u.IsRun = 99
+					u.Base = 0
+					u.RunCount++
+					u.Update()
+					time.Sleep(time.Second * 5)
+					u.IsRun = -1
+					model.AddRun(u.ObjectId, u.RunCount)
+					u = model.UpdateUser(u)
+					u.Update()
+					log.Println("重新开始", u.ObjectId)
+					runtime.Goexit()
+				} else {
+					// fmt.Println("休息吧1")
+					runtime.Gosched()
 				}
+				break OuterLoop
 			}
-			// 循环策略进入
-			if model.UpdateStatus(u.ID) == int64(100) && u.Status == 3 {
-				log.Println("等待重新开始", u.ObjectId)
-				u.IsRun = 99
-				u.Base = 0
-				u.RunCount++
-				u.Update()
-				time.Sleep(time.Second * 10)
-				u.IsRun = -1
-				model.AddRun(u.ObjectId, u.RunCount)
-				u = model.UpdateUser(u)
-				u.Update()
-				log.Println("重新开始", u.ObjectId)
-				runtime.Goexit()
-			}
-			break OuterLoop
 		}
 	}
 }
@@ -93,15 +95,16 @@ OuterLoop:
 				}
 				break OuterLoop
 			}
-			// default:
-		}
-		// 执行任务不是一次执行
-		if model.UpdateStatus(u.ID) == -1 {
-			u.IsRun = 10
-			u.Update()
-			for i := 0; i < 1; i++ {
-				go grid.RunEx(ctx, u) //goex
-				// go grid.Run(ctx, u)
+		default:
+			time.Sleep(time.Millisecond * 100)
+			if model.UpdateStatus(u.ID) == -1 {
+				u.IsRun = 10
+				u.Update()
+				for i := 0; i < 1; i++ {
+					go grid.RunEx(ctx, u) //goex
+				}
+			} else {
+				runtime.Gosched()
 			}
 		}
 	}

@@ -16,8 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	util "zmyjobs/corn/uti"
-
+	"github.com/go-redis/redis/v8"
 	"github.com/shopspring/decimal"
 )
 
@@ -164,7 +163,7 @@ func ParseStrategy(u User) *Args {
 	var data = map[string]interface{}{}
 	var arg Args
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
-	arg.Price, _ = GetPrice(u).Float64()
+	arg.Price, _ = GetPrice(ParseFloatString(data["coin_id"].(float64))).Float64()
 	u.BasePrice = arg.Price
 	arg.FirstBuy = ParseStringFloat(data["FirstBuy"].(string))
 	arg.Rate = ParseStringFloat(data["rate"].(string))
@@ -225,21 +224,9 @@ func ParseStrategy(u User) *Args {
 	return &arg
 }
 
-func GetPrice(u User) decimal.Decimal {
-	c := util.Config{Name: u.Category}
-	f := false
-	if u.Future > 0 {
-		f = true
-	}
-
-	// log.Println("第一次获取价格", u.Name, f)
-	price, err := c.GetPrice(u.Name, f)
-	if err == nil {
-		return price
-	} else {
-		log.Println(err)
-	}
-	return decimal.NewFromFloat(1)
+func GetPrice(coin string) decimal.Decimal {
+	v, _ := decimal.NewFromString(CachePrice(coin))
+	return v
 }
 
 func ToStringJson(v interface{}) string {
@@ -385,4 +372,15 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 		}
 	}
 	return &res
+}
+
+func CachePrice(b string) string {
+	var res = map[string]string{}
+	op := &redis.ZRangeBy{
+		Min: b,
+		Max: b,
+	}
+	data, _ := ListCacheGet("coins", op).Result()
+	json.Unmarshal([]byte(data[0]), &res)
+	return res["price_usd"]
 }

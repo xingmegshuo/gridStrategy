@@ -10,6 +10,7 @@ package grid
 
 import (
 	"encoding/json"
+	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
@@ -275,9 +276,11 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 		order  *goex.Order
 		FOrder *goex.FutureOrder
 	)
+	// fmt.Println(c.symbol)
 	if c.symbol.Future {
 		// fmt.Println(c.symbol.QuoteCurrency)
 		if c.symbol.QuoteCurrency == "USDT" {
+			// fmt.Println("查找")
 			if FOrder, err = c.Future.GetFutureOrder(orderId, c.Currency, goex.SWAP_USDT_CONTRACT); FOrder != nil {
 				o = NewFromFutureOrder(FOrder)
 			}
@@ -299,6 +302,7 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 			return true, false, o
 		}
 	} else {
+		fmt.Println(err)
 		return false, false, nil
 	}
 }

@@ -165,7 +165,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 	}
 	// amount = decimal.Decimal{}
 	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
-	log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
+	log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v,类型:%s", price, amount, t.u.ObjectId, orderId, clientId, msg)
 	// 增加一个真实成交
 	if err == nil {
 		// fmt.Println("已经挂单的买入", t.u.ObjectId)
@@ -298,11 +298,11 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 	log.Println("等待订单交易.......")
 	start := time.Now()
 	for {
-		time.Sleep(time.Second * 1)
 		if t.SearchOrder(orderId, cli) {
 			return true
 		}
-		if time.Since(start) >= time.Second*100 {
+		time.Sleep(time.Second * 3)
+		if time.Since(start) >= time.Second*20 {
 			return false
 		}
 	}

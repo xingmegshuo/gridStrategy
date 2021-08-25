@@ -419,7 +419,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 		return fOrder, errors.New(string(resp))
 	}
 	fOrder.OrderID2 = strconv.Itoa(orderId)
-
 	return fOrder, nil
 }
 
@@ -657,23 +656,21 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	path := bs.apiV1 + "allOrders?" + params.Encode()
 
 	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
-	// fmt.Println(result)
 	if err != nil {
 		return nil, err
 	}
 
 	order := &FutureOrder{}
 	ordId, _ := strconv.Atoi(orderId)
+	// fmt.Println(result)
 	for _, info := range result {
+		// fmt.Println(info)
 		_ord := info.(map[string]interface{})
-		if _ord["symbol"].(string) != currencyPair1.ToSymbol("") {
-			continue
-		}
+		// fmt.Println(ordId, _ord["orderId"])
 
 		if ToInt(_ord["orderId"]) != ordId {
 			continue
 		}
-
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
 		return order, nil

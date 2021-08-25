@@ -48,7 +48,7 @@ func TestGetMoney(t *testing.T) {
 	ex := NewEx(&huobiSymbol)
 	b, m, coin := ex.GetAccount()
 	fmt.Println(b, m, coin)
-	// // 价格测试
+	// 价格测试
 	// price, err := ex.GetPrice()
 	// fmt.Println(price, err)
 	// 交易测试
@@ -69,7 +69,7 @@ func TestGetMoney(t *testing.T) {
 
 	//
 	// cliId := "338280716011966"
-	// // time.Sleep(time.Second * 10)
+	// time.Sleep(time.Second * 10)
 
 	// b, c, o := ex.SearchOrder(cliId)
 	// fmt.Println(b, c, o)
@@ -144,27 +144,42 @@ func TestGetMoney(t *testing.T) {
 }
 
 func TestFutureAccount(t *testing.T) {
-	u := model.User{
-		Symbol: `{"Category":"币安","Symbol":"ETH_USDT","AmountPrecision":2,
-			"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"cIiIZnQ8L77acyTkSAH6je0rDAZGoFcoHSlMHaWYUNDjJhKNtu0Gb8nR9MjLSaws",
-			"Secret":"dnc7LwiB1Vgy6zDOqwuqodIxL8FwltVlxhfEVLvrgmfozezrW9JvnHStpmB4Lymx","Host":"","MinTotal":"5","MinAmount":"1",
-			"BaseCurrency":"ETH","QuoteCurrency:"USDT","future":true,"lever":5}`,
-		Arg: `{"FirstBuy": 6, "FirstDouble": false, "Price": 0.196562, "IsChange": false, "Rate": 20,
-				"MinBuy": 6, "AddRate": 50, "NeedMoney": 0, "MinPrice": 0, "Callback": 0.2, "Reduce": 0.2, "Stop": 5,
-				"AddMoney": 0, "Decline": 0.5, "Out": false, "OrderType": 0, "IsLimit": false, "LimitHigh": 0, "StrategyType": 1,
-				"Crile": true, "OneBuy": false, "AllSell": false, "StopBuy": false, "IsHand": false}`,
-		Strategy: `{"FirstBuy":"6.00000000","NowPrice":"0.00000000","Strategy":1,"Type":2,"add":"0.0000","allSell":1,"callback":"0.20",
-			"decline":"0.50","double":1,"frequency":2,"growth":"50.00","high_price":"0.00000000","limit_high":1,"one_buy":1,"order_type":1,
-			"rate":"20.00","reduce":"0.20","reset":"20.00","stop":"5.00","stop_buy":1}`,
-		Grids: `[{"Id":1,"Price":"0.196562","AmountBuy":"30.52","Decline":0.5,"AmountSell":"0","TotalBuy":"6","Order":0},
-			{"Id":2,"Price":"0.195087785","AmountBuy":"36.91","Decline":0.75,"AmountSell":"0","TotalBuy":"7.2","Order":0},
-			{"Id":3,"Price":"0.1928764625","AmountBuy":"44.8","Decline":1.125,"AmountSell":"0","TotalBuy":"8.64","Order":0}]`,
-		Number: 3,
-		Base:   0,
-		Custom: 2,
+	// u := model.User{
+	// 	Symbol: `{"Category":"币安","Symbol":"ETH/USDT","AmountPrecision":2,
+	// 		"PricePrecision":6,"Label":"goex-币安-dogeusdt-33","Key":"DwKk9rNVVPQuDpvU3Z2grTPZBxgWqZQt5GRtVbJp7cswsRv1UqjxAUxONWJNwycF",
+	// 		"Secret":"pwWvUZiC8iu7KHIM1e2ai99om20yALMkwzrWGJ3CqFp9j28E2bRIlsVfwb8E0ioL","Host":"","MinTotal":"5","MinAmount":"1",
+	// 		"BaseCurrency":"ETH","QuoteCurrency:"USDT","future":true,"lever":20}`,
+	// 	Arg: `{"FirstBuy": 6, "FirstDouble": false, "Price": 0.196562, "IsChange": false, "Rate": 20,
+	// 			"MinBuy": 6, "AddRate": 50, "NeedMoney": 0, "MinPrice": 0, "Callback": 0.2, "Reduce": 0.2, "Stop": 5,
+	// 			"AddMoney": 0, "Decline": 0.5, "Out": false, "OrderType": 0, "IsLimit": false, "LimitHigh": 0, "StrategyType": 1,
+	// 			"Crile": true, "OneBuy": false, "AllSell": false, "StopBuy": false, "IsHand": false}`,
+	// 	Strategy: `{"FirstBuy":"6.00000000","NowPrice":"0.00000000","Strategy":1,"Type":2,"add":"0.0000","allSell":1,"callback":"0.20",
+	// 		"decline":"0.50","double":1,"frequency":2,"growth":"50.00","high_price":"0.00000000","limit_high":1,"one_buy":1,"order_type":1,
+	// 		"rate":"20.00","reduce":"0.20","reset":"20.00","stop":"5.00","stop_buy":1}`,
+	// 	Grids: `[{"Id":1,"Price":"0.196562","AmountBuy":"30.52","Decline":0.5,"AmountSell":"0","TotalBuy":"6","Order":0},
+	// 		{"Id":2,"Price":"0.195087785","AmountBuy":"36.91","Decline":0.75,"AmountSell":"0","TotalBuy":"7.2","Order":0},
+	// 		{"Id":3,"Price":"0.1928764625","AmountBuy":"44.8","Decline":1.125,"AmountSell":"0","TotalBuy":"8.64","Order":0}]`,
+	// 	Number: 3,
+	// 	Base:   0,
+	// 	Custom: 2,
+	// }
+	// symbol := model.StringSymobol(u.Symbol)
+	bian := model.SymbolCategory{
+		Key:    "DwKk9rNVVPQuDpvU3Z2grTPZBxgWqZQt5GRtVbJp7cswsRv1UqjxAUxONWJNwycF",
+		Secret: "pwWvUZiC8iu7KHIM1e2ai99om20yALMkwzrWGJ3CqFp9j28E2bRIlsVfwb8E0ioL",
+		Symbol: "ETH/USDT",
+		// Host:            "https://fapi.binace.com",
+		BaseCurrency:    "ETH",
+		QuoteCurrency:   "USDT",
+		AmountPrecision: 2,
+		PricePrecision:  6,
+		Category:        "币安",
+		Label:           "u20",
+		Future:          true,
 	}
-	symbol := model.StringSymobol(u.Symbol)
-	cli := NewEx(&symbol)
+	// fmt.Println(bian)
+	cli := NewEx(&bian)
+
 	// b := goex.NewCurrencyPair2(symbol.Symbol)
 	// fmt.Println(b.String())
 	// cli.Future.ChangeLever(b, goex.SWAP_CONTRACT)
@@ -178,11 +193,11 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(fmt.Sprintf("%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
-	orderid, clientId, result := cli.Exchanges(decimal.NewFromFloat(1.00000), decimal.Decimal{}, OpenDL, false)
-	fmt.Println(orderid, clientId, result)
-	// orderId := "13041934796"
-	// b, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("%+v", o), b, r)
+	// orderid, clientId, result := cli.Exchanges(decimal.NewFromFloat(1.00000), decimal.Decimal{}, OpenDL, false)
+	// fmt.Println(orderid, clientId, result)
+	orderId := "8389765505566994432"
+	b, r, o := cli.SearchOrder(orderId)
+	fmt.Println(fmt.Sprintf("%+v", o), b, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

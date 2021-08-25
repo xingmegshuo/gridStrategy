@@ -68,15 +68,15 @@ func xhttp(url string, name string) {
 
 // craw
 func craw(coinCache []*redis.Z) {
-	start := time.Now()
+	// start := time.Now()
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://dpi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
 	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
-	fmt.Println(len(coinCache), coinCount, time.Since(start))
+	// fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
-		fmt.Println("write db")
+		// fmt.Println("write db")
 		model.Del("coins")
 		model.AddCache("coins", coinCache...)
 		coinCache = []*redis.Z{}
@@ -85,7 +85,7 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
-	client := http.Client{Timeout: 10 * time.Second}
+	client := http.Client{Timeout: 3 * time.Second}
 	// client := util.ProxyHttp()
 	resp, err := client.Get(url)
 	if err == nil {

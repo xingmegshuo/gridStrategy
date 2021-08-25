@@ -120,7 +120,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                             res := t.CalCulateProfit()
                             p, _ := res.Float64()
                             // 盈利ctx
-                            if t.arg.Crile > 2 {
+                            if t.arg.Crile >= 2 {
                                 t.u.IsRun = 100
                             } else {
                                 t.u.IsRun = 1

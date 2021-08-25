@@ -45,23 +45,38 @@ func JobExit(job model.Job) {
 func CrawRun() {
 	coinCache := []*redis.Z{}
 	craw(coinCache)
+	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "COINF")
+	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "USDF")
 }
 
 // xhttp 缓存信息
 func xhttp(url string, name string) {
 	if !model.CheckCache(name) {
-		client := &http.Client{Timeout: 30 * time.Second}
+		client := makeClient()
 		resp, err := client.Get(url)
 		if err == nil {
 			defer resp.Body.Close()
 			content, _ := ioutil.ReadAll(resp.Body)
-			var data = make(map[string]interface{})
-			_ = json.Unmarshal(content, &data)
-			byteData, _ := json.Marshal(data["data"])
-			//log.Println(data["data"])
-			model.SetCache(name, string(byteData), time.Hour*72)
-			crawJob.Count++
-			crawJob.UpdateJob()
+			var realData []map[string]interface{}
+			_ = json.Unmarshal(content, &realData)
+			var coins []model.Coin
+			for _, one := range realData {
+				var coin model.Coin
+				coin.CategoryId = 2
+				coin.Name = util.ToMySymbol(one["symbol"].(string))
+				coin.PriceUsd = model.ParseStringFloat(one["lastPrice"].(string))
+				coin.Price = coin.PriceUsd * 6.5
+				coin.DayAmount = model.ParseStringFloat(one["quoteVolume"].(string)) * 6.5 / 100000000
+				coin.Raf = model.ParseStringFloat(one["priceChangePercent"].(string))
+				coin.CoinType = util.SwitchCoinType(coin.Name)
+				coin.EnName = coin.Name
+				coin.CoinName = coin.Name
+				coin.CreateTime = int(time.Now().Unix())
+				coins = append(coins, coin)
+			}
+			data, _ := json.Marshal(&coins)
+			model.Del(name)
+			model.SetCache(name, string(data), time.Hour)
 		}
 	}
 }
@@ -77,7 +92,7 @@ func craw(coinCache []*redis.Z) {
 	// fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
 		// fmt.Println("write db")
-		model.Del("coins")
+		model.Del("COINS")
 		model.AddCache("coins", coinCache...)
 		coinCache = []*redis.Z{}
 	}
@@ -85,8 +100,7 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
-	client := http.Client{Timeout: 5 * time.Second}
-	// client := util.ProxyHttp()
+	client := makeClient()
 	resp, err := client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
@@ -164,3 +178,65 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 	}
 	return
 }
+
+func makeClient() http.Client {
+	return http.Client{Timeout: 5 * time.Second}
+	// return util.ProxyHttp()
+}
+
+// CrawAccount 缓存用户持仓数据
+// func crawAccount() {
+// 	var (
+// 		users = []map[string]interface{}{}
+// 		ids   []interface{}
+// 	)
+
+// 	model.UserDB.Raw("select id from users").Scan(&ids)
+// 	for _, v := range ids {
+// 		// var
+// 		b, name, key, secret := model.GetApiConfig(v.(float64), 1)
+// 		// fmt.Println(b, name, key)
+// 		if b {
+// 			c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"})
+// 			data, err := c.Ex.GetAccount()
+// 			if err == nil {
+// 				for k, v := range data.SubAccounts {
+// 					if v.Amount > 0 {
+// 						one := map[string]interface{}{}
+// 						one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
+// 						symbol := model.SymbolCategory{BaseCurrency: k.Symbol, QuoteCurrency: "USDT", Category: name, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"}
+// 						cli := grid.NewEx(&symbol)
+// 						price, _ := cli.GetPrice()
+// 						// fmt.Println(price, err)
+// 						if k.Symbol == "USDT" {
+// 							one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
+// 						} else {
+// 							one["money"] = price.Mul(decimal.NewFromFloat(v.Amount)).Round(8)
+// 						}
+// 						one["symbol"] = k.Symbol
+// 						list = append(list, one)
+// 					}
+// 				}
+// 				for _, v := range list {
+// 					sumMoney = sumMoney.Add(v["money"].(decimal.Decimal))
+// 				}
+// 				// fmt.Println(sumMoney)
+// 				for _, v := range list {
+// 					// fmt.Println(fmt.Sprintf("%T", v["money"]))
+// 					rate := decimal.NewFromInt(100)
+// 					m := v["money"].(decimal.Decimal)
+// 					value := m.Div(sumMoney).Mul(rate)
+// 					v["position"] = value.Round(4)
+// 				}
+// 				res["list"] = list
+// 				res["sum"] = sumMoney
+// 				response["data"] = res
+// 			} else {
+// 				response["msg"] = err.Error()
+// 			}
+// 		} else {
+// 			// [] = "获取信息出错"
+// 		}
+// 	}
+
+// }

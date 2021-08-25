@@ -383,10 +383,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     t.Tupdate()
                 }
             }
-            if t.over {
-                log.Printf("%v用户任务结束", t.u.ObjectId)
-                break
-            }
+        }
+        if t.over {
+            log.Printf("%v用户任务结束", t.u.ObjectId)
+            break
         }
     }
 }

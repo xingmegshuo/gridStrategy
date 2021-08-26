@@ -264,19 +264,19 @@ func GotMoney(money float64, uId float64, from interface{}) {
 					BeforeAmount:   GetAccountCach(float64(u["id"].(int32))),
 					CreateTime:     time.Now().Unix(),
 				}
-				if count == 0 && u["is_meal"].(float64) == 1 {
+				if count == 0 && u["is_meal"].(uint32) == 1 {
 					thisLog.FlowType = float64(63)
 					thisLog.Remark = "直推奖励"
 					log.Printf("用户%v直推奖励%v", u["id"], referralReward)
 					myMoney = referralReward
 					count++
-				} else if 0 < count && count < 3 && ParseStringFloat(u["team_amount"].(string)) > 50000 && u["is_meal"].(float64) == 1 {
+				} else if 0 < count && count < 3 && ParseStringFloat(u["team_amount"].(string)) > 50000 && u["is_meal"].(uint32) == 1 {
 					thisLog.FlowType = float64(64)
 					thisLog.Remark = "合伙人奖励"
 					log.Printf("用户%v合伙人奖励%v", u["id"], partnerReward)
 					myMoney = partnerReward
 					count++
-				} else if ParseStringFloat(u["team_amount"].(string)) > 100000 && u["is_meal"].(float64) == 1 {
+				} else if ParseStringFloat(u["team_amount"].(string)) > 100000 && u["is_meal"].(uint32) == 1 {
 					thisLog.FlowType = float64(65)
 					thisLog.Remark = "创始人奖励"
 					log.Printf("用户%v创始人奖励%v", u["id"], founderReward)

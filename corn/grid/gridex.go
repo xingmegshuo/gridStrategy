@@ -142,7 +142,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 	msg := "限价买入"
 	if t.arg.OrderType == 2 {
 		orderType = BuyM
-		amount = t.grids[t.base].TotalBuy
+		// amount = t.grids[t.base].TotalBuy
 		msg = "市价买入"
 	}
 	// log.Println(t.arg.Crile)

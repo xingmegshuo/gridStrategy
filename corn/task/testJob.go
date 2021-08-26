@@ -13,12 +13,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
+	grid "zmyjobs/corn/grid"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/shopspring/decimal"
 )
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
@@ -185,58 +188,34 @@ func makeClient() http.Client {
 }
 
 // CrawAccount 缓存用户持仓数据
-// func crawAccount() {
-// 	var (
-// 		users = []map[string]interface{}{}
-// 		ids   []interface{}
-// 	)
+func crawAccount() {
+	var (
+		users = []map[string]interface{}{}
+		ids   []interface{}
+	)
 
-// 	model.UserDB.Raw("select id from users").Scan(&ids)
-// 	for _, v := range ids {
-// 		// var
-// 		b, name, key, secret := model.GetApiConfig(v.(float64), 1)
-// 		// fmt.Println(b, name, key)
-// 		if b {
-// 			c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"})
-// 			data, err := c.Ex.GetAccount()
-// 			if err == nil {
-// 				for k, v := range data.SubAccounts {
-// 					if v.Amount > 0 {
-// 						one := map[string]interface{}{}
-// 						one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
-// 						symbol := model.SymbolCategory{BaseCurrency: k.Symbol, QuoteCurrency: "USDT", Category: name, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"}
-// 						cli := grid.NewEx(&symbol)
-// 						price, _ := cli.GetPrice()
-// 						// fmt.Println(price, err)
-// 						if k.Symbol == "USDT" {
-// 							one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
-// 						} else {
-// 							one["money"] = price.Mul(decimal.NewFromFloat(v.Amount)).Round(8)
-// 						}
-// 						one["symbol"] = k.Symbol
-// 						list = append(list, one)
-// 					}
-// 				}
-// 				for _, v := range list {
-// 					sumMoney = sumMoney.Add(v["money"].(decimal.Decimal))
-// 				}
-// 				// fmt.Println(sumMoney)
-// 				for _, v := range list {
-// 					// fmt.Println(fmt.Sprintf("%T", v["money"]))
-// 					rate := decimal.NewFromInt(100)
-// 					m := v["money"].(decimal.Decimal)
-// 					value := m.Div(sumMoney).Mul(rate)
-// 					v["position"] = value.Round(4)
-// 				}
-// 				res["list"] = list
-// 				res["sum"] = sumMoney
-// 				response["data"] = res
-// 			} else {
-// 				response["msg"] = err.Error()
-// 			}
-// 		} else {
-// 			// [] = "获取信息出错"
-// 		}
-// 	}
-
-// }
+	model.UserDB.Raw("select id from users").Scan(&ids)
+	for _, v := range ids {
+		var data = map[string]interface{}{}
+		for i := 1; i < 2; i++ {
+			b, name, key, secret := model.GetApiConfig(v.(float64), i)
+			list := []map[string]interface{}{}
+			if b {
+				c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8})
+				data, err := c.Ex.GetAccount()
+				if err == nil {
+					for k, v := range data.SubAccounts {
+						if v.Amount > 0 {
+							one := map[string]interface{}{}
+							one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
+							one["symbol"] = k.Symbol
+							list = append(list, one)
+						}
+					}
+				}
+			}
+			data[strconv.Itoa(i)] = list
+		}
+		users = append(users, data)
+	}
+}

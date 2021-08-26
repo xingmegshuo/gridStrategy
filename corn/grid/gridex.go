@@ -317,7 +317,7 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 			return true
 		}
 		time.Sleep(time.Second * 3)
-		if time.Since(start) >= time.Second*20 {
+		if time.Since(start) >= time.Second*60 {
 			return false
 		}
 	}

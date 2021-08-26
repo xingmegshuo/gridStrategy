@@ -242,7 +242,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 	}
 	t.hold = t.myMoney()
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
-	if b, ok := t.SellOrder[order.ClientId]; ok {
+	if b, ok := t.SellOrder[order.OrderId]; ok {
 		log.Printf("当前单数:%v,卖出单数:%v", t.base, b)
 		sellMoney := price.Mul(amount).Abs().Sub(fee)
 		t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱

@@ -380,7 +380,7 @@ func CachePrice(b string) string {
 		Min: b,
 		Max: b,
 	}
-	data, _ := ListCacheGet("coins", op).Result()
+	data, _ := ListCacheGet("ZMYCOINS", op).Result()
 	json.Unmarshal([]byte(data[0]), &res)
 	return res["price_usd"]
 }

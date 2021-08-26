@@ -23,6 +23,8 @@ func SetCache(name string, data interface{}, t time.Duration) {
 
 func AddCache(name string, data ...*redis.Z) {
 	CacheDB.ZAdd(ctx, name, data...)
+	// fmt.Println(res.Result())
+	// fmt.Println(name)
 }
 
 // CheckCache 查看缓存是否过期

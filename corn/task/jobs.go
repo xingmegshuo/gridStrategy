@@ -23,7 +23,6 @@ var (
 
 // Init 开始任务
 func Init() {
-	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
 	log.Println("start job")
 	Wg.Add(1)
 	// InitJob(*job,TestRun)

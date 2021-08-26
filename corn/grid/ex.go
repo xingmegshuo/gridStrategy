@@ -217,7 +217,7 @@ func (c *Cliex) GetPrice() (price decimal.Decimal, err error) {
  *@param        : amount,price,name decimal/decimal/string                            `数量/价格/交易类型`
  *@return       : clientId,orderId,err string/string/error                            `自定义id/id/错误`
  */
-func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name string, futureLimit bool) (string, string, error) {
+func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name string, futureLimit bool) (*OneOrder, error) {
 	var (
 		order *goex.Order
 		err   error
@@ -238,7 +238,7 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 			}
 		}
 		if err == nil {
-			return FutureOrder.ClientOid, FutureOrder.OrderID2, err
+			return NewFromFutureOrder(FutureOrder), err
 		}
 	} else {
 		switch name {
@@ -252,13 +252,10 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 			order, err = c.Ex.MarketSell(amount.String(), price.String(), c.Currency)
 		}
 		if err == nil {
-			return order.Cid, order.OrderID2, err
+			return NewFromOrder(order), err
 		}
 	}
-
-	// log.Println(amount, price, symbol, "交易信息")
-
-	return "", "", err
+	return &OneOrder{}, err
 }
 
 /*

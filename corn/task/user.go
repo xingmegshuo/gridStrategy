@@ -30,30 +30,33 @@ func UserJobRun() {
 func userData() {
 	user.Count++
 	user.UpdateJob()
-	WriteCache("db_task_order", time.Second*5)
-	WriteCache("db_task_api", time.Second*5)
-	WriteCache("db_task_category", time.Second*5)
+	WriteCache("ZMYdb_task_order", time.Second*5)
+	WriteCache("ZMYdb_task_api", time.Hour)
+	WriteCache("ZMYdb_task_category", time.Hour)
 }
 
 // WriteCache mysql查询写入redis
 func WriteCache(name string, t time.Duration) {
-	if !model.CheckCache(name) {
-		var Data []map[string]interface{}
-		switch name {
-		case "db_task_api":
-			db.Raw("select apikey,secretkey,member_id,category_id from db_task_api").Scan(&Data)
-		case "db_task_category":
-			db.Raw("select `id`,`name` from db_task_category").Scan(&Data)
-		case "db_task_order":
-			db.Raw("select * from db_task_order").Scan(&Data)
-			coin := map[string]interface{}{}
-			for _, v := range Data {
-				db.Raw("select `name`,`coin_type` from db_task_coin where `id` = ?", v["task_coin_id"]).Scan(&coin)
-				v["task_coin_name"] = coin["name"]
-				v["coin_type"] = coin["coin_type"]
-			}
+	// fmt.Println(model.CheckCache(name))
+	// if !model.CheckCache(name) {
+	var Data []map[string]interface{}
+	switch name {
+	case "ZMYdb_task_api":
+		db.Raw("select apikey,secretkey,member_id,category_id from db_task_api").Scan(&Data)
+	case "ZMYdb_task_category":
+		db.Raw("select `id`,`name` from db_task_category").Scan(&Data)
+	case "ZMYdb_task_order":
+		db.Raw("select * from db_task_order").Scan(&Data)
+		coin := map[string]interface{}{}
+		for _, v := range Data {
+			db.Raw("select `name`,`coin_type` from db_task_coin where `id` = ?", v["task_coin_id"]).Scan(&coin)
+			v["task_coin_name"] = coin["name"]
+			v["coin_type"] = coin["coin_type"]
 		}
-		byteData, _ := json.Marshal(Data)
-		model.SetCache(name, string(byteData), t)
 	}
+	byteData, _ := json.Marshal(Data)
+	// fmt.Println(name, string(byteData), Data, err)
+	model.Del(name)
+	model.SetCache(name, string(byteData), t)
+
 }

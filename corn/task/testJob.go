@@ -13,12 +13,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 	grid "zmyjobs/corn/grid"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/shopspring/decimal"
@@ -48,8 +48,10 @@ func JobExit(job model.Job) {
 func CrawRun() {
 	coinCache := []*redis.Z{}
 	craw(coinCache)
-	// go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "COINF")
-	// go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "USDF")
+	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+	go crawAccount()
+	// fmt.Println("结束")
 }
 
 // xhttp 缓存信息
@@ -64,12 +66,17 @@ func xhttp(url string, name string) {
 			_ = json.Unmarshal(content, &realData)
 			var coins []model.Coin
 			for _, one := range realData {
+				// fmt.Printf("%+v", one)
 				var coin model.Coin
 				coin.CategoryId = 2
 				coin.Name = util.ToMySymbol(one["symbol"].(string))
 				coin.PriceUsd = model.ParseStringFloat(one["lastPrice"].(string))
 				coin.Price = coin.PriceUsd * 6.5
-				coin.DayAmount = model.ParseStringFloat(one["quoteVolume"].(string)) * 6.5 / 100000000
+				if one["quoteVolume"] == nil {
+					coin.DayAmount = model.ParseStringFloat(one["volume"].(string)) * 6.5 / 100000000
+				} else {
+					coin.DayAmount = model.ParseStringFloat(one["quoteVolume"].(string)) * 6.5 / 100000000
+				}
 				coin.Raf = model.ParseStringFloat(one["priceChangePercent"].(string))
 				coin.CoinType = util.SwitchCoinType(coin.Name)
 				coin.EnName = coin.Name
@@ -79,6 +86,7 @@ func xhttp(url string, name string) {
 			}
 			data, _ := json.Marshal(&coins)
 			model.Del(name)
+			fmt.Println("写入数据", name)
 			model.SetCache(name, string(data), time.Hour)
 		}
 	}
@@ -87,6 +95,7 @@ func xhttp(url string, name string) {
 // craw
 func craw(coinCache []*redis.Z) {
 	// start := time.Now()
+	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
@@ -95,8 +104,8 @@ func craw(coinCache []*redis.Z) {
 	// fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
 		// fmt.Println("write db")
-		model.Del("COINS")
-		model.AddCache("coins", coinCache...)
+		model.Del("ZMYCOINS")
+		model.AddCache("ZMYCOINS", coinCache...)
 		coinCache = []*redis.Z{}
 	}
 }
@@ -184,38 +193,97 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 
 func makeClient() http.Client {
 	return http.Client{Timeout: 5 * time.Second}
-	// return util.ProxyHttp()
+	// util.ProxyHttp()
+	// return *util.ProxyHttp()
 }
 
 // CrawAccount 缓存用户持仓数据
 func crawAccount() {
 	var (
-		users = []map[string]interface{}{}
-		ids   []interface{}
+		users = []*redis.Z{}
+		ids   []float64
 	)
+	model.UserDB.Raw("select id from db_customer").Scan(&ids)
+	// fmt.Println(ids)
+	for _, id := range ids {
+		data := map[string]interface{}{
+			"1": map[string][]map[string]interface{}{
+				"spot": GetUserHold(id, 1, 0),
+			},
+			"2": map[string][]map[string]interface{}{
+				"spot": GetUserHold(id, 2, 0),
+				"B":    GetUserHold(id, 2, 1),
+				"U":    GetUserHold(id, 2, 2),
+			},
+		}
+		str, _ := json.Marshal(&data)
+		// fmt.Println(string(str), id)
+		users = append(users, &redis.Z{
+			Score:  id,
+			Member: string(str),
+		})
+	}
+	if len(users) == len(ids) {
+		model.Del("ZMYUSERS")
+		model.AddCache("ZMYUSERS", users...)
+	}
+}
 
-	model.UserDB.Raw("select id from users").Scan(&ids)
-	for _, v := range ids {
-		var data = map[string]interface{}{}
-		for i := 1; i < 2; i++ {
-			b, name, key, secret := model.GetApiConfig(v.(float64), i)
-			list := []map[string]interface{}{}
-			if b {
-				c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8})
-				data, err := c.Ex.GetAccount()
-				if err == nil {
-					for k, v := range data.SubAccounts {
-						if v.Amount > 0 {
-							one := map[string]interface{}{}
-							one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
-							one["symbol"] = k.Symbol
-							list = append(list, one)
-						}
-					}
+func GetUserHold(id float64, cate float64, t float64) (data []map[string]interface{}) {
+	b, name, key, secret := model.GetApiConfig(id, cate)
+	if b && t == 0 {
+		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8})
+		value, err := c.Ex.GetAccount()
+		// fmt.Println(err)
+		if err == nil {
+			for k, v := range value.SubAccounts {
+				if v.Amount > 0 {
+					one := map[string]interface{}{}
+					one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
+					one["symbol"] = k.Symbol
+					data = append(data, one)
 				}
 			}
-			data[strconv.Itoa(i)] = list
 		}
-		users = append(users, data)
+		return
+	} else if t == 1 && b {
+		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
+		Bdata, Berr := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_CONTRACT)
+		if Berr == nil {
+			for _, v := range Bdata {
+				var one = map[string]interface{}{}
+				one["amount"] = v.BuyAmount
+				one["symbol"] = v.Symbol.String()
+				one["unprofit"] = v.BuyProfitReal
+				one["level"] = v.LeverRate
+				if v.ContractType == "LNOG" {
+					one["slide"] = "做多"
+				} else {
+					one["slide"] = "做空"
+				}
+				data = append(data, one)
+			}
+		}
+		return
+	} else if t == 2 && b {
+		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
+		value, err := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_USDT_CONTRACT)
+		if err == nil {
+			for _, v := range value {
+				var one = map[string]interface{}{}
+				one["amount"] = v.BuyAmount
+				one["symbol"] = v.Symbol.String()
+				one["unprofit"] = v.BuyProfitReal
+				one["level"] = v.LeverRate
+				if v.ContractType == "LNOG" {
+					one["slide"] = "做多"
+				} else {
+					one["slide"] = "做空"
+				}
+				data = append(data, one)
+			}
+		}
+		return
 	}
+	return
 }

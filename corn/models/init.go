@@ -57,10 +57,25 @@ func init() {
 	)
 	// serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
 	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	// rdb := redis.NewClient(&redis.Options{
+	// 	Addr:     "8.210.86.77:6379",
+	// 	Password: "lookupld",
+	// 	DB:       0,
+	// })
+	// rdb := redis.NewClient(&redis.Options{
+	// 	Addr:     "127.0.0.1:6379",
+	// 	Password: "",
+	// 	DB:       0,
+	// })
 
 	// server
 	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
 	dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "172.31.213.84:6379",
+		Password: "lookuplds",
+		DB:       0,
+	})
 
 	serverDB.SetMaxIdleConns(2000) //设置最大连接数
 	serverDB.SetMaxOpenConns(2000)
@@ -84,12 +99,6 @@ func init() {
 	DB = db
 
 	db.AutoMigrate(&Job{}, &Host{}, &User{}, &RebotLog{})
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Password: "com1Chybay!",
-		DB:       0,
-	})
 
 	_, er := rdb.Ping(ctx).Result()
 	if er != nil {

@@ -137,7 +137,7 @@ func (t *ExTrader) CountNeed() (moneyNeed decimal.Decimal) {
 	 @param   : price,amount,rate / decimal,decimal,float64 / `价格,数量,跌幅`
 	 @return  :  / string,string,err / `orderid，clientid，错误`
 **/
-func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, string, error) {
+func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, error) {
 	orderType := BuyL
 	msg := "限价买入"
 	if t.arg.OrderType == 2 {
@@ -166,7 +166,8 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 		msg = "开空"
 	}
 	// amount = decimal.Decimal{}
-	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
+	o, err := t.goex.Exchanges(amount, price, orderType, false)
+	clientId, orderId := o.ClientId, o.OrderId
 	log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v,类型:%s", price, amount, t.u.ObjectId, orderId, clientId, msg)
 	// 增加一个真实成交
 	if err == nil {
@@ -182,11 +183,11 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (string, str
 		}
 		t.RealGrids = append(t.RealGrids, g)
 	}
-	return orderId, clientId, err
+	return o, err
 }
 
 // 卖出
-func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (string, string, error) {
+func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (*OneOrder, error) {
 	orderType := SellL
 	msg := "限价卖出"
 	if t.arg.OrderType == 2 {
@@ -205,7 +206,8 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (str
 		amount = t.CountMesure()
 	}
 	log.Printf("类型:%v,数量:%v,价格:%v;用户:%v", msg, amount, price, t.u.ObjectId)
-	clientId, orderId, err := t.goex.Exchanges(amount, price, orderType, false)
+	o, err := t.goex.Exchanges(amount, price, orderType, false)
+	clientId, orderId := o.ClientId, o.OrderId
 	log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
 	// 增加一个真实成交
 	if err == nil {
@@ -214,7 +216,7 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (str
 		g := map[string]int{orderId: n}
 		t.SellOrder = g
 	}
-	return orderId, clientId, err
+	return o, err
 }
 
 // SearchOrder 查询订单
@@ -222,46 +224,51 @@ func (t *ExTrader) SearchOrder(clientOrderId string, client string) bool {
 	// log.Println("查询订单", client, "依据此查找:", clientOrderId)
 	has, over, order := t.goex.SearchOrder(clientOrderId)
 	if has && over {
-		price := decimal.NewFromFloat(order.Price)
-		amount := decimal.NewFromFloat(order.Amount)
-		fee := decimal.NewFromFloat(order.Fee)
-		if t.u.Future == 2 || t.u.Future == 4 {
-			amount = decimal.NewFromFloat(order.Cash)
-		}
-		t.hold = t.myMoney()
-		log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
-		if b, ok := t.SellOrder[clientOrderId]; ok {
-			log.Printf("当前单数:%v,卖出单数:%v", t.base, b)
-			sellMoney := price.Mul(amount).Abs().Sub(fee)
-			t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
-			t.RealGrids[b].AmountSell = t.SellMoney  // 修改卖出
-			t.amount = t.CountHold()
-			t.pay = t.CountPay()
-			model.RebotUpdateBy(clientOrderId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
-			if b == 0 {
-				t.over = true
-				model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
-			} else {
-				model.AsyncData(t.u.ObjectId, t.amount, t.pay.Div(t.amount), t.pay, b)
-			}
-		} else {
-			t.RealGrids[t.base].AmountBuy = amount.Sub(fee)
-			t.RealGrids[t.base].Price = price
-			t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(fee))
-			if t.u.Future == 1 || t.u.Future == 3 {
-				t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
-			}
-			t.amount = t.CountHold()
-			t.pay = t.CountPay()
-			t.cost = t.pay.Div(t.amount)
-			model.RebotUpdateBy(clientOrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
-			model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
-		}
+		t.ParseOrder(order)
 		t.Tupdate()
 		log.Printf("实际操作%+v", t.RealGrids)
 		return true
 	}
 	return false
+}
+
+// ParseOrder
+func (t *ExTrader) ParseOrder(order *OneOrder) {
+	price := decimal.NewFromFloat(order.Price)
+	amount := decimal.NewFromFloat(order.Amount)
+	fee := decimal.NewFromFloat(order.Fee)
+	if t.u.Future == 2 || t.u.Future == 4 {
+		amount = decimal.NewFromFloat(order.Cash)
+	}
+	t.hold = t.myMoney()
+	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
+	if b, ok := t.SellOrder[order.ClientId]; ok {
+		log.Printf("当前单数:%v,卖出单数:%v", t.base, b)
+		sellMoney := price.Mul(amount).Abs().Sub(fee)
+		t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
+		t.RealGrids[b].AmountSell = t.SellMoney  // 修改卖出
+		t.amount = t.CountHold()
+		t.pay = t.CountPay()
+		model.RebotUpdateBy(order.ClientId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
+		if b == 0 {
+			t.over = true
+			model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
+		} else {
+			model.AsyncData(t.u.ObjectId, t.amount, t.pay.Div(t.amount), t.pay, b)
+		}
+	} else {
+		t.RealGrids[t.base].AmountBuy = amount.Sub(fee)
+		t.RealGrids[t.base].Price = price
+		t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(fee))
+		if t.u.Future == 1 || t.u.Future == 3 {
+			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
+		}
+		t.amount = t.CountHold()
+		t.pay = t.CountPay()
+		t.cost = t.pay.Div(t.amount)
+		model.RebotUpdateBy(order.ClientId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
+		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
+	}
 }
 
 // 获取当前持仓数量
@@ -313,16 +320,21 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 // WaitSell 卖出等待
 func (t *ExTrader) WaitSell(price decimal.Decimal, amount decimal.Decimal, rate float64, n int) error {
 	t.OrderOver = false
-	orderId, clientOrder, err := t.sell(price, amount, rate, n)
+	o, err := t.sell(price, amount, rate, n)
 	if err != nil {
 		log.Printf("卖出错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if t.WaitOrder(orderId, clientOrder) {
+		if o.ClientId != "" {
+			t.last = price
+			return nil
+		}
+		if t.WaitOrder(o.OrderId, o.ClientId) {
+			t.ParseOrder(o)
 			t.last = price
 			return nil
 		} else {
-			t.goex.CancelOrder(orderId)
+			t.goex.CancelOrder(o.OrderId)
 			return errors.New("卖出出错")
 		}
 	}
@@ -331,15 +343,20 @@ func (t *ExTrader) WaitSell(price decimal.Decimal, amount decimal.Decimal, rate 
 // WaitBuy 买入等待
 func (t *ExTrader) WaitBuy(price decimal.Decimal, amount decimal.Decimal, rate float64) error {
 	t.OrderOver = false
-	orderId, clientOrder, err := t.buy(price, amount, rate)
+	o, err := t.buy(price, amount, rate)
 	if err != nil {
 		log.Printf("买入错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if t.WaitOrder(orderId, clientOrder) {
+		if o.ClientId != "" {
+			t.ParseOrder(o)
+			t.last = price
+			return nil
+		}
+		if t.WaitOrder(o.OrderId, o.ClientId) {
 			return nil
 		} else {
-			t.goex.CancelOrder(orderId)
+			t.goex.CancelOrder(o.OrderId)
 			return errors.New("买入出错")
 		}
 	}

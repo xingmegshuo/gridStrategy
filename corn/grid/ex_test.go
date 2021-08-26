@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 	model "zmyjobs/corn/models"
-
-	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -61,11 +59,11 @@ func TestGetMoney(t *testing.T) {
 	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 
-	price := decimal.NewFromFloat(152.93)
+	// price := decimal.NewFromFloat(152.93)
 	// 买入
-	amount := decimal.NewFromFloat(40.31)
-	cliId, orderId, err := ex.Exchanges(amount, price, SellM, false)
-	fmt.Println(cliId, err, orderId, amount, price)
+	// amount := decimal.NewFromFloat(40.31)
+	// cliId, orderId, err := ex.Exchanges(amount, price, SellM, false)
+	// fmt.Println(cliId, err, orderId, amount, price)
 
 	//
 	// cliId := "338280716011966"

@@ -59,7 +59,7 @@ type User struct {
 
 // NewUser 从缓存获取如果数据库不存在就添加
 func NewUser() {
-	orders := StringMap(GetCache("db_task_order"))
+	orders := StringMap(GetCache("ZMYdb_task_order"))
 	for _, order := range orders {
 		// log.Println("新建用户检测:", order["id"], len(orders))
 		mutex.Lock()
@@ -219,15 +219,16 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 		secret string
 	)
 
-	api := StringMap(GetCache("db_task_api"))
-	Category := StringMap(GetCache("db_task_category"))
-
+	api := StringMap(GetCache("ZMYdb_task_api"))
+	Category := StringMap(GetCache("ZMYdb_task_category"))
+	// fmt.Println(api, Category)
 	for _, value := range Category {
 		if value["id"] == category {
 			name = value["name"].(string)
 		}
 	}
 	for _, a := range api {
+		// fmt.Println(fmt.Sprintf("%V,%V", a["member_id"], memberid))
 		if a["category_id"] == category && a["member_id"] == memberid {
 			apiKey = a["apikey"].(string)
 			secret = a["secretkey"].(string)

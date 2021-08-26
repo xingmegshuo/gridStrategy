@@ -73,7 +73,7 @@ func init() {
 	dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "172.31.213.84:6379",
-		Password: "lookuplds",
+		Password: "lookupld",
 		DB:       0,
 	})
 

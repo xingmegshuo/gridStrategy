@@ -86,7 +86,7 @@ func xhttp(url string, name string) {
 			}
 			data, _ := json.Marshal(&coins)
 			model.Del(name)
-			fmt.Println("写入数据", name)
+			// fmt.Println("写入数据", name)
 			model.SetCache(name, string(data), time.Hour)
 		}
 	}

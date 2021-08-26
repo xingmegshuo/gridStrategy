@@ -57,7 +57,7 @@ func main() {
 	exitChan = make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt, syscall.SIGTERM)
 	go exitHandle()
-	xhttp.RunServer()
+	go xhttp.RunServer()
 
 	job.Init()
 	job.C.Start()

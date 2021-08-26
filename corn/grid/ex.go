@@ -77,6 +77,8 @@ func FutureTypeString(b interface{}, t bool) (r interface{}) {
 			r = 2
 		case OpenLM:
 			r = 4
+		default:
+			r = 0
 		}
 	} else {
 		switch b.(int) {
@@ -88,6 +90,8 @@ func FutureTypeString(b interface{}, t bool) (r interface{}) {
 			r = "平多"
 		case 4:
 			r = "平空"
+		default:
+			r = "未知"
 		}
 	}
 	return

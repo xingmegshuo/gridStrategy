@@ -249,7 +249,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		t.RealGrids[b].AmountSell = t.SellMoney  // 修改卖出
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
-		model.RebotUpdateBy(order.ClientId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
+		model.RebotUpdateBy(order.OrderId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
 		if b == 0 {
 			t.over = true
 			model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
@@ -257,6 +257,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			model.AsyncData(t.u.ObjectId, t.amount, t.pay.Div(t.amount), t.pay, b)
 		}
 	} else {
+		log.Printf("当前单数:%v,用户:%v", t.base, t.u.ObjectId)
 		t.RealGrids[t.base].AmountBuy = amount.Sub(fee)
 		t.RealGrids[t.base].Price = price
 		t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(fee))
@@ -266,7 +267,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
 		t.cost = t.pay.Div(t.amount)
-		model.RebotUpdateBy(order.ClientId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
+		model.RebotUpdateBy(order.OrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
 		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 	}
 }

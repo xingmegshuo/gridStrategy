@@ -264,8 +264,13 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
 		}
-		t.amount = t.CountHold()
-		t.pay = t.CountPay()
+		if t.base == 0 {
+			t.amount = amount
+			t.pay = decimal.NewFromFloat(order.Cash)
+		} else {
+			t.amount = t.CountHold()
+			t.pay = t.CountPay()
+		}
 		t.cost = t.pay.Div(t.amount)
 		model.RebotUpdateBy(order.OrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
 		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)

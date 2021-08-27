@@ -389,7 +389,7 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	} else {
 		params.Set("type", "MARKET")
 	}
-
+	fmt.Printf("%+v", params)
 	fOrder := &FutureOrder{
 		Currency: currencyPair,
 		// ClientOid:    clientOid,

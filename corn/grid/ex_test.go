@@ -193,7 +193,7 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(o, err)
 	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDL, false)
 	// fmt.Println(order, result)
-	orderId := "8389765505714067456"
+	orderId := "8389765505681314816"
 	b, r, o := cli.SearchOrder(orderId)
 	fmt.Println(fmt.Sprintf("%+v", o), b, r)
 

@@ -172,6 +172,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 	// 增加一个真实成交
 	if err == nil {
 		// fmt.Println("已经挂单的买入", t.u.ObjectId)
+		log.Printf("买入下单返回的数据用户%v[%v]:amount:%v,price:%v", t.u.ObjectId, o.Type, o.Amount, o.Price)
 		t.log(orderId, price, msg, t.base, amount, rate, "买入")
 		g := model.Grid{
 			Id:      t.base + 1,
@@ -211,6 +212,7 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (*On
 	log.Printf("[Order][sell] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v", price, amount, t.u.ObjectId, orderId, clientId)
 	// 增加一个真实成交
 	if err == nil {
+		log.Printf("卖出下单返回的数据用户%v[%v]:amount:%v,price:%v", t.u.ObjectId, o.Type, o.Amount, o.Price)
 		t.RealGrids[n].Decline = rate
 		t.log(orderId, price, msg, n, amount, rate, "卖出")
 		g := map[string]int{orderId: n}
@@ -332,6 +334,7 @@ func (t *ExTrader) WaitSell(price decimal.Decimal, amount decimal.Decimal, rate 
 		return err
 	} else {
 		if o.ClientId != "" {
+			t.ParseOrder(o)
 			t.last = price
 			return nil
 		}

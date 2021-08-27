@@ -46,11 +46,11 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
-	coinCache := []*redis.Z{}
-	craw(coinCache)
-	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
-	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-	go crawAccount()
+	// coinCache := []*redis.Z{}
+	// craw(coinCache)
+	// go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+	// go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+	// go crawAccount()
 	// fmt.Println("结束")
 }
 

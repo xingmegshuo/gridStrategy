@@ -568,7 +568,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
     w = Handler(w)
     if r.Method == "POST" {
         r.ParseForm()
-        fmt.Println(r.Form)
+        // fmt.Println(r.Form)
         var form = map[string]interface{}{}
         str, _ := ioutil.ReadAll(r.Body)
         json.Unmarshal(str, &form)

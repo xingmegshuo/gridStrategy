@@ -661,7 +661,6 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	if err != nil {
 		return nil, err
 	}
-
 	order := &FutureOrder{}
 	ordId, _ := strconv.Atoi(orderId)
 	// fmt.Println(result)

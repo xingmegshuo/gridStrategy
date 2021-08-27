@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 	model "zmyjobs/corn/models"
-
-	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -193,11 +191,11 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(fmt.Sprintf("%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
-	order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDL, false)
-	fmt.Println(order, result)
-	// orderId := "8389765505681314816"
-	// b, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("%+v", o), b, r)
+	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDL, false)
+	// fmt.Println(order, result)
+	orderId := "8389765505714067456"
+	b, r, o := cli.SearchOrder(orderId)
+	fmt.Println(fmt.Sprintf("%+v", o), b, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

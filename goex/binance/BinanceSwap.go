@@ -366,16 +366,16 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	params.Set("symbol", pair.ToSymbol(""))
 	params.Set("quantity", amount)
 	params.Set("newClientOrderId", clientOid)
-	if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
-		params.Set("positionSide", p[0].ContractType)
-	} else {
-		if OPEN_BUY == openType || CLOSE_BUY == openType {
-			params.Set("positionSide", "LONG")
-		}
-		if OPEN_SELL == openType || CLOSE_SELL == openType {
-			params.Set("positionSide", "SHORT")
-		}
+	// if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
+	// 	params.Set("positionSide", p[0].ContractType)
+	// } else {
+	if OPEN_BUY == openType || CLOSE_BUY == openType {
+		params.Set("positionSide", "LONG")
 	}
+	if OPEN_SELL == openType || CLOSE_SELL == openType {
+		params.Set("positionSide", "SHORT")
+	}
+	// }
 	switch openType {
 	case OPEN_BUY, CLOSE_SELL:
 		params.Set("side", "BUY")
@@ -389,7 +389,7 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	} else {
 		params.Set("type", "MARKET")
 	}
-	fmt.Printf("%+v", params)
+	// fmt.Printf("%+v", params)
 	fOrder := &FutureOrder{
 		Currency: currencyPair,
 		// ClientOid:    clientOid,
@@ -415,8 +415,9 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	if err != nil {
 		return fOrder, err
 	}
-
 	orderId := ToInt(respmap["orderId"])
+	fmt.Println(fmt.Sprintf("下单返回数据---:%+v;解析的订单id:%v", respmap, orderId))
+
 	if orderId <= 0 {
 		return fOrder, errors.New(string(resp))
 	}
@@ -652,7 +653,8 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 
 	params := url.Values{}
 	params.Set("symbol", currencyPair1.ToSymbol(""))
-	params.Set("orderId", orderId)
+	params.Set("orderId", "")
+	// params.Set("orderId", orderId)
 	bs.buildParamsSigned(&params)
 
 	path := bs.apiV1 + "allOrders?" + params.Encode()
@@ -663,7 +665,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	}
 	order := &FutureOrder{}
 	ordId, _ := strconv.Atoi(orderId)
-	// fmt.Println(result)
+	// fmt.Println(result, "api返回数据------")
 	for _, info := range result {
 		// fmt.Println(info)
 		_ord := info.(map[string]interface{})
@@ -674,6 +676,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 		}
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
+		fmt.Println(fmt.Sprintf("订单数据:-----%+v", order))
 		return order, nil
 	}
 	return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))

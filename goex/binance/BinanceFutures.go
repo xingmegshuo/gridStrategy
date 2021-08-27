@@ -312,16 +312,16 @@ func (bs *BinanceFutures) PlaceFutureOrder(currencyPair CurrencyPair, contractTy
 	param.Set("newClientOrderId", GenerateOrderClientId(32))
 	param.Set("quantity", amount)
 	param.Set("newOrderRespType", "ACK")
-	if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
-		param.Set("positionSide", p[0].ContractType)
-	} else {
-		if OPEN_BUY == openType || CLOSE_BUY == openType {
-			param.Set("positionSide", "LONG")
-		}
-		if OPEN_SELL == openType || CLOSE_SELL == openType {
-			param.Set("positionSide", "SHORT")
-		}
+	// if p, err := bs.GetFuturePosition(currencyPair, contractType); err == nil && len(p) > 0 {
+	// 	param.Set("positionSide", p[0].ContractType)
+	// } else {
+	if OPEN_BUY == openType || CLOSE_BUY == openType {
+		param.Set("positionSide", "LONG")
 	}
+	if OPEN_SELL == openType || CLOSE_SELL == openType {
+		param.Set("positionSide", "SHORT")
+	}
+	// }
 	if matchPrice == 0 {
 		param.Set("type", "LIMIT")
 		param.Set("timeInForce", "GTC")

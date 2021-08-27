@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 	model "zmyjobs/corn/models"
-
-	"github.com/shopspring/decimal"
-	"/goex"
+	"zmyjobs/goex"
+	// "github.com/nntaoli-project/goex"
 )
 
 // bian Test api mhRYW9GrdeEZ6nNKdZsoGYg4S3DlvrHNxxTqNaP60m3SDz09TwXe5rGDw7YrEVyp secretKey lkUxg31nEBExSprEXX3wRgcGIte30UaYxZmfSW0b31sClkVa0hjrtgCEV5AsxJXB
@@ -35,7 +34,7 @@ func TestGetMoney(t *testing.T) {
 	// bian := model.SymbolCategory{
 	// 	Key:    "l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
 	// 	Secret: "EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR",
-	// 	// Host:            "https://fapi.binace.com",
+	// Host:            "https://fapi.binace.com",
 	// 	BaseCurrency:    "USDT",
 	// 	QuoteCurrency:   "DOGE",
 	// 	AmountPrecision: 2,
@@ -190,14 +189,22 @@ func TestFutureAccount(t *testing.T) {
 	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
 
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
-	fmt.Println(fmt.Sprintf("%+v", p), err)
-	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
-	// fmt.Println(o, err)
-	order, result := cli.Exchanges(decimal.NewFromFloat(0.012), decimal.Decimal{}, OpenLM, false)
-	fmt.Println(order, result)
-	// orderId := "8389765505681314816"
-	// b, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("%+v", o), b, r)
+	fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
+	// // o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
+	// // fmt.Println(o, err)
+	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
+	// fmt.Println("下单数据", order, result)
+	// // orderId := "8389765505725968384"
+	// orderId := order.OrderId
+	// time.Sleep(time.Second * 5)
+	// n, r, o := cli.SearchOrder(orderId)
+	// fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
+
+	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
+	// fmt.Println(ordierId, clientId, err)
+	// orderId := "8389765504833933312"
+	// h, over, o := cli.SearchOrder(orderId)
+	// fmt.Println(h, over, o)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

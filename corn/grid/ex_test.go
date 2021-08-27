@@ -193,7 +193,7 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(fmt.Sprintf("%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
-	order, result := cli.Exchanges(decimal.NewFromFloat(0.0012), decimal.Decimal{}, OpenDL, false)
+	order, result := cli.Exchanges(decimal.NewFromFloat(0.0012), decimal.Decimal{}, OpenLM, false)
 	fmt.Println(order, result)
 	// orderId := "8389765505681314816"
 	// b, r, o := cli.SearchOrder(orderId)

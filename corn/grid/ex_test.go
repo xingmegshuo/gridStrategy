@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"testing"
 	model "zmyjobs/corn/models"
-
-	"github.com/shopspring/decimal"
+	"zmyjobs/goex"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -180,24 +179,24 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(bian)
 	cli := NewEx(&bian)
 
-	// b := goex.NewCurrencyPair2(bian.Symbol)
+	b := goex.NewCurrencyPair2(bian.Symbol)
 	// fmt.Println(b.String())
 	// cli.Future.ChangeLever(b, goex.SWAP_CONTRACT)
 	// fmt.Println(cli.Currency)
 	// cl := util.Config{Name: "币安"}
 	// p, err := cl.GetPrice("ETH/USD", true)
 	// fmt.Println(p, err)
-	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
+	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
 
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
-	// fmt.Println(fmt.Sprintf("%+v", p), err)
+	fmt.Println(fmt.Sprintf("%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
-	order, result := cli.Exchanges(decimal.NewFromFloat(0.012), decimal.Decimal{}, OpenLM, false)
-	fmt.Println(order, result)
-	// orderId := "8389765505681314816"
-	// b, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("%+v", o), b, r)
+	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
+	// fmt.Println(order, result)
+	orderId := "8389765505717358592"
+	n, r, o := cli.SearchOrder(orderId)
+	fmt.Println(fmt.Sprintf("%+v", o), n, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

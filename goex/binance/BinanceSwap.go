@@ -665,7 +665,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	ordId, _ := strconv.Atoi(orderId)
 	// fmt.Println(result)
 	for _, info := range result {
-		// fmt.Println(info)
+		fmt.Println(info)
 		_ord := info.(map[string]interface{})
 		// fmt.Println(ordId, _ord["orderId"])
 
@@ -674,6 +674,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 		}
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
+		fmt.Println(fmt.Sprintf("%+v", order))
 		return order, nil
 	}
 	return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))

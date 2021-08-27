@@ -68,9 +68,9 @@ func NewApi(c *Config) (cli goex.API) {
  *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
  */
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-        ClientID(c.ClientID).HttpTimeout(time.Second * 60).FuturesLever(c.Lever)
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+    //     ClientID(c.ClientID).HttpTimeout(time.Second * 60).FuturesLever(c.Lever)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api

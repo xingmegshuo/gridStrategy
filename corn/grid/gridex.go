@@ -172,7 +172,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 	// 增加一个真实成交
 	if err == nil {
 		// fmt.Println("已经挂单的买入", t.u.ObjectId)
-		log.Printf("买入下单返回的数据用户%v[%v]:amount:%v,price:%v", t.u.ObjectId, o.Type, o.Amount, o.Price)
+		log.Printf("买入下单返回的数据用户%v[%v][%v]:amount:%v,price:%v", t.u.ObjectId, o.Slide, o.Type, o.Amount, o.Price)
 		t.log(orderId, price, msg, t.base, amount, rate, "买入")
 		g := model.Grid{
 			Id:      t.base + 1,
@@ -266,14 +266,10 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
 		}
-		if t.base == 0 {
-			t.amount = amount
-			t.pay = decimal.NewFromFloat(order.Cash)
-		} else {
-			t.amount = t.CountHold()
-			t.pay = t.CountPay()
-		}
-		t.cost = t.pay.Div(t.amount)
+
+		t.amount = t.CountHold()
+		t.pay = t.CountPay()
+		t.cost = t.CostPrice()
 		model.RebotUpdateBy(order.OrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
 		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 	}
@@ -290,6 +286,25 @@ func (t *ExTrader) CountHold() (amount decimal.Decimal) {
 	return
 }
 
+// 平均价格
+func (t *ExTrader) CostPrice() (amount decimal.Decimal) {
+	num := 1
+	for _, g := range t.RealGrids {
+		if g.AmountSell.Cmp(decimal.Decimal{}) < 1 {
+			amount = amount.Add(g.Price)
+			num += 1
+		}
+	}
+	if num-1 == 0 {
+		num = 1
+	} else {
+		num = num - 1
+	}
+	amount = amount.Div(decimal.NewFromInt(int64(num)))
+	log.Printf("用户%v计算平均价格:%v", t.u.ObjectId, amount)
+	return
+}
+
 // 获取当前投入金额
 func (t *ExTrader) CountPay() (pay decimal.Decimal) {
 	for _, g := range t.RealGrids {
@@ -297,6 +312,7 @@ func (t *ExTrader) CountPay() (pay decimal.Decimal) {
 			pay = pay.Add(g.TotalBuy)
 		}
 	}
+	log.Printf("用户%v计算投入金额:%v", t.u.ObjectId, pay)
 	return
 }
 
@@ -408,6 +424,6 @@ func (t *ExTrader) CountMesure() (amount decimal.Decimal) {
 			amount = amount.Add(g.Mesure)
 		}
 	}
-	log.Println("用户%v卖出计算:%v", t.u.ObjectId, amount)
+	log.Printf("用户%v卖出计算:%v", t.u.ObjectId, amount)
 	return
 }

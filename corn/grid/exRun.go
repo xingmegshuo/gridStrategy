@@ -184,7 +184,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
         die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
         if t.arg.Crile == 4 {
             die, _ = price.Sub(t.last).Div(t.last).Float64() // 当前跌幅
-
         }
         if count == 50 {
             log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
@@ -242,9 +241,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     } else {
                         high = price
                         low = price
-                        log.Printf("用户%v首次买入成功", t.u.ObjectId)
                         t.last = t.RealGrids[0].Price
                         t.base = t.base + 1
+                        log.Printf("用户%v首次买入成功;交易价格%v", t.u.ObjectId, t.last)
                         t.Tupdate()
                     }
                 }
@@ -270,6 +269,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                         low = price
                         t.last = t.RealGrids[t.base].Price
                         t.base = t.base + 1
+                        log.Printf("用户%v第%v次买入成功;交易价格%v", t.u.ObjectId, t.base, t.last)
                         t.Tupdate()
                     }
                 }

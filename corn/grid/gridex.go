@@ -266,7 +266,6 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
 		}
-
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
 		t.cost = t.CostPrice()

@@ -416,7 +416,7 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 		return fOrder, err
 	}
 	orderId := ToInt(respmap["orderId"])
-	fmt.Println(fmt.Sprintf("下单返回数据---:%+v;解析的订单id:%v", respmap, orderId))
+	// fmt.Println(fmt.Sprintf("下单返回数据---:%+v;解析的订单id:%v", respmap, orderId))
 
 	if orderId <= 0 {
 		return fOrder, errors.New(string(resp))
@@ -676,7 +676,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 		}
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
-		fmt.Println(fmt.Sprintf("订单数据:-----%+v", order))
+		// fmt.Println(fmt.Sprintf("订单数据:-----%+v", order))
 		return order, nil
 	}
 	return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))

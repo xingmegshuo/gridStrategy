@@ -16,7 +16,7 @@ import (
 func CentsUser(uId float64, money float64, from interface{}) {
     t := GetAccount(uId)
     realMoney := money * 0.24 // 分红盈利
-    log.Println("用户%v;策略%v;盈利%v;分红%v;套餐余额%v", uId, from, money, realMoney, t)
+    log.Printf("用户%v;策略%v;盈利%v;分红%v;套餐余额%v", uId, from, money, realMoney, t)
 
     if money > 0 { // 盈利
         var (
@@ -48,7 +48,7 @@ func CentsUser(uId float64, money float64, from interface{}) {
         // 大于%5 分红
         if t > money*0.05 {
             // %5
-            fiveRate := money * 0.05
+            fiveRate := money * 0.04
             realMoney -= fiveRate
             SaveMoney(1, fiveRate)
 
@@ -60,10 +60,22 @@ func CentsUser(uId float64, money float64, from interface{}) {
 
             // 市场
             market := money * 0.2 * 0.8
-            log.Printf("用户:%v;市场:%v;存储:%v;boos:%v", uId, market, fiveRate, boss)
             baseLevel := u["level"].(uint8)
             levelMoney := realMoney
+
+            // 创始合伙人
+            partner := levelMoney * 0.1
+            SaveMoney(3, partner)
+            // levelMoney -= partner
+
+            // 股东
+            orther := levelMoney * 0.2
+            SaveMoney(4, orther)
+            // levelMoney -= orther
+            log.Printf("用户:%v;市场:%v;存储:%v;boos:%v;创始合伙人:%v;股东:%v", uId, market, fiveRate, boss, partner, orther)
+
             f := true
+            sameLevel := float64(0)
             for {
                 var myMoney float64
                 if u["inviter_id"].(uint32) > 0 {
@@ -79,10 +91,10 @@ func CentsUser(uId float64, money float64, from interface{}) {
                         Remark:         "级差分红",
                         FromCustomerId: uId,
                         CustomerId:     float64(u["id"].(int32)),
-                        BeforeAmount:   GetAccount(float64(u["id"].(int32))),
+                        BeforeAmount:   GetAccountCach(float64(u["id"].(int32))),
                     }
 
-                    if thisLevel > baseLevel && realMoney > 0 {
+                    if thisLevel >= baseLevel && realMoney > 0 {
                         // baseLevel = thisLevel // 上级的vip等级，下次分红vip必须大于此等级
                         if thisLevel == 1 {
                             myMoney = levelMoney * 0.2
@@ -131,12 +143,14 @@ func CentsUser(uId float64, money float64, from interface{}) {
                                 } else {
                                     myMoney = levelMoney * 0.55
                                 }
+                                f = false
+                                sameLevel = myMoney
                             } else {
-                                myMoney = levelMoney * 0.06 //平级
+                                myMoney = sameLevel * 0.1 //平级
                             }
                         }
                         if thisLevel == 6 {
-                            log.Println(thisLevel, baseLevel)
+                            // log.Println(thisLevel, baseLevel)
                             // l.Println("我要60%")
                             if thisLevel-baseLevel == 1 {
                                 myMoney = levelMoney * 0.05
@@ -168,7 +182,7 @@ func CentsUser(uId float64, money float64, from interface{}) {
                     break
                 }
             }
-            log.Printf("剩余金额%v", realMoney)
+            log.Printf("剩余金额%v", realMoney-partner-orther)
         }
     }
 }

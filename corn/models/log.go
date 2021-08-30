@@ -114,15 +114,18 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}) {
+func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isAuto bool) {
 	old := GetOldAmount(orderId)
-	var data = map[string]interface{}{
-		"status": 2,
+	var data = map[string]interface{}{}
+	if isAuto {
+		data["status"] = 0
+	} else {
+		data["status"] = 1
 	}
 	if b.(float64) > 0 {
 		log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))
 		data["total_profit"] = b.(float64) + old
-		GotMoney(b.(float64), id.(float64), from)
+		CentsUser(b.(float64), id.(float64), from)
 	}
 	UpdateOrder(orderId, data)
 }
@@ -332,7 +335,8 @@ func DeleteRebotLog(orderId string) {
 }
 
 // LogStrategy 卖出盈利日志
-func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, order interface{}, member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}) {
+func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, order interface{},
+	member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}, isAuto bool) {
 	log.Println("盈利日志", name, member, coin_name)
 	var (
 		data     = map[string]interface{}{}
@@ -363,5 +367,5 @@ func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, o
 	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
 
 	m, _ := money.(decimal.Decimal).Float64()
-	RunOver(member, m, order, id)
+	RunOver(member, m, order, id, isAuto)
 }

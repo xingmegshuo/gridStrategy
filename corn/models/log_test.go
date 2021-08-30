@@ -15,6 +15,7 @@ import (
 
 func TestGetMoney(t *testing.T) {
 	fmt.Println("testing start .....")
+	CentsUser(8, 100, int64(20))
 	// LogStrategy("火币", "doge", 2, 2, 10, 2, false, 10)
 	// var v = map[string]interface{}{}
 	// c := UserDB.Raw("select id from db_task_category where name like ?", "火币").Scan(&v)

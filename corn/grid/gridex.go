@@ -16,6 +16,7 @@ type ExTrader struct {
 	base      int             // 当前单数
 	ErrString string          // 错误信息
 	over      bool            // 是否结束
+	automatic bool            // 是否用户主动清仓
 	u         model.User      // 用户
 	pay       decimal.Decimal // 投入金额
 	cost      decimal.Decimal // average price
@@ -245,7 +246,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 	t.hold = t.myMoney()
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 	if b, ok := t.SellOrder[order.OrderId]; ok {
-		log.Printf("当前单数:%v,卖出单数:%v", t.base, b)
+		log.Printf("当前单数:%v,卖出单数:%v;%v", t.base, b, t.SellOrder)
 		sellMoney := price.Mul(amount).Abs().Sub(fee)
 		t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
 		t.RealGrids[b].AmountSell = t.SellMoney  // 修改卖出
@@ -333,9 +334,11 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 		if t.SearchOrder(orderId, cli) {
 			return true
 		}
-		time.Sleep(time.Second * 3)
-		if time.Since(start) >= time.Second*60 {
+		if time.Since(start) >= time.Second*20 {
 			return false
+		} else {
+			time.Sleep(time.Second * 2)
+			continue
 		}
 	}
 }
@@ -354,7 +357,7 @@ func (t *ExTrader) WaitSell(price decimal.Decimal, amount decimal.Decimal, rate 
 			return nil
 		}
 		if t.WaitOrder(o.OrderId, o.ClientId) {
-			t.ParseOrder(o)
+			// t.ParseOrder(o)
 			t.last = price
 			return nil
 		} else {
@@ -407,7 +410,7 @@ func (t *ExTrader) myCoin() (coin decimal.Decimal) {
  */
 func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
 	c := t.myCoin()
-	coin = t.CountHold()
+	coin = sell
 	if coin.Cmp(c) == 1 && t.u.Future == 0 {
 		coin = c
 	}

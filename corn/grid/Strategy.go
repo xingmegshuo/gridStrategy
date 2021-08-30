@@ -131,8 +131,8 @@ func (t *Trader) Trade(ctx context.Context) {
 						t.u.IsRun = 1
 						t.u.BasePrice = p
 						// model.RunOver(t.u.Custom, t.u.BasePrice, float64(t.u.ObjectId))
-						model.LogStrategy(t.arg.CoinId, t.symbol.Category, t.symbol.QuoteCurrency, t.u.ObjectId,
-							t.u.Custom, t.amount, t.cost, t.arg.IsHand, p)
+						// model.LogStrategy(t.arg.CoinId, t.symbol.Category, t.symbol.QuoteCurrency, t.u.ObjectId,
+						// 	t.u.Custom, t.amount, t.cost, t.arg.IsHand, p,)
 						t.u.RealGrids = "***"
 						t.u.Base = 0
 						t.u.Update()

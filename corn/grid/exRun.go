@@ -122,6 +122,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
                             // 盈利ctx
                             if t.arg.Crile >= 2 {
                                 t.u.IsRun = 100
+                            } else if t.automatic {
+                                t.u.IsRun = 2
                             } else {
                                 t.u.IsRun = 1
                             }
@@ -131,7 +133,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
                             model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
                             log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
                             model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
-                                t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res)
+                                t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, t.automatic)
                             log.Println("任务结束", t.u.ObjectId)
                         }
                     }
@@ -156,8 +158,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
     )
     for {
         count++
-        time.Sleep(time.Millisecond * 500) // 间隔0.5秒查询
-        price, err := t.goex.GetPrice()    // 获取当前价格
+        time.Sleep(time.Millisecond * 1) // 间隔0.5秒查询
+        // price := model.GetPrice(model.ParseFloatString(t.arg.CoinId.(float64)))
+        price, err := t.goex.GetPrice()
         if err != nil {
             errorCount++
             if errorCount > 2 {
@@ -307,12 +310,13 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                     } else {
                         t.Tupdate()
                     }
+                    t.automatic = true
                     t.over = true
                 }
             }
             // 智多元
             if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
-                if t.SetupBeMutiple(price, reduce, win) != nil {
+                if err := t.SetupBeMutiple(price, reduce, win); err != nil {
                     errorCount++
                     if errorCount > 2 {
                         log.Printf("买入错误: %d, err: %s", t.base, err)
@@ -355,11 +359,12 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
                             continue
                         }
                     }
+                    t.automatic = true
                     t.over = true
                 }
             }
             // 立即买入
-            if t.arg.OneBuy && t.base < len(t.grids)-1 {
+            if t.arg.OneBuy && t.base < len(t.grids) {
                 log.Printf("%v用户一键补仓", t.u.ObjectId)
                 t.arg.OneBuy = false
                 // model.OneBuy(t.u.ObjectId)
@@ -398,7 +403,6 @@ func (t *ExTrader) GetLastPrice() {
     } else {
         t.last = t.grids[0].Price
     }
-    // fmt.Println(t.last)
 }
 
 // Tupdate 更新数据

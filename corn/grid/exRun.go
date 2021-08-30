@@ -1,15 +1,14 @@
 package grid
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "runtime"
-    "time"
-    model "zmyjobs/corn/models"
-    "zmyjobs/goex"
+	"context"
+	"encoding/json"
+	"runtime"
+	"time"
+	model "zmyjobs/corn/models"
+	"zmyjobs/goex"
 
-    "github.com/shopspring/decimal"
+	"github.com/shopspring/decimal"
 )
 
 // RunEx 策略执行入口
@@ -47,7 +46,31 @@ func RunEx(ctx context.Context, u model.User) {
 func DelEx(u model.User) {
     g := NewExStrategy(u)
     if u.Base > 0 && g.CountHold().Cmp(decimal.Decimal{}) == 1 {
-        fmt.Println("hhh")
+        price, err := g.goex.GetPrice()
+        if err == nil {
+            win := float64(0)
+            if g.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
+                if g.arg.Crile == 4 {
+                    win, _ = (g.pay.Sub(price.Mul(g.amount))).Div(g.pay).Float64() // 计算盈利 当前价值-投入价值
+                } else {
+                    win, _ = (price.Mul(g.amount).Sub(g.pay)).Div(g.pay).Float64() // 计算盈利 当前价值-投入价值
+                }
+            }
+            err = g.WaitSell(price, g.SellCount(g.CountHold()), win*100, 0)
+            if err == nil {
+                res := g.CalCulateProfit()
+                p, _ := res.Float64()
+                g.u.IsRun = 2
+                g.u.BasePrice = p
+                g.u.RealGrids = "***"
+                g.u.Update()
+                model.DB.Exec("update users set base = 0 where object_id = ?", g.u.ObjectId)
+                log.Println("实际的买入信息清空,用户单数清空", g.u.ObjectId)
+                model.LogStrategy(g.arg.CoinId, g.goex.symbol.Category, g.u.Name, g.u.ObjectId,
+                    g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, g.automatic)
+                log.Println("任务结束,删除平仓或者暂停平仓", g.u.ObjectId)
+            }
+        }
     }
 }
 

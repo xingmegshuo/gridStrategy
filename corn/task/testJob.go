@@ -143,6 +143,7 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 		if category == 2 || category == 5 {
 			_ = json.Unmarshal(content, &realData)
 		}
+		fmt.Println(realData)
 		return WriteDB(realData, category, coinType)
 	} else {
 		fmt.Println(err)
@@ -161,7 +162,6 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 		} else {
 			symbol = s["symbol"].(string)
 		}
-		fmt.Println(symbol)
 		if name := util.ToMySymbol(symbol); name != "none" {
 			var id interface{}
 			if coinType == 0 {

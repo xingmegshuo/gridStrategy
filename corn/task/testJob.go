@@ -50,7 +50,7 @@ func CrawRun() {
 	start := time.Now()
 	// fmt.Println("开始jjjjj")
 	coinCache := []*redis.Z{}
-	craw(coinCache)
+	go craw(coinCache)
 	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
 	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
 	go crawAccount()
@@ -200,7 +200,7 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 }
 
 func makeClient() http.Client {
-	return http.Client{Timeout: 5 * time.Second}
+	return http.Client{Timeout: 3 * time.Second}
 	// util.ProxyHttp()
 	// return *util.ProxyHttp()
 }

@@ -15,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/shopspring/decimal"
@@ -375,12 +376,22 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 }
 
 func CachePrice(b string) string {
-	var res = map[string]string{}
+	var (
+		res  = map[string]string{}
+		data []string
+	)
 	op := &redis.ZRangeBy{
 		Min: b,
 		Max: b,
 	}
-	data, _ := ListCacheGet("ZMYCOINS", op).Result()
+	for {
+		data, _ = ListCacheGet("ZMYCOINS", op).Result()
+		if len(data) > 0 {
+			break
+		} else {
+			time.Sleep(time.Millisecond * 300)
+		}
+	}
 	json.Unmarshal([]byte(data[0]), &res)
 	return res["price_usd"]
 }

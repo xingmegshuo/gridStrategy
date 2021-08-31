@@ -143,7 +143,7 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 		if category == 2 || category == 5 {
 			_ = json.Unmarshal(content, &realData)
 		}
-		fmt.Println(content)
+		fmt.Println(string(content))
 		return WriteDB(realData, category, coinType)
 	} else {
 		fmt.Println(err)

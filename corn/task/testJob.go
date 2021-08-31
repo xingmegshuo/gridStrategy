@@ -46,6 +46,7 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
+	fmt.Println("开始jjjjj")
 	coinCache := []*redis.Z{}
 	craw(coinCache)
 	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")

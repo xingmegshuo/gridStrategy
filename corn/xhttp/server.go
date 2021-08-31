@@ -366,7 +366,7 @@ func GetFutureU(w http.ResponseWriter, r *http.Request) {
     )
 
     url := "https://fapi.binance.com/fapi/v1/ticker/24hr"
-    data := util.HttpGet(url)
+    data := util.HttpGet(url, util.ProxyHttp("1124"))
     response["status"] = "success"
     response["msg"] = "获取币安市场u本位合约交易对"
     search := r.FormValue("search")
@@ -420,7 +420,7 @@ func GetFutureB(w http.ResponseWriter, r *http.Request) {
         response = map[string]interface{}{}
     )
     url := "https://dapi.binance.com/dapi/v1/ticker/24hr"
-    data := util.HttpGet(url)
+    data := util.HttpGet(url, util.ProxyHttp("1124"))
     response["status"] = "success"
     response["msg"] = "获取b本位合约交易对"
     search := r.FormValue("search")

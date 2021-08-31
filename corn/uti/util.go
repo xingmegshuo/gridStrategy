@@ -86,17 +86,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
 
 // ProxySock socks5代理
 func ProxySock() *builder.APIBuilder {
-    dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1123", nil, proxy.Direct)
-    if err != nil {
-        fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
-        os.Exit(1)
-    }
-    // setup a http client
-    httpTransport := &http.Transport{}
-    httpTransport.Dial = dialer.Dial
-
-    // set our socks5 as the dialer
-    cli := builder.NewCustomAPIBuilder(&http.Client{Transport: httpTransport, Timeout: time.Second * 20})
+    cli := builder.NewCustomAPIBuilder(ProxyHttp("1123"))
     return cli
 }
 
@@ -147,8 +137,8 @@ func SwitchCoinType(name string) int {
     return 0
 }
 
-func ProxyHttp() *http.Client {
-    dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1123", nil, proxy.Direct)
+func ProxyHttp(port string) *http.Client {
+    dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:"+port, nil, proxy.Direct)
     if err != nil {
         fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
     }
@@ -187,8 +177,8 @@ func ToMySymbol(name string) string {
     return name
 }
 
-func HttpGet(url string) (d interface{}) {
-    client := http.Client{Timeout: 10 * time.Second}
+func HttpGet(url string, client *http.Client) (d interface{}) {
+    // client := ProxyHttp("1123")
     // client := ProxyHttp()
     resp, err := client.Get(url)
     if err == nil {

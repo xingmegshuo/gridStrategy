@@ -12,8 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"runtime"
 	"sync"
 	"time"
 	grid "zmyjobs/corn/grid"
@@ -47,29 +45,19 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
-	start := time.Now()
+	// start := time.Now()
 	// fmt.Println("开始jjjjj")
 	coinCache := []*redis.Z{}
-	go craw(coinCache)
-	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
-	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-	go crawAccount()
-	for {
-		if time.Since(start) > time.Second*30 {
-			// fmt.Println("超时退出", time.Since(start))
-			runtime.Goexit()
-		} else {
-			time.Sleep(time.Second)
-		}
-	}
-
+	craw(coinCache)
+	xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+	xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+	crawAccount()
 }
 
 // xhttp 缓存信息
 func xhttp(url string, name string) {
 	if !model.CheckCache(name) {
-		client := makeClient()
-		resp, err := client.Get(url)
+		resp, err := util.ProxyHttp("1123").Get(url)
 		if err == nil {
 			defer resp.Body.Close()
 			content, _ := ioutil.ReadAll(resp.Body)
@@ -105,7 +93,7 @@ func xhttp(url string, name string) {
 
 // craw
 func craw(coinCache []*redis.Z) {
-	// start := time.Now()
+	start := time.Now()
 	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
@@ -117,9 +105,9 @@ func craw(coinCache []*redis.Z) {
 
 	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
 
-	// fmt.Println(len(coinCache), coinCount, time.Since(start))
+	fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
-		// fmt.Println("write coins db")
+		fmt.Println("write coins db")
 		model.Del("ZMYCOINS")
 		model.AddCache("ZMYCOINS", coinCache...)
 		coinCache = []*redis.Z{}
@@ -128,8 +116,7 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
-	client := makeClient()
-	resp, err := client.Get(url)
+	resp, err := util.ProxyHttp("1124").Get(url)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)
@@ -145,7 +132,20 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 		}
 		// fmt.Println(string(content))
 		if len(realData) == 0 {
-			fmt.Println(string(content))
+			resp, err := util.ProxyHttp("1124").Get(url)
+			if err == nil {
+				defer resp.Body.Close()
+				content, _ = ioutil.ReadAll(resp.Body)
+
+				if category == 1 {
+					_ = json.Unmarshal(content, &data)
+					byteData, _ := json.Marshal(data["data"])
+					_ = json.Unmarshal(byteData, &realData)
+				}
+				if category == 2 || category == 5 {
+					_ = json.Unmarshal(content, &realData)
+				}
+			}
 		}
 		return WriteDB(realData, category, coinType)
 	} else {
@@ -211,12 +211,6 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 	}
 	// fmt.Println(coinCache)
 	return
-}
-
-func makeClient() http.Client {
-	return http.Client{Timeout: 3 * time.Second}
-	// util.ProxyHttp()
-	// return *util.ProxyHttp()
 }
 
 // CrawAccount 缓存用户持仓数据

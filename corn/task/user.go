@@ -21,10 +21,10 @@ var (
 
 func UserJobRun() {
 	userData()
-	// for i := 0; i < 1; i++ {
-	// 	go model.NewUser()
-	// 	go RunWG()
-	// }
+	for i := 0; i < 1; i++ {
+		go model.NewUser()
+		go RunWG()
+	}
 }
 
 func userData() {

@@ -200,6 +200,7 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 			}
 		}
 	}
+	fmt.Println(coinCache)
 	return
 }
 

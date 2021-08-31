@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"sync"
 	"time"
 	grid "zmyjobs/corn/grid"
@@ -46,13 +47,18 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
-	fmt.Println("开始jjjjj")
+	start := time.Now()
+	// fmt.Println("开始jjjjj")
 	coinCache := []*redis.Z{}
 	craw(coinCache)
 	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
 	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
 	go crawAccount()
 	// fmt.Println("结束")
+	if time.Since(start) > time.Second*10 {
+		fmt.Println("超时退出", time.Since(start))
+		runtime.Goexit()
+	}
 }
 
 // xhttp 缓存信息
@@ -130,6 +136,7 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 		}
 		return WriteDB(realData, category, coinType)
 	} else {
+		fmt.Println(err)
 		return []*redis.Z{}
 	}
 }

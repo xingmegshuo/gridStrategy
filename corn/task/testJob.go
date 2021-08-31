@@ -161,6 +161,7 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 		} else {
 			symbol = s["symbol"].(string)
 		}
+		fmt.Println(symbol)
 		if name := util.ToMySymbol(symbol); name != "none" {
 			var id interface{}
 			if coinType == 0 {
@@ -168,7 +169,6 @@ func WriteDB(realData []map[string]interface{}, category int, coinType int) (coi
 			} else {
 				model.UserDB.Raw("select id from db_task_coin where coin_type != ? and name = ? and category_id = ?", 0, name, category).Scan(&id)
 			}
-			fmt.Println(id)
 			if id != nil {
 				var (
 					raf       float64

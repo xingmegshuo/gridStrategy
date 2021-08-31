@@ -54,7 +54,7 @@ func CrawRun() {
 	go xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
 	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
 	go crawAccount()
-	// fmt.Println("结束")
+	fmt.Println("结束")
 	if time.Since(start) > time.Second*10 {
 		fmt.Println("超时退出", time.Since(start))
 		runtime.Goexit()

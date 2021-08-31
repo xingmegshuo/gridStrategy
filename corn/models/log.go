@@ -307,7 +307,7 @@ func ChangeAmount(money float64, u *map[string]interface{}, db *gorm.DB, b bool)
 	// fmt.Println(*u)
 	var grade = map[string]interface{}{}
 	// 修改业绩
-	if b {
+	if b && (*u)["profit_mine_amount"] != nil {
 		grade["profit_mine_amount"] = ParseStringFloat((*u)["profit_mine_amount"].(string)) + money
 	}
 	log.Println(fmt.Sprintf("业绩更新:%+v,用户:%v", grade, (*u)["id"]))

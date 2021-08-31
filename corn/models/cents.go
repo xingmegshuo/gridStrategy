@@ -13,7 +13,7 @@ import (
     "time"
 )
 
-func CentsUser(uId float64, money float64, from interface{}) {
+func CentsUser(money float64, uId float64, from interface{}) {
     t := GetAccount(uId)
     realMoney := money * 0.24 // 分红盈利
     log.Printf("用户%v;策略%v;盈利%v;分红%v;套餐余额%v", uId, from, money, realMoney, t)

@@ -55,8 +55,8 @@ func CrawRun() {
 	go xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
 	go crawAccount()
 	for {
-		if time.Since(start) > time.Second*10 {
-			fmt.Println("超时退出", time.Since(start))
+		if time.Since(start) > time.Second*30 {
+			// fmt.Println("超时退出", time.Since(start))
 			runtime.Goexit()
 		} else {
 			time.Sleep(time.Second)
@@ -108,10 +108,19 @@ func craw(coinCache []*redis.Z) {
 	start := time.Now()
 	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
+	fmt.Println("火币数据", len(coinCache))
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
+	fmt.Println("币安数据", len(coinCache))
+
 	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
+	fmt.Println("币安数据", len(coinCache))
+
 	coinCache = append(coinCache, xhttpCraw("https://dpi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
+	fmt.Println("币安数据", len(coinCache))
+
 	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
+	fmt.Println("币安数据", len(coinCache))
+
 	fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
 		fmt.Println("write coins db")

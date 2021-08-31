@@ -103,7 +103,7 @@ func craw(coinCache []*redis.Z) {
 	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
 	// fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
-		// fmt.Println("write db")
+		fmt.Println("write coins db")
 		model.Del("ZMYCOINS")
 		model.AddCache("ZMYCOINS", coinCache...)
 		coinCache = []*redis.Z{}

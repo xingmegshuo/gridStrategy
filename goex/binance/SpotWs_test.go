@@ -16,7 +16,7 @@ func createSpotWs() {
 	spotWs.DepthCallback(func(depth *goex.Depth) {
 		log.Println(depth)
 	})
-	spotWs.TickerCallback(func(ticker *goex.Ticker) {
+	spotWs.TickerCallback(func(ticker []*goex.Ticker) {
 		log.Println(ticker)
 	})
 }

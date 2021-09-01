@@ -20,13 +20,13 @@ type FuturesWsApi interface {
 
 type SpotWsApi interface {
 	DepthCallback(func(depth *Depth))
-	TickerCallback(func(ticker *Ticker))
+	TickerCallback(func(ticker []*Ticker))
 	TradeCallback(func(trade *Trade))
 	//OrderCallback(func(order *Order))
 	//AccountCallback(func(account *Account))
 
 	SubscribeDepth(pair CurrencyPair) error
-	SubscribeTicker(pair CurrencyPair) error
+	SubscribeTicker() error
 	SubscribeTrade(pair CurrencyPair) error
 
 	//Login() error

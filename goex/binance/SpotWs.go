@@ -2,13 +2,13 @@ package binance
 
 import (
 	json2 "encoding/json"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+	"zmyjobs/goex/internal/logger"
 
 	"zmyjobs/goex"
 )
@@ -38,7 +38,7 @@ type SpotWs struct {
 	reqId int
 
 	depthCallFn  func(depth *goex.Depth)
-	tickerCallFn func(ticker *goex.Ticker)
+	tickerCallFn func(ticker []*goex.Ticker)
 	tradeCallFn  func(trade *goex.Trade)
 }
 
@@ -66,7 +66,7 @@ func (s *SpotWs) DepthCallback(f func(depth *goex.Depth)) {
 	s.depthCallFn = f
 }
 
-func (s *SpotWs) TickerCallback(f func(ticker *goex.Ticker)) {
+func (s *SpotWs) TickerCallback(f func(ticker []*goex.Ticker)) {
 	s.tickerCallFn = f
 }
 
@@ -90,7 +90,7 @@ func (s *SpotWs) SubscribeDepth(pair goex.CurrencyPair) error {
 	})
 }
 
-func (s *SpotWs) SubscribeTicker(pair goex.CurrencyPair) error {
+func (s *SpotWs) SubscribeTicker() error {
 	defer func() {
 		s.reqId++
 	}()
@@ -99,7 +99,7 @@ func (s *SpotWs) SubscribeTicker(pair goex.CurrencyPair) error {
 
 	return s.c.Subscribe(req{
 		Method: "SUBSCRIBE",
-		Params: []string{pair.ToLower().ToSymbol("") + "@ticker"},
+		Params: []string{"!miniTicker@arr"},
 		Id:     s.reqId,
 	})
 }
@@ -168,26 +168,29 @@ func (s *SpotWs) depthHandle(data json2.RawMessage, pair goex.CurrencyPair) erro
 
 func (s *SpotWs) tickerHandle(data json2.RawMessage, pair goex.CurrencyPair) error {
 	var (
-		tickerData = make(map[string]interface{}, 4)
-		ticker     goex.Ticker
+		tickerDatas = []map[string]interface{}{}
+		tickerData  = map[string]interface{}{}
+
+		tickers []*goex.Ticker
+		ticker  *goex.Ticker
 	)
 
-	err := json2.Unmarshal(data, &tickerData)
+	err := json2.Unmarshal(data, &tickerDatas)
 	if err != nil {
 		logger.Errorf("unmarshal ticker response data error [%s] , data = %s", err, string(data))
 		return err
 	}
-
-	ticker.Pair = pair
-	ticker.Vol = goex.ToFloat64(tickerData["v"])
-	ticker.Last = goex.ToFloat64(tickerData["c"])
-	ticker.Sell = goex.ToFloat64(tickerData["a"])
-	ticker.Buy = goex.ToFloat64(tickerData["b"])
-	ticker.High = goex.ToFloat64(tickerData["h"])
-	ticker.Low = goex.ToFloat64(tickerData["l"])
-	ticker.Date = goex.ToUint64(tickerData["E"])
-
-	s.tickerCallFn(&ticker)
-
+	for _, tickerData = range tickerDatas {
+		ticker.Pair = pair
+		ticker.Vol = goex.ToFloat64(tickerData["v"])
+		ticker.Last = goex.ToFloat64(tickerData["c"])
+		ticker.Sell = goex.ToFloat64(tickerData["a"])
+		ticker.Buy = goex.ToFloat64(tickerData["b"])
+		ticker.High = goex.ToFloat64(tickerData["h"])
+		ticker.Low = goex.ToFloat64(tickerData["l"])
+		ticker.Date = goex.ToUint64(tickerData["E"])
+		tickers = append(tickers, ticker)
+	}
+	s.tickerCallFn(tickers)
 	return nil
 }

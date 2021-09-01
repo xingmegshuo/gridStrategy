@@ -99,7 +99,7 @@ func (s *SpotWs) SubscribeTicker() error {
 
 	return s.c.Subscribe(req{
 		Method: "SUBSCRIBE",
-		Params: []string{"!miniTicker@arr"},
+		Params: []string{"!miniticker@arr"},
 		Id:     s.reqId,
 	})
 }
@@ -176,6 +176,7 @@ func (s *SpotWs) tickerHandle(data json2.RawMessage, pair goex.CurrencyPair) err
 	)
 
 	err := json2.Unmarshal(data, &tickerDatas)
+	fmt.Println("hhhh")
 	if err != nil {
 		logger.Errorf("unmarshal ticker response data error [%s] , data = %s", err, string(data))
 		return err

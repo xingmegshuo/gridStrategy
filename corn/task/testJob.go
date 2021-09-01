@@ -49,7 +49,6 @@ func JobExit(job model.Job) {
 
 func CrawRun() {
 	fmt.Println("lll", BianSpot)
-
 	// start := time.Now()
 	// fmt.Println("开始jjjjj")
 	// coinCache := []*redis.Z{}
@@ -100,12 +99,12 @@ func xhttp(url string, name string) {
 func craw(coinCache []*redis.Z) {
 	start := time.Now()
 	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
-	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
-	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
+	// coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
+	// coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
 	// fmt.Println("币安数据", len(coinCache))
-	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
-	coinCache = append(coinCache, xhttpCraw("https://dapi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
-	coinCache = append(coinCache, xhttpCraw("https://fapi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
+	// coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
+	// coinCache = append(coinCache, xhttpCraw("https://dapi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
+	// coinCache = append(coinCache, xhttpCraw("https://fapi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
 
 	// fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {
@@ -121,8 +120,7 @@ func craw(coinCache []*redis.Z) {
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 	if category == 2 && coinType == 0 {
-		os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1123")
-
+		os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
 	}
 	resp, err := util.ProxyHttp("1123").Get(url)
 	if err == nil {
@@ -155,7 +153,7 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 				}
 				fmt.Println(len(realData), category, coinType, string(content))
 			} else {
-				fmt.Println(err)
+				fmt.Println(err, string(content))
 			}
 
 		}

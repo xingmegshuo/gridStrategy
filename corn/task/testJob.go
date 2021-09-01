@@ -133,7 +133,6 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 			if err == nil {
 				defer resp.Body.Close()
 				content, _ = ioutil.ReadAll(resp.Body)
-
 				if category == 1 {
 					_ = json.Unmarshal(content, &data)
 					byteData, _ := json.Marshal(data["data"])
@@ -247,15 +246,30 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 	if b && t == 0 {
 		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8})
 		value, err := c.Ex.GetAccount()
-		// fmt.Println(err)
+		// fmt.Println(err, value)
 		if err == nil {
 			for k, v := range value.SubAccounts {
+				// fmt.Println("hhh", v, k)
 				if v.Amount > 0 {
 					one := map[string]interface{}{}
 					one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
 					one["symbol"] = k.Symbol
+					if k.Symbol != "USDT" {
+						var id float64
+						model.UserDB.Raw("select id from db_task_coin where category_id = ? and en_name = ? and coin_type = 0 ", cate, k.Symbol).Scan(&id)
+						// fmt.Println(id)
+						if id > 0 {
+							one["money"] = model.GetPrice(model.ParseFloatString(id)).Mul(decimal.NewFromFloat(v.Amount)).Round(8)
+						} else {
+							one["money"] = 1
+						}
+					} else {
+						one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
+					}
+					// fmt.Println("00000", one)
 					data = append(data, one)
 				}
+
 			}
 		}
 		return

@@ -9,9 +9,9 @@
 package job
 
 import (
-	"fmt"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "fmt"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 )
 
 var (
@@ -33,10 +33,10 @@ func Begin() {
     // model.UserDB.Raw("select `name` from db_task_coin where coin_type = ? and category_id = ?", 0, 2).Scan(&names)
     // fmt.Println(names)
 
-    for _, v := range names {
-        fmt.Println("执行", v)
-        ws.SubscribeTicker()
-    }
+    // for _, v := range names {
+    fmt.Println("执行")
+    ws.SubscribeTicker()
+    // }
     for {
         ;
     }

@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"sync"
 	"time"
 	grid "zmyjobs/corn/grid"
@@ -28,6 +27,8 @@ import (
 var (
 	crawJob  = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 3s")
 	crawLock sync.Mutex
+	count    = 0
+	port     = "1123"
 )
 
 func InitJob(j model.Job, f func()) {
@@ -48,14 +49,17 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
-	fmt.Println("lll", BianSpot)
+	// fmt.Println("lll", BianSpot)
 	// start := time.Now()
 	// fmt.Println("开始jjjjj")
-	// coinCache := []*redis.Z{}
-	// craw(coinCache)
-	// xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
-	// xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-	// crawAccount()
+	coinCache := []*redis.Z{}
+	craw(coinCache)
+	if count%10 == 0 {
+		xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+		xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+		crawAccount()
+	}
+	count++
 }
 
 // xhttp 缓存信息
@@ -97,32 +101,31 @@ func xhttp(url string, name string) {
 
 // craw
 func craw(coinCache []*redis.Z) {
-	start := time.Now()
+	// start := time.Now()
 	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
-	// coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
-	// coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
+	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
+	if count%3 == 0 {
+		coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
+	}
 	// fmt.Println("币安数据", len(coinCache))
-	// coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
-	// coinCache = append(coinCache, xhttpCraw("https://dapi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
-	// coinCache = append(coinCache, xhttpCraw("https://fapi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
+	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
+	coinCache = append(coinCache, xhttpCraw("https://dapi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
+	coinCache = append(coinCache, xhttpCraw("https://fapi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
 
 	// fmt.Println(len(coinCache), coinCount, time.Since(start))
-	if len(coinCache) == coinCount {
-		// fmt.Println("write coins db")
-		model.Del("ZMYCOINS")
-		model.AddCache("ZMYCOINS", coinCache...)
-		coinCache = []*redis.Z{}
-	} else {
-		fmt.Println(len(coinCache), coinCount, time.Since(start), "失败")
-	}
+	// if len(coinCache) == coinCount {
+	// fmt.Println("write coins db")
+	model.Del("ZMYCOINS")
+	model.AddCache("ZMYCOINS", coinCache...)
+	coinCache = []*redis.Z{}
+	// } else {
+	// fmt.Println(len(coinCache), coinCount, time.Since(start), "失败")
+	// }
 }
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
-	if category == 2 && coinType == 0 {
-		os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
-	}
-	resp, err := util.ProxyHttp("1123").Get(url)
+	resp, err := util.ProxyHttp(port).Get(url)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)
@@ -138,23 +141,28 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 		}
 		// fmt.Println(string(content))
 		if len(realData) == 0 {
-			fmt.Println(len(realData), category, coinType, string(content))
-			resp, err := util.ProxyHttp("1124").Get(url)
-			if err == nil {
-				defer resp.Body.Close()
-				content, _ = ioutil.ReadAll(resp.Body)
-				if category == 1 {
-					_ = json.Unmarshal(content, &data)
-					byteData, _ := json.Marshal(data["data"])
-					_ = json.Unmarshal(byteData, &realData)
-				}
-				if category == 2 || category == 5 {
-					_ = json.Unmarshal(content, &realData)
-				}
-				fmt.Println(len(realData), category, coinType, string(content))
+			if port == "1123" {
+				port = "1124"
 			} else {
-				fmt.Println(err, string(content))
+				port = "1123"
 			}
+			// fmt.Println(len(realData), category, coinType, string(content))
+			// resp, err := util.ProxyHttp("1124").Get(url)
+			// if err == nil {
+			// 	defer resp.Body.Close()
+			// 	content, _ = ioutil.ReadAll(resp.Body)
+			// 	if category == 1 {
+			// 		_ = json.Unmarshal(content, &data)
+			// 		byteData, _ := json.Marshal(data["data"])
+			// 		_ = json.Unmarshal(byteData, &realData)
+			// 	}
+			// 	if category == 2 || category == 5 {
+			// 		_ = json.Unmarshal(content, &realData)
+			// 	}
+			// 	fmt.Println(len(realData), category, coinType, string(content))
+			// } else {
+			// 	fmt.Println(err, string(content))
+			// }
 
 		}
 		return WriteDB(realData, category, coinType)

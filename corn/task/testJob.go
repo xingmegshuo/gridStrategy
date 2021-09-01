@@ -131,8 +131,7 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 		}
 		// fmt.Println(string(content))
 		if len(realData) == 0 {
-			fmt.Println(len(realData), category, coinType)
-
+			fmt.Println(len(realData), category, coinType, string(content))
 			resp, err := util.ProxyHttp("1124").Get(url)
 			if err == nil {
 				defer resp.Body.Close()
@@ -145,6 +144,8 @@ func xhttpCraw(url string, category int, coinType int) []*redis.Z {
 				if category == 2 || category == 5 {
 					_ = json.Unmarshal(content, &realData)
 				}
+			} else {
+				fmt.Println(err)
 			}
 
 		}

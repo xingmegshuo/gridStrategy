@@ -78,7 +78,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
             sameLevel := float64(0)
             for {
                 var myMoney float64
-                if u["inviter_id"].(uint32) > 0 {
+                if u["inviter_id"].(uint32) > 0 && realMoney > 0 {
                     // time.Sleep(time.Second)
                     tx.Raw("select `id`,`team_amount`,`team_min_amount`,`level`,`inviter_id`,`is_meal` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
                     // ChangeAmount(money, &u, tx, true)
@@ -92,6 +92,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
                         FromCustomerId: uId,
                         CustomerId:     float64(u["id"].(int32)),
                         BeforeAmount:   GetAccountCach(float64(u["id"].(int32))),
+                        CreateTime:     time.Now().Unix(),
                     }
 
                     if thisLevel >= baseLevel && realMoney > 0 {
@@ -167,13 +168,12 @@ func CentsUser(money float64, uId float64, from interface{}) {
                             }
                             f = false
                         }
-
-                        thisLog.Amount = myMoney
-                        thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
-                        log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v;之前账户余额%v;现在账户余额%v", myMoney, u["id"], thisLevel, thisLog.BeforeAmount, thisLog.AfterAmount))
-                        thisLog.Write(UserDB)
-                        tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
                         if myMoney > 0 {
+                            thisLog.Amount = myMoney
+                            thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
+                            log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v;之前账户余额%v;现在账户余额%v", myMoney, u["id"], thisLevel, thisLog.BeforeAmount, thisLog.AfterAmount))
+                            thisLog.Write(UserDB)
+                            tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
                             baseLevel = thisLevel
                             realMoney -= myMoney
                         }

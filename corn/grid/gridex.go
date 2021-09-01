@@ -95,6 +95,7 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
 		log.Printf("账户余额: %s, 币种:  %s,orderFor %d", moneyHeld, coinHeld, t.u.ObjectId)
 		if moneyNeed.Cmp(moneyHeld) == 1 {
 			return errors.New("no enough money")
+			// return nil
 		}
 
 	} else {
@@ -103,9 +104,11 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
 			log.Printf("账户余额: %s, 币种:  %s,orderFor %d", moneyHeld, coinHeld, t.u.ObjectId)
 			if moneyNeed.Cmp(moneyHeld) == 1 {
 				return errors.New("no enough money")
+				// return nil
 			}
 		} else {
 			return errors.New("account or api error")
+			// return nil
 		}
 	}
 	return nil
@@ -324,6 +327,9 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 		my = my.Add(b.AmountSell)
 	}
 	log.Printf("用户%v投入资金:%v;清仓获得资金:%v", t.u.ObjectId, pay, my)
+	if t.arg.Crile == 4 {
+		return pay.Sub(my)
+	}
 	return my.Sub(pay)
 }
 

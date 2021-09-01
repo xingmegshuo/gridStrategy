@@ -186,18 +186,20 @@ func ParseStrategy(u User) *Args {
 
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
 	if data["allSell"].(float64) == 2 {
-		if UpdateStatus(u.ID) == 10 {
-			log.Println("发送清仓", u.ObjectId)
-			OneSell(u.ObjectId)
-			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
-		}
+		arg.AllSell = true
+		// if UpdateStatus(u.ID) == 10 {
+		// 	log.Println("发送清仓", u.ObjectId)
+		// 	OneSell(u.ObjectId)
+		// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
+		// }
 	}
 	if data["one_buy"].(float64) == 2 {
-		if UpdateStatus(u.ID) == 10 {
-			log.Println("发送补仓", u.ObjectId)
-			OneBuy(u.ObjectId)
-			OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
-		}
+		arg.OneBuy = true
+		// if UpdateStatus(u.ID) == 10 {
+		// 	log.Println("发送补仓", u.ObjectId)
+		// 	OneBuy(u.ObjectId)
+		// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
+		// }
 	}
 	if data["add_type"] != nil && data["add_type"].(float64) == 1 {
 		arg.IsAdd = true
@@ -211,9 +213,12 @@ func ParseStrategy(u User) *Args {
 	if data["double"].(float64) == 2 {
 		arg.FirstDouble = true
 	}
-	if data["stop_buy"].(float64) == 2 && UpdateStatus(u.ID) == 10 {
-		log.Println("发送停止买入", u.ObjectId)
-		OperateCh <- Operate{Id: float64(u.ObjectId), Op: 3}
+	if data["stop_buy"].(float64) == 2 {
+		arg.StopBuy = true
+		// log.Println("发送停止买入", u.ObjectId)
+		// OperateCh <- Operate{Id: float64(u.ObjectId), Op: 3}
+	} else {
+		arg.StopBuy = false
 	}
 	if data["order_type"].(float64) == 2 {
 		arg.IsHand = true

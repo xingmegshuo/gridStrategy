@@ -181,8 +181,12 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 	)
 	for {
 		count++
-		time.Sleep(time.Millisecond * 3) // 间隔0.5秒查询
+		time.Sleep(time.Second * 3) // 间隔0.5秒查询
 		price := model.GetPrice(model.ParseFloatString(t.arg.CoinId.(float64)))
+		var u model.User
+		model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
+		t.arg = model.ParseStrategy(u)
+
 		// price, err := t.goex.GetPrice()
 		// if err != nil {
 		// errorCount++
@@ -218,27 +222,28 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		case <-ctx.Done():
 			log.Println("close get price ", t.u.ObjectId)
 			runtime.Goexit()
-		case op := <-model.OperateCh:
-			if op.Id == float64(t.u.ObjectId) {
-				if op.Op == 1 {
-					t.arg.AllSell = true
-					log.Printf("用户%d清仓操作----", t.u.ObjectId)
-				}
-				if op.Op == 2 {
-					t.arg.OneBuy = true
-					log.Printf("用户%d一键补仓----", t.u.ObjectId)
-				}
-				if op.Op == 3 {
-					t.arg.StopBuy = true
-					log.Printf("用户%d停止买入----", t.u.ObjectId)
-				}
-				if op.Op == 4 {
-					if t.arg.StopBuy {
-						t.arg.StopBuy = false
-						log.Printf("用户%d恢复买入----", t.u.ObjectId)
-					}
-				}
-			}
+		// case op := <-model.OperateCh:
+		// 	log.Printf("管道数据:%+v,是否相等%v,协程中的用户%v", op, op.Id == float64(t.u.ObjectId), t.u.ObjectId)
+		// 	if op.Id == float64(t.u.ObjectId) {
+		// 		if op.Op == 1 {
+		// 			t.arg.AllSell = true
+		// 			log.Printf("用户%d接收到清仓操作----", t.u.ObjectId)
+		// 		}
+		// 		if op.Op == 2 {
+		// 			t.arg.OneBuy = true
+		// 			log.Printf("用户%d接收到一键补仓----", t.u.ObjectId)
+		// 		}
+		// 		if op.Op == 3 {
+		// 			t.arg.StopBuy = true
+		// 			log.Printf("用户%d接收到停止买入----", t.u.ObjectId)
+		// 		}
+		// 		if op.Op == 4 {
+		// 			if t.arg.StopBuy {
+		// 				t.arg.StopBuy = false
+		// 				log.Printf("用户%d接收到恢复买入----", t.u.ObjectId)
+		// 			}
+		// 		}
+		// 	}
 		default:
 			//  第一单 进场时机无所谓
 			if t.base == 0 && !t.arg.StopBuy {
@@ -316,7 +321,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					}
 				}
 				if t.arg.AllSell {
-					log.Printf("%v用户智乘方清仓", t.u.ObjectId)
+					log.Printf("%v用户智乘方清仓-----实际操作", t.u.ObjectId)
 					t.AllSellMy()
 					err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
 					if err != nil {
@@ -333,6 +338,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					} else {
 						t.Tupdate()
 					}
+					time.Sleep(time.Second * 3)
 					t.automatic = true
 					t.over = true
 				}
@@ -355,7 +361,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					t.over = true
 				}
 				if t.arg.AllSell {
-					log.Printf("%v用户智多元清仓", t.u.ObjectId)
+					log.Printf("%v用户智多元清仓=---实际操作", t.u.ObjectId)
 					t.AllSellMy()
 					for {
 						for _, g := range t.RealGrids {
@@ -375,22 +381,22 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 								t.Tupdate()
 							}
 						}
-						time.Sleep(time.Second)
 						if t.CountHold().Cmp(decimal.Decimal{}) < 1 {
 							break
 						} else {
 							continue
 						}
 					}
+					time.Sleep(time.Second * 3)
 					t.automatic = true
 					t.over = true
 				}
 			}
 			// 立即买入
 			if t.arg.OneBuy && t.base < len(t.grids) {
-				log.Printf("%v用户一键补仓", t.u.ObjectId)
+				log.Printf("%v用户一键补仓----实际操作", t.u.ObjectId)
 				t.arg.OneBuy = false
-				// model.OneBuy(t.u.ObjectId)
+				model.OneBuy(t.u.ObjectId)
 				err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
 				if err != nil {
 					errorCount++
@@ -410,6 +416,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					t.base = t.base + 1
 					t.Tupdate()
 				}
+				time.Sleep(time.Second * 3)
 			}
 		}
 		if t.over {
@@ -440,11 +447,11 @@ func (t *ExTrader) Tupdate() {
 
 // AllSellMy 平仓
 func (t *ExTrader) AllSellMy() {
+	model.OneSell(t.u.ObjectId)
 	log.Println("一键平仓：", t.u.ObjectId)
-	t.arg.AllSell = false
-	t.u.Arg = model.ToStringJson(&t.arg)
-	t.u.Update()
-	// model.OneSell(t.u.ObjectId)
+	// t.arg.AllSell = false
+	// t.u.Arg = model.ToStringJson(&t.arg)
+	// t.u.Update()
 }
 
 func (t *ExTrader) ToPrecision(p decimal.Decimal) decimal.Decimal {

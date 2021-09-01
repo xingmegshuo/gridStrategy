@@ -137,12 +137,13 @@ func NewUser() {
 				}
 			}
 			if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
-				old := ParseStrategy(u)
+				// old := ParseStrategy(u)
 				u.Strategy = parseInput(order)
-				if old.StopBuy {
-					log.Println("发送恢复买入", u.ObjectId)
-					OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
-				}
+				// log.Printf("旧状态;买入状态:%v;补仓状态:%v;清仓状态:%v", old.StopBuy, old.AllSell, old.OneBuy)
+				// if old.StopBuy {
+				// 	log.Println("发送恢复买入", u.ObjectId)
+				// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
+				// }
 				u = UpdateUser(u)
 				u.Update()
 			}

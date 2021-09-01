@@ -98,12 +98,9 @@ func craw(coinCache []*redis.Z) {
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
 	// fmt.Println("币安数据", len(coinCache))
-
 	coinCache = append(coinCache, xhttpCraw("https://www.okex.com/api/spot/v3/instruments/ticker", 5, 0)...)
-
-	coinCache = append(coinCache, xhttpCraw("https://dpi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
-
-	coinCache = append(coinCache, xhttpCraw("https://fpi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
+	coinCache = append(coinCache, xhttpCraw("https://dapi.binance.com/dapi/v1/ticker/24hr", 2, 2)...)
+	coinCache = append(coinCache, xhttpCraw("https://fapi.binance.com/fapi/v1/ticker/24hr", 2, 2)...)
 
 	// fmt.Println(len(coinCache), coinCount, time.Since(start))
 	if len(coinCache) == coinCount {

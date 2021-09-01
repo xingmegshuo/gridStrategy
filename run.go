@@ -58,7 +58,9 @@ func main() {
 	signal.Notify(exitChan, os.Interrupt, syscall.SIGTERM)
 	go exitHandle()
 	go xhttp.RunServer()
-
+	for i := 0; i < 1; i++ {
+		go job.Begin()
+	}
 	job.Init()
 	job.C.Start()
 	defer job.C.Stop()

@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 	grid "zmyjobs/corn/grid"
@@ -25,11 +26,12 @@ import (
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
 var (
-	crawJob  = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 5s")
+	crawJob  = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 3s")
 	crawLock sync.Mutex
 )
 
 func InitJob(j model.Job, f func()) {
+
 	err := C.AddFunc(j.Spec, f)
 	if err == nil {
 		j.Status = model.ConfigMap["jobStatus1"]
@@ -40,18 +42,21 @@ func InitJob(j model.Job, f func()) {
 
 func JobExit(job model.Job) {
 	job.Status = model.ConfigMap["jobStatus2"]
+	// for i := 0; i < 1; i++ {
 	job.UpdateJob()
 	Wg.Done()
 }
 
 func CrawRun() {
+	fmt.Println("lll", BianSpot)
+
 	// start := time.Now()
 	// fmt.Println("开始jjjjj")
-	coinCache := []*redis.Z{}
-	craw(coinCache)
-	xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
-	xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-	crawAccount()
+	// coinCache := []*redis.Z{}
+	// craw(coinCache)
+	// xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+	// xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+	// crawAccount()
 }
 
 // xhttp 缓存信息
@@ -115,6 +120,10 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
+	if category == 2 && coinType == 0 {
+		os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1123")
+
+	}
 	resp, err := util.ProxyHttp("1123").Get(url)
 	if err == nil {
 		defer resp.Body.Close()

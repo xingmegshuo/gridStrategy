@@ -25,7 +25,7 @@ import (
 
 //var job = model.NewJob(model.ConfigMap["jobType1"],"test","@every 5s")
 var (
-	crawJob  = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 3s")
+	crawJob  = model.NewJob(model.ConfigMap["jobType1"], "爬取基础数据", "@every 5s")
 	crawLock sync.Mutex
 )
 
@@ -115,7 +115,7 @@ func craw(coinCache []*redis.Z) {
 
 // xhttpCraw 不缓存只更新数据   抓取最新的币种价格行情
 func xhttpCraw(url string, category int, coinType int) []*redis.Z {
-	resp, err := util.ProxyHttp("1124").Get(url)
+	resp, err := util.ProxyHttp("1123").Get(url)
 	if err == nil {
 		defer resp.Body.Close()
 		content, _ := ioutil.ReadAll(resp.Body)

@@ -93,7 +93,7 @@ func xhttp(url string, name string) {
 
 // craw
 func craw(coinCache []*redis.Z) {
-	// start := time.Now()
+	start := time.Now()
 	model.UserDB.Raw("select count(*) from db_task_coin").Scan(&coinCount)
 	coinCache = append(coinCache, xhttpCraw("https://api.huobi.pro/market/tickers", 1, 0)...)
 	coinCache = append(coinCache, xhttpCraw("https://api.binance.com/api/v3/ticker/24hr", 2, 0)...)
@@ -108,6 +108,8 @@ func craw(coinCache []*redis.Z) {
 		model.Del("ZMYCOINS")
 		model.AddCache("ZMYCOINS", coinCache...)
 		coinCache = []*redis.Z{}
+	} else {
+		fmt.Println(len(coinCache), coinCount, time.Since(start), "失败")
 	}
 }
 

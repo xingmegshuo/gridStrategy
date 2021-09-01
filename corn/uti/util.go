@@ -86,7 +86,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
 
 // ProxySock socks5代理
 func ProxySock() *builder.APIBuilder {
-    cli := builder.NewCustomAPIBuilder(ProxyHttp("1123"))
+    cli := builder.NewCustomAPIBuilder(ProxyHttp("1124"))
     return cli
 }
 

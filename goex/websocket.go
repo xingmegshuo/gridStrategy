@@ -3,13 +3,13 @@ package goex
 import (
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex/internal/logger"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
 	"time"
+	. "zmyjobs/goex/internal/logger"
 
 	"github.com/gorilla/websocket"
 )
@@ -57,6 +57,7 @@ func NewWsBuilder() *WsBuilder {
 	return &WsBuilder{&WsConfig{
 		ReqHeaders:        make(map[string][]string, 1),
 		reconnectInterval: time.Second * 10,
+		readDeadLineTime:  time.Second * 5,
 	}}
 }
 

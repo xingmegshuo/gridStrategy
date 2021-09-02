@@ -9,10 +9,10 @@
 package job
 
 import (
-	"testing"
+    "testing"
 )
 
 func TestCraw(t *testing.T) {
-    crawAccount()
+    Begin()
 
 }

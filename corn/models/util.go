@@ -325,9 +325,6 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 		for _, data := range v {
 			filter := data["filters"].([]interface{})
 			for _, v := range filter {
-				// if v["filterType"].(string) == "PRICE_FILTER" {
-				// 	v["minPrice"].(float64)
-				// }
 				d := v.(map[string]interface{})
 				if d["filterType"].(string) == "LOT_SIZE" {
 					c.MinAmount, _ = decimal.NewFromString(d["minQty"].(string))

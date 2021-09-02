@@ -59,3 +59,11 @@ func Del(name string) {
 func ListCacheGet(name string, op *redis.ZRangeBy) *redis.StringSliceCmd {
 	return CacheDB.ZRangeByScore(ctx, name, op)
 }
+
+func ListCacheRm(name string, min string, max string) {
+	CacheDB.ZRemRangeByScore(ctx, name, min, max)
+}
+
+func ListCacheAddOne(name string, data *redis.Z) {
+	CacheDB.ZAdd(ctx, name, data)
+}

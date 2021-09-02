@@ -10,21 +10,28 @@ package job
 
 import (
     "fmt"
+    "os"
+    "time"
     util "zmyjobs/corn/uti"
     "zmyjobs/goex"
 )
 
 var (
-    BianSpot map[string]*goex.Ticker
+    BianSpot = map[string]*goex.Ticker{}
     names    []map[string]interface{}
     ws       goex.SpotWsApi
 )
 
 func NewBIANWsApi() {
+    os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
     ws, _ = util.ProxySock().BuildSpotWs(goex.BINANCE)
     ws.TickerCallback(func(ticker []*goex.Ticker) {
-        fmt.Println(ticker)
-        // BianSpot[ticker.Pair.ToSymbol("")] = ticker
+        // fmt.Println(ticker)
+        time.Sleep(time.Second * 2)
+        BianSpot = map[string]*goex.Ticker{}
+        for _, t := range ticker {
+            BianSpot[t.Pair.ToSymbol("")] = t
+        }
     })
 }
 
@@ -38,6 +45,6 @@ func Begin() {
     ws.SubscribeTicker()
     // }
     for {
-        ;
+
     }
 }

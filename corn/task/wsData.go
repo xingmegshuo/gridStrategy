@@ -9,19 +9,19 @@
 package job
 
 import (
-    "fmt"
-    "os"
-    "runtime"
-    "time"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"fmt"
+	"os"
+	"runtime"
+	"time"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 )
 
 var (
     BianSpot = map[string]*goex.Ticker{}
     names    []map[string]interface{}
     ws       goex.SpotWsApi
-    Stop     chan int
+    Stop     = make(chan int)
 )
 
 func NewBIANWsApi() {
@@ -39,19 +39,16 @@ func NewBIANWsApi() {
 
 func Begin() {
     NewBIANWsApi()
-    // model.UserDB.Raw("select `name` from db_task_coin where coin_type = ? and category_id = ?", 0, 2).Scan(&names)
-    // fmt.Println(names)
-
-    // for _, v := range names {
-    fmt.Println("执行")
+    fmt.Println("开启")
     ws.SubscribeTicker()
-    // }
     for {
         select {
         case <-Stop:
+            fmt.Println("关闭webSocket")
             runtime.Goexit()
         default:
-            time.Sleep(time.Second * 3)
+            fmt.Println("hhh")
+            time.Sleep(time.Second)
         }
     }
 }

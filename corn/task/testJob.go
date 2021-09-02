@@ -32,6 +32,7 @@ var (
 	count    = 0
 	port     = "1124"
 	readWs   = true
+	OpenWs   = false
 )
 
 func InitJob(j model.Job, f func()) {
@@ -217,14 +218,14 @@ func CrawBianSpot() {
 					}
 				}
 			} else {
-				go Begin()
 				readWs = true
 			}
 		} else {
-			go Begin()
 			readWs = true
 		}
-	} else {
+	} else if !OpenWs {
+		go Begin()
+	} else if OpenWs {
 		wsCraw()
 	}
 }

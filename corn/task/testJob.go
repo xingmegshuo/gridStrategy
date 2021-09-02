@@ -69,6 +69,8 @@ func CrawRun() {
 		if time.Since(start) > time.Second*10 {
 			// fmt.Println("超时退出")
 			runtime.Goexit()
+		} else {
+			time.Sleep(time.Second)
 		}
 	}
 }

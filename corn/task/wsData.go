@@ -9,12 +9,12 @@
 package job
 
 import (
-	"fmt"
-	"os"
-	"runtime"
-	"time"
-	util "zmyjobs/corn/uti"
-	"zmyjobs/goex"
+    "fmt"
+    "os"
+    "runtime"
+    "time"
+    util "zmyjobs/corn/uti"
+    "zmyjobs/goex"
 )
 
 var (
@@ -47,7 +47,7 @@ func Begin() {
             fmt.Println("关闭webSocket")
             runtime.Goexit()
         default:
-            fmt.Println("hhh")
+            // fmt.Println("hhh")
             time.Sleep(time.Second)
         }
     }

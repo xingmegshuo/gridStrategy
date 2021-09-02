@@ -11,6 +11,7 @@ package job
 import (
     "fmt"
     "os"
+    "runtime"
     "time"
     util "zmyjobs/corn/uti"
     "zmyjobs/goex"
@@ -20,6 +21,7 @@ var (
     BianSpot = map[string]*goex.Ticker{}
     names    []map[string]interface{}
     ws       goex.SpotWsApi
+    Stop     chan int
 )
 
 func NewBIANWsApi() {
@@ -45,6 +47,11 @@ func Begin() {
     ws.SubscribeTicker()
     // }
     for {
-
+        select {
+        case <-Stop:
+            runtime.Goexit()
+        default:
+            time.Sleep(time.Second * 3)
+        }
     }
 }

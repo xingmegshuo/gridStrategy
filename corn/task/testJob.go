@@ -227,6 +227,7 @@ func CrawBianSpot() {
 		}
 	} else if !OpenWs {
 		go Begin()
+		OpenWs = true
 	} else if OpenWs {
 		wsCraw()
 	}

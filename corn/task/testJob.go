@@ -31,7 +31,7 @@ var (
 	crawLock sync.Mutex
 	count    = 0
 	port     = "1124"
-	readWs   = false
+	readWs   = true
 )
 
 func InitJob(j model.Job, f func()) {

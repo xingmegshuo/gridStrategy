@@ -114,10 +114,10 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isAuto bool) {
+func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isAuto bool, isHand bool) {
 	old := GetOldAmount(orderId)
 	var data = map[string]interface{}{}
-	if isAuto {
+	if isAuto && !isHand {
 		data["status"] = 0
 	} else {
 		data["status"] = 1
@@ -367,5 +367,5 @@ func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, o
 	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
 
 	m, _ := money.(decimal.Decimal).Float64()
-	RunOver(member, m, order, id, isAuto)
+	RunOver(member, m, order, id, isAuto, isHand)
 }

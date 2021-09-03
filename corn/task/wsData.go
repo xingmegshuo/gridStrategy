@@ -42,6 +42,7 @@ func NewBIANWsApi() {
 func Begin() {
     NewBIANWsApi()
     start := time.Now()
+    send := false
     fmt.Println("开启websocket")
     ws.SubscribeTicker()
     for {
@@ -51,9 +52,12 @@ func Begin() {
             runtime.Goexit()
         default:
             time.Sleep(time.Second)
-            if time.Since(start) > time.Minute {
-                go Begin()
-                Stop <- 1
+            if time.Since(start) > time.Minute && !send {
+                for i := 0; i < 1; i++ {
+                    go Begin()
+                    send = true
+                    Stop <- 1
+                }
             }
         }
     }

@@ -68,7 +68,7 @@ func NewUser() {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
 			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
-			if b {
+			if b && order["status"].(float64) < 3 {
 				// 数据库查找存在与否
 				// log.Println("新建用户:", order["id"])
 				u = User{
@@ -138,17 +138,11 @@ func NewUser() {
 			if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
 				// old := ParseStrategy(u)
 				u.Strategy = parseInput(order)
-				// log.Printf("旧状态;买入状态:%v;补仓状态:%v;清仓状态:%v", old.StopBuy, old.AllSell, old.OneBuy)
-				// if old.StopBuy {
-				// 	log.Println("发送恢复买入", u.ObjectId)
-				// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
-				// }
 				u = UpdateUser(u)
 				u.Update()
 			}
 		}
 
-	
 		mutex.Unlock()
 	}
 }

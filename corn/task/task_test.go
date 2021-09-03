@@ -9,18 +9,13 @@
 package job
 
 import (
-	"fmt"
-	"testing"
-	"time"
+    "fmt"
+    "testing"
+    "time"
 )
 
 func TestCraw(t *testing.T) {
-    // go func() {
-    //     for {
-    //         s := <-Stop
-    //         fmt.Println("数据", s)
-    //     }
-    // }()
+
     go Begin()
     go func() {
         for {
@@ -31,7 +26,7 @@ func TestCraw(t *testing.T) {
         }
     }()
     for {
-     ;
+        ;
     }
 
 }

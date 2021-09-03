@@ -43,32 +43,33 @@ type CategorySymbols struct {
 // Args 策略输入参数
 type Args struct {
 	CoinId       interface{}
-	FirstBuy     float64 // 首单
-	FirstDouble  bool    // 首单加倍
-	Price        float64 // 价格
-	IsChange     bool    // 是否为固定加仓金额
-	Rate         float64 // 补仓比例
-	MinBuy       float64 // 最少买入
-	IsAdd        bool    // 是否固定增幅
-	AddRate      float64 // 补仓增幅
-	NeedMoney    float64 // 需要NeedMoney
-	MinPrice     float64 // 最小价格
-	Callback     float64 // 回降
-	Reduce       float64 // 回调
-	Stop         float64 // 止盈
-	AddMoney     float64 // 补仓金额
-	Decline      float64 // 跌幅比例
-	Out          bool    // 出局方式
-	OrderType    int64   // 1 限价 2 市价
-	IsLimit      bool    // 是否限高
-	LimitHigh    float64 // 限高价格
-	StrategyType int64   // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市
-	Crile        float64 // 是否循环
-	OneBuy       bool    // 一键补仓
-	AllSell      bool    // 一键平仓
-	StopBuy      bool    // 停止买入
-	IsHand       bool    // 手动参数 false 自动参数true
-	Level        interface{}
+	FirstBuy     float64     // 首单
+	FirstDouble  bool        // 首单加倍
+	Price        float64     // 价格
+	IsChange     bool        // 是否为固定加仓金额
+	Rate         float64     // 补仓比例
+	MinBuy       float64     // 最少买入
+	IsAdd        bool        // 是否固定增幅
+	AddRate      float64     // 补仓增幅
+	NeedMoney    float64     // 需要NeedMoney
+	MinPrice     float64     // 最小价格
+	Callback     float64     // 回降
+	Reduce       float64     // 回调
+	Stop         float64     // 止盈
+	AddMoney     float64     // 补仓金额
+	Decline      float64     // 跌幅比例
+	Out          bool        // 出局方式
+	OrderType    int64       // 1 限价 2 市价
+	IsLimit      bool        // 是否限高
+	LimitHigh    float64     // 限高价格
+	StrategyType int64       // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市
+	Crile        float64     // 是否循环
+	OneBuy       bool        // 一键补仓
+	AllSell      bool        // 一键平仓
+	StopBuy      bool        // 停止买入
+	IsHand       bool        // 手动参数 false 自动参数true
+	Level        interface{} // 杠杆倍数
+	StopFlow     bool        // 停止跟随
 }
 
 // 策略预览内容

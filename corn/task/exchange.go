@@ -51,13 +51,13 @@ func RunWG() {
 						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)
 						go RunStrategy(u)
 					}
-				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 1 {
+				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 2 {
 					log.Println("等待重新开始", u.ObjectId)
 					u.IsRun = 99
 					u.Base = 0
 					u.RunCount++
 					u.Update()
-					time.Sleep(time.Second * 5)
+					time.Sleep(time.Second * 3)
 					u.IsRun = -1
 					model.AddRun(u.ObjectId, u.RunCount)
 					u = model.UpdateUser(u)

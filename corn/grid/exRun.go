@@ -67,7 +67,7 @@ func DelEx(u model.User) {
 				model.DB.Exec("update users set base = 0 where object_id = ?", g.u.ObjectId)
 				log.Println("实际的买入信息清空,用户单数清空", g.u.ObjectId)
 				model.LogStrategy(g.arg.CoinId, g.goex.symbol.Category, g.u.Name, g.u.ObjectId,
-					g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, g.automatic)
+					g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, g.automatic, g.arg.StopFlow)
 				log.Println("任务结束,删除平仓或者暂停平仓", g.u.ObjectId)
 			}
 		}
@@ -81,7 +81,15 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 	var realGrid []model.Grid
 	_ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
 	symbol := model.StringSymobol(u.Symbol)
-	symbol.Lever = arg.Level.(float64)
+	if arg.Level == nil {
+		symbol.Lever = 10
+	} else {
+		if arg.Level.(float64) > 0 {
+			symbol.Lever = arg.Level.(float64)
+		} else {
+			symbol.Lever = 10
+		}
+	}
 	ex = &ExTrader{
 		grids:     *grid,
 		arg:       &arg,
@@ -90,13 +98,13 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 	}
 	if u.Future == 2 || u.Future == 4 {
 		if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) {
-			log.Println("修改杠杆倍数出错")
+			log.Println("修改杠杆倍数出错", symbol.Lever)
 			return nil
 		}
 	}
 	if u.Future == 1 || u.Future == 3 {
 		if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_USDT_CONTRACT) {
-			log.Println("修改杠杆倍数出错")
+			log.Println("修改杠杆倍数出错", symbol.Lever)
 			return nil
 		}
 	}
@@ -156,8 +164,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
 							log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
 							model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
-								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, t.automatic)
-							log.Println("任务结束", t.u.ObjectId)
+								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, t.automatic, t.arg.StopFlow)
+							log.Printf("%v任务结束;是否用户主动结束:%v;策略类型:%v", t.u.ObjectId, t.automatic, t.arg.IsHand)
 						}
 					}
 				} else {

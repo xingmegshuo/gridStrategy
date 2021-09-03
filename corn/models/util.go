@@ -185,21 +185,15 @@ func ParseStrategy(u User) *Args {
 	arg.Crile = data["frequency"].(float64)
 
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
-	if data["allSell"].(float64) == 2 {
+	if data["allSell"].(float64) >= 2 {
 		arg.AllSell = true
-		// if UpdateStatus(u.ID) == 10 {
-		// 	log.Println("发送清仓", u.ObjectId)
-		// 	OneSell(u.ObjectId)
-		// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
-		// }
+	}
+	if data["allSell"].(float64) == 3 {
+		// arg.AllSell = true
+		arg.StopFlow = true
 	}
 	if data["one_buy"].(float64) == 2 {
 		arg.OneBuy = true
-		// if UpdateStatus(u.ID) == 10 {
-		// 	log.Println("发送补仓", u.ObjectId)
-		// 	OneBuy(u.ObjectId)
-		// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
-		// }
 	}
 	if data["add_type"] != nil && data["add_type"].(float64) == 1 {
 		arg.IsAdd = true
@@ -215,8 +209,6 @@ func ParseStrategy(u User) *Args {
 	}
 	if data["stop_buy"].(float64) == 2 {
 		arg.StopBuy = true
-		// log.Println("发送停止买入", u.ObjectId)
-		// OperateCh <- Operate{Id: float64(u.ObjectId), Op: 3}
 	} else {
 		arg.StopBuy = false
 	}
@@ -332,9 +324,10 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				if d["filterType"] != nil && d["filterType"].(string) == "MIN_NOTIONAL" {
 					c.MinTotal, _ = decimal.NewFromString(d["minNotional"].(string))
 				}
+				c.PricePrecision = int32(floatLen(d["minNotional"].(string)))
+				c.AmountPrecision = int32(floatLen(d["minQty"].(string)))
 			}
-			c.PricePrecision = 8
-			c.AmountPrecision = 8
+
 			// c.MinAmount = decimal.NewFromFloat(0)
 			// c.MinTotal = decimal.NewFromFloat(10)
 			c.BaseCurrency = data["baseAsset"].(string)
@@ -396,4 +389,18 @@ func CachePrice(b string) string {
 	}
 	json.Unmarshal([]byte(data[0]), &res)
 	return res["price_usd"]
+}
+
+// floatLen 计算精度
+func floatLen(d string) int {
+	tmp := strings.Split(d, ".")
+	if len(tmp) <= 1 {
+		return 0
+	}
+	for i := len(tmp[1]); i > 0; i-- {
+		if tmp[1][i-1] != '0' {
+			return i
+		}
+	}
+	return len(tmp[1])
 }

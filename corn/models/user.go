@@ -91,7 +91,6 @@ func NewUser() {
 					Future: int(order["coin_type"].(float64)),
 				}
 				u = UpdateUser(u)
-
 				result = DB.Exec("select id from users where object_id = ?", order["id"])
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 					DB.Create(&u)
@@ -148,6 +147,8 @@ func NewUser() {
 				u.Update()
 			}
 		}
+
+	
 		mutex.Unlock()
 	}
 }

@@ -9,12 +9,12 @@
 package job
 
 import (
-    "fmt"
-    "os"
-    "runtime"
-    "time"
-    util "zmyjobs/corn/uti"
-    "zmyjobs/goex"
+	"fmt"
+	"os"
+	"runtime"
+	"time"
+	util "zmyjobs/corn/uti"
+	"zmyjobs/goex"
 )
 
 var (
@@ -24,6 +24,7 @@ var (
     Stop     = make(chan int)
 )
 
+// NewBIANWsApi 新建币安websocket 现货行情
 func NewBIANWsApi() {
     os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
     ws, _ = util.ProxySock().BuildSpotWs(goex.BINANCE)
@@ -37,9 +38,11 @@ func NewBIANWsApi() {
     })
 }
 
+// Begin 开启websocket 连接更新行情
 func Begin() {
     NewBIANWsApi()
-    fmt.Println("开启")
+    start := time.Now()
+    fmt.Println("开启websocket")
     ws.SubscribeTicker()
     for {
         select {
@@ -47,8 +50,11 @@ func Begin() {
             fmt.Println("关闭webSocket")
             runtime.Goexit()
         default:
-            // fmt.Println("hhh")
             time.Sleep(time.Second)
+            if time.Since(start) > time.Minute {
+                go Begin()
+                Stop <- 1
+            }
         }
     }
 }

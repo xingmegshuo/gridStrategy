@@ -320,12 +320,12 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				d := v.(map[string]interface{})
 				if d["filterType"].(string) == "LOT_SIZE" {
 					c.MinAmount, _ = decimal.NewFromString(d["minQty"].(string))
+					c.AmountPrecision = int32(floatLen(d["minQty"].(string)))
 				}
 				if d["filterType"] != nil && d["filterType"].(string) == "MIN_NOTIONAL" {
 					c.MinTotal, _ = decimal.NewFromString(d["minNotional"].(string))
+					c.PricePrecision = int32(floatLen(d["minNotional"].(string)))
 				}
-				c.PricePrecision = int32(floatLen(d["minNotional"].(string)))
-				c.AmountPrecision = int32(floatLen(d["minQty"].(string)))
 			}
 
 			// c.MinAmount = decimal.NewFromFloat(0)

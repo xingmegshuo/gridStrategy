@@ -5,6 +5,8 @@ import (
 	"testing"
 	model "zmyjobs/corn/models"
 	"zmyjobs/goex"
+
+	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -15,36 +17,35 @@ import (
 
 func TestGetMoney(t *testing.T) {
 	// fmt.Println("testing start .....")
-	huobiSymbol := model.SymbolCategory{
-		Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
-		Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
+	// huobiSymbol := model.SymbolCategory{
+	// 	Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
+	// 	Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
 
-		// Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
-		// Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
+	// Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
+	// Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
 
-		// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
-		// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
-		Host:            "api.huobi.de.com",
-		BaseCurrency:    "DOGE",
-		QuoteCurrency:   "USDT",
-		AmountPrecision: 4,
-		PricePrecision:  2,
-	}
-
-	// bian := model.SymbolCategory{
-	// 	Key:    "l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
-	// 	Secret: "EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR",
-	// Host:            "https://fapi.binace.com",
-	// 	BaseCurrency:    "USDT",
-	// 	QuoteCurrency:   "DOGE",
-	// 	AmountPrecision: 2,
-	// 	PricePrecision:  6,
-	// 	Category:        "币安",
-	// 	Label:           "u20",
+	// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
+	// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
+	// 	Host:            "api.huobi.de.com",
+	// 	BaseCurrency:    "DOGE",
+	// 	QuoteCurrency:   "USDT",
+	// 	AmountPrecision: 4,
+	// 	PricePrecision:  2,
 	// }
 
+	bian := model.SymbolCategory{
+		Key:             "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
+		Secret:          "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4",
+		BaseCurrency:    "SAND",
+		QuoteCurrency:   "USDT",
+		AmountPrecision: 8,
+		PricePrecision:  8,
+		Category:        "币安",
+		Label:           "u20",
+	}
+
 	// 账户测试
-	ex := NewEx(&huobiSymbol)
+	ex := NewEx(&bian)
 	b, m, coin := ex.GetAccount()
 	fmt.Println(b, m, coin)
 	// 价格测试
@@ -60,11 +61,11 @@ func TestGetMoney(t *testing.T) {
 	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 
-	// price := decimal.NewFromFloat(152.93)
+	price := decimal.NewFromFloat(0)
 	// 买入
-	// amount := decimal.NewFromFloat(40.31)
-	// cliId, orderId, err := ex.Exchanges(amount, price, SellM, false)
-	// fmt.Println(cliId, err, orderId, amount, price)
+	amount := decimal.NewFromFloat(21)
+	o, err := ex.Exchanges(amount, price, SellM, false)
+	fmt.Println(o, err)
 
 	//
 	// cliId := "338280716011966"

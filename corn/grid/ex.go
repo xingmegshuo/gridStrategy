@@ -182,6 +182,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 				if account.Currency.Symbol == b.Symbol {
 					money = decimal.NewFromFloat(account.Amount)
 				}
+				// fmt.Println(account)
 			}
 			// log.Printf("用户数据:%+v,%+v;%+v", info.SubAccounts[b], info.SubAccounts[d], info.SubAccounts)
 		}

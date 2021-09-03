@@ -324,7 +324,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				}
 				if d["filterType"] != nil && d["filterType"].(string) == "MIN_NOTIONAL" {
 					c.MinTotal, _ = decimal.NewFromString(d["minNotional"].(string))
-					c.PricePrecision = int32(floatLen(d["minNotional"].(string)))
+					c.PricePrecision = int32(8)
 				}
 			}
 
@@ -402,5 +402,5 @@ func floatLen(d string) int {
 			return i
 		}
 	}
-	return len(tmp[1])
+	return 0
 }

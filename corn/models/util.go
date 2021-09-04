@@ -181,7 +181,7 @@ func ParseStrategy(u User) *Args {
 	if arg.StrategyType == 1 {
 		arg.IsChange = false
 	}
-	arg.StopEnd = data["end"].(float64)
+	arg.StopEnd = ParseStringFloat(data["end"].(string))
 	arg.Crile = data["frequency"].(float64)
 
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅

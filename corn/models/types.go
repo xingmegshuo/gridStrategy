@@ -70,6 +70,7 @@ type Args struct {
 	IsHand       bool        // 手动参数 false 自动参数true
 	Level        interface{} // 杠杆倍数
 	StopFlow     bool        // 停止跟随
+	StopEnd      float64     // 止损
 }
 
 // 策略预览内容

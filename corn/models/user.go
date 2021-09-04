@@ -202,8 +202,9 @@ func parseInput(order map[string]interface{}) string {
 	strategy["stop_buy"] = order["stop_buy"]          // 停止买入
 	strategy["order_type"] = order["order_type"]      // 手动自动
 	strategy["add_type"] = order["price_growth_type"] // 补仓增幅类型
-	strategy["leverage"] = order["leverage"]
-	strategy["coin_id"] = order["task_coin_id"]
+	strategy["leverage"] = order["leverage"]          // 杠杆倍数
+	strategy["coin_id"] = order["task_coin_id"]       // 交易对id
+	strategy["end"] = order["price_end"]              // 止损比例
 	return ToStringJson(strategy)
 }
 

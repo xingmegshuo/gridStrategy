@@ -33,6 +33,7 @@ var (
 	port     = "1124"
 	readWs   = true
 	OpenWs   = false
+	startWs  = time.Now()
 )
 
 func InitJob(j model.Job, f func()) {
@@ -66,6 +67,10 @@ func CrawRun() {
 		}()
 	}
 	for {
+		if time.Since(startWs) > time.Hour*8 {
+			OpenWs = false
+			Stop <- 2
+		}
 		if time.Since(start) > time.Second*10 {
 			// fmt.Println("超时退出")
 			runtime.Goexit()
@@ -304,12 +309,12 @@ func CrawBianB() {
 }
 
 func ChangePort() {
-	fmt.Println("换服务器")
 	if port == "1123" {
 		port = "1124"
 	} else {
 		port = "1123"
 	}
+	fmt.Println("换服务器", port)
 }
 
 func CrawOkSpot() {

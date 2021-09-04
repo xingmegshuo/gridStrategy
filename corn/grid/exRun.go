@@ -226,6 +226,11 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		if count == 50 {
 			log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
 		}
+
+		if win < -t.arg.StopEnd {
+			t.arg.AllSell = true
+		}
+
 		select {
 		case <-ctx.Done():
 			log.Println("close get price ", t.u.ObjectId)

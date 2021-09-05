@@ -12,53 +12,57 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
 )
 
 var (
-    BianSpot = map[string]*goex.Ticker{}
-    names    []map[string]interface{}
-    ws       goex.SpotWsApi
-    Stop     = make(chan int)
+	BianSpot = map[string]*goex.Ticker{}
+	names    []map[string]interface{}
+	ws       goex.SpotWsApi
+	Stop     = make(chan int)
+	mapLock  sync.Mutex
 )
 
 // NewBIANWsApi 新建币安websocket 现货行情
 func NewBIANWsApi() {
-    os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
-    ws, _ = util.ProxySock().BuildSpotWs(goex.BINANCE)
-    ws.TickerCallback(func(ticker []*goex.Ticker) {
-        // fmt.Println(ticker)
-        // time.Sleep(time.Second * 2)
-        BianSpot = map[string]*goex.Ticker{}
-        for _, t := range ticker {
-            BianSpot[t.Pair.ToSymbol("")] = t
-        }
-    })
+	os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
+	ws, _ = util.ProxySock().BuildSpotWs(goex.BINANCE)
+	ws.TickerCallback(func(ticker []*goex.Ticker) {
+		// fmt.Println(ticker)
+		// time.Sleep(time.Second * 2)
+		// BianSpot = map[string]*goex.Ticker{}
+		for _, t := range ticker {
+			mapLock.Lock()
+			BianSpot[t.Pair.ToSymbol("")] = t
+			mapLock.Unlock()
+		}
+	})
 }
 
 // Begin 开启websocket 连接更新行情
 func Begin() {
-    NewBIANWsApi()
-    // start := time.Now()
-    // send := false
-    fmt.Println("开启websocket")
-    ws.SubscribeTicker()
-    for {
-        select {
-        case <-Stop:
-            fmt.Println("关闭webSocket")
-            runtime.Goexit()
-        default:
-            time.Sleep(time.Second)
-            // if time.Since(start) > time.Minute && !send {
-            //     for i := 0; i < 1; i++ {
-            //         go Begin()
-            //         send = true
-            //         Stop <- 1
-            //     }
-            // }
-        }
-    }
+	NewBIANWsApi()
+	// start := time.Now()
+	// send := false
+	fmt.Println("开启websocket")
+	ws.SubscribeTicker()
+	for {
+		select {
+		case <-Stop:
+			fmt.Println("关闭webSocket")
+			runtime.Goexit()
+		default:
+			time.Sleep(time.Second)
+			// if time.Since(start) > time.Minute && !send {
+			//     for i := 0; i < 1; i++ {
+			//         go Begin()
+			//         send = true
+			//         Stop <- 1
+			//     }
+			// }
+		}
+	}
 }

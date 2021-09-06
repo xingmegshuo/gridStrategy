@@ -76,6 +76,7 @@ func CrawRun() {
 						}
 						isOver = true
 						count++
+						fmt.Println("任务完成", count, time.Since(start))
 						return
 					}
 				}
@@ -84,6 +85,10 @@ func CrawRun() {
 	}
 	go func() {
 		for {
+			if isOver {
+				fmt.Println(count)
+				runtime.Goexit()
+			}
 			if time.Since(startWs) > time.Hour*8 {
 				OpenWs = false
 				Stop <- 2

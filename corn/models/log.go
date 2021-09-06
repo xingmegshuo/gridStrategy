@@ -260,7 +260,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 				log.Printf("用户:%+v", u)
 				var thisLog = &AmountLog{
 					CoinId:         float64(2),
-					Direction:      2,
+					Direction:      1,
 					Hash:           "",
 					FromCustomerId: uId,
 					CustomerId:     float64(u["id"].(int32)),

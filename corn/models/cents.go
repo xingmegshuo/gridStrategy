@@ -86,7 +86,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
                     var thisLog = &AmountLog{
                         FlowType:       float64(59),
                         CoinId:         float64(2),
-                        Direction:      2,
+                        Direction:      1,
                         Hash:           "",
                         Remark:         "级差分红",
                         FromCustomerId: uId,

@@ -114,17 +114,10 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isAuto bool, isHand bool, Stop bool) {
+func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isHand bool, status interface{}) {
 	old := GetOldAmount(orderId)
 	var data = map[string]interface{}{}
-
-	if Stop {
-		data["status"] = 2 // 用户不跟随策略
-	} else if !isAuto {
-		data["status"] = 1 // 自动结束，重新开始
-	} else if isAuto {
-		data["status"] = 0 // 手动暂停，不重新开始，等待用户手动开始
-	}
+	data["status"] = status
 	// 分红金额小于5 结束任务
 	if GetAccount(id.(float64)) < 5 {
 		data["status"] = 0 // 跟随者不重新开启直接结束
@@ -343,7 +336,7 @@ func DeleteRebotLog(orderId string) {
 
 // LogStrategy 卖出盈利日志
 func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, order interface{},
-	member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}, isAuto bool, Stop bool) {
+	member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}, status interface{}) {
 	log.Println("盈利日志", name, member, coin_name)
 	var (
 		data     = map[string]interface{}{}
@@ -374,5 +367,5 @@ func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, o
 	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
 
 	m, _ := money.(decimal.Decimal).Float64()
-	RunOver(member, m, order, id, isAuto, isHand, Stop)
+	RunOver(member, m, order, id, isHand, status)
 }

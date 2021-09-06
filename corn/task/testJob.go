@@ -75,7 +75,7 @@ func CrawRun() {
 						}
 						isOver = true
 						count++
-						fmt.Println("任务完成", count, time.Since(start))
+						// fmt.Println("任务完成", count, time.Since(start))
 						return
 					}
 				}

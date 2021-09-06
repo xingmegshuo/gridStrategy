@@ -80,23 +80,24 @@ func CrawRun() {
 					}
 				}
 			}
-
-			// wsCraw(coinCache)
 		}()
 	}
-	for {
-		if time.Since(startWs) > time.Hour*8 {
-			OpenWs = false
-			Stop <- 2
+	go func() {
+		for {
+			if time.Since(startWs) > time.Hour*8 {
+				OpenWs = false
+				Stop <- 2
+				runtime.Goexit()
+			}
+			if time.Since(start) > time.Second*10 && !isOver {
+				fmt.Println("超时退出", time.Since(start), count, isOver)
+				StopHttp <- 2
+				runtime.Goexit()
+			} else {
+				time.Sleep(time.Second)
+			}
 		}
-		if time.Since(start) > time.Second*10 && !isOver {
-			fmt.Println("超时退出", time.Since(start), count, isOver)
-			StopHttp <- 2
-
-		} else {
-			time.Sleep(time.Second)
-		}
-	}
+	}()
 }
 
 // xhttp 缓存信息

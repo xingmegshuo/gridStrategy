@@ -76,6 +76,7 @@ func CrawRun() {
 						}
 						isOver = true
 						count++
+						return
 					}
 				}
 			}

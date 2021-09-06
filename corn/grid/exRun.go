@@ -158,10 +158,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							// 盈利ctx
 							if t.arg.Crile >= 2 && !t.automatic {
 								t.u.IsRun = 100
-							} else if t.automatic {
-								t.u.IsRun = 2
 							} else {
-								t.u.IsRun = 1
+								t.u.IsRun = 2
 							}
 							t.u.BasePrice = p
 							t.u.RealGrids = "***"

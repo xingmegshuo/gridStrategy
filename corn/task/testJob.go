@@ -54,6 +54,7 @@ func JobExit(job model.Job) {
 func CrawRun() {
 	StopHttp := make(chan int)
 	start := time.Now()
+	isOver := false
 	for i := 0; i < 1; i++ {
 		go func() {
 			// model.UserDB.Raw("select id from db_task_coin").Scan(&coinIds)
@@ -73,6 +74,7 @@ func CrawRun() {
 							xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
 							crawAccount()
 						}
+						isOver = true
 						count++
 					}
 				}
@@ -86,7 +88,7 @@ func CrawRun() {
 			OpenWs = false
 			Stop <- 2
 		}
-		if time.Since(start) > time.Second*10 {
+		if time.Since(start) > time.Second*10 && !isOver {
 			fmt.Println("超时退出", time.Since(start))
 			StopHttp <- 2
 

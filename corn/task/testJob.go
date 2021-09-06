@@ -57,7 +57,6 @@ func CrawRun() {
 	isOver := false
 	for i := 0; i < 1; i++ {
 		go func() {
-			// model.UserDB.Raw("select id from db_task_coin").Scan(&coinIds)
 			stratHttp := false
 			for {
 				select {
@@ -82,27 +81,26 @@ func CrawRun() {
 				}
 			}
 		}()
+		go func() {
+			for {
+				if isOver {
+					runtime.Goexit()
+				}
+				if time.Since(startWs) > time.Hour*8 {
+					OpenWs = false
+					Stop <- 2
+					runtime.Goexit()
+				}
+				if time.Since(start) > time.Second*20 && !isOver {
+					fmt.Println("超时退出", time.Since(start), count, isOver)
+					StopHttp <- 2
+					runtime.Goexit()
+				} else {
+					time.Sleep(time.Second)
+				}
+			}
+		}()
 	}
-	go func() {
-		for {
-			if isOver {
-				// fmt.Println(count)
-				runtime.Goexit()
-			}
-			if time.Since(startWs) > time.Hour*8 {
-				OpenWs = false
-				Stop <- 2
-				runtime.Goexit()
-			}
-			if time.Since(start) > time.Second*10 && !isOver {
-				fmt.Println("超时退出", time.Since(start), count, isOver)
-				StopHttp <- 2
-				runtime.Goexit()
-			} else {
-				time.Sleep(time.Second)
-			}
-		}
-	}()
 }
 
 // xhttp 缓存信息

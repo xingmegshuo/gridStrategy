@@ -62,7 +62,7 @@ func CrawRun() {
 			for {
 				select {
 				case <-StopHttp:
-					fmt.Println("退出爬取数据", time.Since(start))
+					fmt.Println("退出爬取数据", time.Since(start), count, isOver)
 					runtime.Goexit()
 				default:
 					time.Sleep(time.Millisecond * 200)
@@ -89,7 +89,7 @@ func CrawRun() {
 			Stop <- 2
 		}
 		if time.Since(start) > time.Second*10 && !isOver {
-			fmt.Println("超时退出", time.Since(start))
+			fmt.Println("超时退出", time.Since(start), count, isOver)
 			StopHttp <- 2
 
 		} else {

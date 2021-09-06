@@ -67,7 +67,7 @@ func DelEx(u model.User) {
 				model.DB.Exec("update users set base = 0 where object_id = ?", g.u.ObjectId)
 				log.Println("实际的买入信息清空,用户单数清空", g.u.ObjectId)
 				model.LogStrategy(g.arg.CoinId, g.goex.symbol.Category, g.u.Name, g.u.ObjectId,
-					g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, g.automatic, g.arg.StopFlow)
+					g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, 0)
 				log.Println("任务结束,删除平仓或者暂停平仓", g.u.ObjectId)
 			}
 		}
@@ -180,7 +180,6 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else if t.automatic {
 								status = 0
 							}
-
 							model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
 							log.Printf("%v任务结束;是否用户主动结束:%v;策略类型:%v", t.u.ObjectId, t.automatic, t.arg.IsHand)

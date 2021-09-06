@@ -19,11 +19,12 @@ import (
 )
 
 var (
-	BianSpot = map[string]*goex.Ticker{}
-	names    []map[string]interface{}
-	ws       goex.SpotWsApi
-	Stop     = make(chan int)
-	mapLock  sync.Mutex
+	BianSpot    = map[string]*goex.Ticker{}
+	names       []map[string]interface{}
+	ws          goex.SpotWsApi
+	Stop        = make(chan int)
+	mapLock     sync.Mutex
+	readMapLock sync.Mutex
 )
 
 // NewBIANWsApi 新建币安websocket 现货行情
@@ -34,11 +35,12 @@ func NewBIANWsApi() {
 		// fmt.Println(ticker)
 		// time.Sleep(time.Second * 2)
 		// BianSpot = map[string]*goex.Ticker{}
+		mapLock.Lock()
 		for _, t := range ticker {
-			mapLock.Lock()
 			BianSpot[t.Pair.ToSymbol("")] = t
-			mapLock.Unlock()
 		}
+		mapLock.Unlock()
+
 	})
 }
 

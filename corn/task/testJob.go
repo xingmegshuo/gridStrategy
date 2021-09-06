@@ -155,6 +155,7 @@ func craw() {
 
 func wsCraw() {
 	if len(BianSpot) > 0 {
+		readMapLock.Lock()
 		for k, v := range BianSpot {
 			if name := util.ToMySymbol(k); name != "none" {
 				var id interface{}
@@ -180,6 +181,7 @@ func wsCraw() {
 				}
 			}
 		}
+		readMapLock.Unlock()
 	}
 }
 

@@ -52,17 +52,31 @@ func JobExit(job model.Job) {
 }
 
 func CrawRun() {
+	StopHttp := make(chan int)
 	start := time.Now()
 	for i := 0; i < 1; i++ {
 		go func() {
 			// model.UserDB.Raw("select id from db_task_coin").Scan(&coinIds)
-			craw()
-			if count%20 == 0 {
-				xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
-				xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-				crawAccount()
+			stratHttp := false
+			for {
+				select {
+				case <-StopHttp:
+					runtime.Goexit()
+				default:
+					time.Sleep(time.Millisecond * 200)
+					if !stratHttp {
+						stratHttp = true
+						craw()
+						if count%20 == 0 {
+							xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+							xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+							crawAccount()
+						}
+						count++
+					}
+				}
 			}
-			count++
+
 			// wsCraw(coinCache)
 		}()
 	}
@@ -72,8 +86,9 @@ func CrawRun() {
 			Stop <- 2
 		}
 		if time.Since(start) > time.Second*10 {
-			// fmt.Println("超时退出")
-			runtime.Goexit()
+			fmt.Println("超时退出")
+			StopHttp <- 2
+
 		} else {
 			time.Sleep(time.Second)
 		}

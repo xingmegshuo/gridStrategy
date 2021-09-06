@@ -28,7 +28,7 @@ func RunEx(ctx context.Context, u model.User) {
 			g := NewExStrategy(u)
 			if g == nil || len(g.grids) != int(u.Number) {
 				u.IsRun = -10
-				u.Error = "api 请求超时，或api接口更改"
+				u.Error = "无法使用api解析"
 				u.Update()
 				GridDone <- u.ObjectId
 			} else {
@@ -96,7 +96,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 		RealGrids: realGrid,
 		goex:      NewEx(&symbol),
 	}
-	if ex.goex != nil {
+	if ex.goex.Future != nil {
 		if u.Future == 2 || u.Future == 4 {
 			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) {
 				log.Println("修改杠杆倍数出错", symbol.Lever)
@@ -109,7 +109,10 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 				return nil
 			}
 		}
+	} else if u.Future > 0 {
+		return nil
 	}
+
 	log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v", u.ObjectId, ex.goex.Currency, u.Future, ex.arg.Crile, ex.RealGrids)
 	return
 }

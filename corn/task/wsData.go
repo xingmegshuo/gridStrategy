@@ -35,7 +35,7 @@ func NewBIANWsApi() {
 	if err == nil {
 		ws.TickerCallback(func(ticker []*goex.Ticker) {
 			// fmt.Println(ticker)
-			time.Sleep(time.Second * 2)
+			// time.Sleep(time.Second * 2)
 			// BianSpot = map[string]*goex.Ticker{}
 			mapLock.Lock()
 			for _, t := range ticker {

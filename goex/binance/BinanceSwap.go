@@ -94,7 +94,7 @@ func (bs *BinanceSwap) ChangeLever(currency CurrencyPair, contractType string) b
 
 		_, err := HttpPostForm2(bs.httpClient, uri, data,
 			map[string]string{"X-MBX-APIKEY": bs.f.apikey})
-		fmt.Println(err, bs.f.Level)
+		// fmt.Println(err, bs.f.Level)
 		if err == nil {
 			return true
 		}

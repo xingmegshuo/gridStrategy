@@ -10,7 +10,6 @@ package grid
 
 import (
 	"encoding/json"
-	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
@@ -304,7 +303,7 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 			return true, false, o
 		}
 	} else {
-		fmt.Println(err)
+		// fmt.Println(err)
 		return false, false, nil
 	}
 }

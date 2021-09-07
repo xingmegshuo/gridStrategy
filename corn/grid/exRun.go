@@ -288,16 +288,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
 					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
 					if err != nil {
-						errorCount++
-						if errorCount > 2 {
-							log.Printf("买入错误: %d, err: %s", t.base, err)
-							t.ErrString = err.Error()
-							time.Sleep(time.Second * 5)
-							t.over = true
-						} else {
-							time.Sleep(time.Second * 10)
-							continue
-						}
+						log.Printf("买入错误: %d, err: %s", t.base, err)
+						t.ErrString = err.Error()
+						time.Sleep(time.Second * 5)
+						t.over = true
 					} else {
 						high = price
 						low = price

@@ -9,8 +9,8 @@
 package model
 
 import (
-    "fmt"
-    "time"
+	"fmt"
+	"time"
 )
 
 func CentsUser(money float64, uId float64, from interface{}) {
@@ -97,14 +97,14 @@ func CentsUser(money float64, uId float64, from interface{}) {
 
                     if thisLevel >= baseLevel && realMoney > 0 {
                         // baseLevel = thisLevel // 上级的vip等级，下次分红vip必须大于此等级
-                        if thisLevel == 1 {
+                        if thisLevel == 1 && baseLevel != 1 {
                             myMoney = levelMoney * 0.2
                         }
                         if thisLevel == 2 {
                             // l.Println("我分25%")
                             if thisLevel-baseLevel == 1 {
                                 myMoney = levelMoney * 0.1
-                            } else {
+                            } else if thisLevel-baseLevel == 2 {
                                 myMoney = levelMoney * 0.3
                             }
                         }
@@ -114,7 +114,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 myMoney = levelMoney * 0.1
                             } else if thisLevel-baseLevel == 2 {
                                 myMoney = levelMoney * 0.2
-                            } else {
+                            } else if thisLevel-baseLevel == 3 {
                                 myMoney = levelMoney * 0.4
                             }
                         }
@@ -126,7 +126,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 myMoney = levelMoney * 0.2
                             } else if thisLevel-baseLevel == 3 {
                                 myMoney = levelMoney * 0.3
-                            } else {
+                            } else if thisLevel-baseLevel == 4 {
                                 myMoney = levelMoney * 0.5
                             }
                         }
@@ -148,11 +148,15 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 sameLevel = myMoney
                             } else {
                                 myMoney = sameLevel * 0.1 //平级
+                                baseLevel = 7
                             }
                         }
                         if thisLevel == 6 {
                             // log.Println(thisLevel, baseLevel)
                             // l.Println("我要60%")
+                            if baseLevel == 7 {
+                                baseLevel = 5
+                            }
                             if thisLevel-baseLevel == 1 {
                                 myMoney = levelMoney * 0.05
                             } else if thisLevel-baseLevel == 2 {
@@ -163,10 +167,9 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 myMoney = levelMoney * 0.3
                             } else if thisLevel-baseLevel == 5 {
                                 myMoney = levelMoney * 0.4
-                            } else {
+                            } else if thisLevel-baseLevel == 6 {
                                 myMoney = levelMoney * 0.6
                             }
-                            f = false
                         }
                         if myMoney > 0 {
                             thisLog.Amount = myMoney
@@ -174,7 +177,9 @@ func CentsUser(money float64, uId float64, from interface{}) {
                             log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v;之前账户余额%v;现在账户余额%v", myMoney, u["id"], thisLevel, thisLog.BeforeAmount, thisLog.AfterAmount))
                             thisLog.Write(UserDB)
                             tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
-                            baseLevel = thisLevel
+                            if baseLevel != 7 {
+                                baseLevel = thisLevel
+                            }
                             realMoney -= myMoney
                         }
                     }

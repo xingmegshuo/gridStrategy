@@ -332,16 +332,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			// 智乘方
 			if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
 				if err := t.setupBi(win, reduce, price); err != nil {
-					errorCount++
-					if errorCount > 2 {
-						log.Printf("卖出错误: %d, err: %s", t.base, err)
-						t.ErrString = err.Error()
-						time.Sleep(time.Second * 5)
-						t.over = true
-					} else {
-						time.Sleep(time.Second * 10)
-						continue
-					}
+					log.Printf("%v卖出入错误: %d, err: %s", t.u.ObjectId, t.base, err)
+					t.ErrString = err.Error()
+					time.Sleep(time.Second * 5)
+					t.over = true
 				}
 				if t.arg.AllSell {
 					log.Printf("%v用户智乘方清仓-----实际操作", t.u.ObjectId)
@@ -369,16 +363,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			// 智多元
 			if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
 				if err := t.SetupBeMutiple(price, reduce, win); err != nil {
-					errorCount++
-					if errorCount > 2 {
-						log.Printf("买入错误: %d, err: %s", t.base, err)
-						t.ErrString = err.Error()
-						time.Sleep(time.Second * 5)
-						t.over = true
-					} else {
-						time.Sleep(time.Second * 10)
-						continue
-					}
+					log.Printf("%v卖出入错误: %d, err: %s", t.u.ObjectId, t.base, err)
+					t.ErrString = err.Error()
+					time.Sleep(time.Second * 5)
+					t.over = true
 				}
 				if t.HaveOver() {
 					t.over = true

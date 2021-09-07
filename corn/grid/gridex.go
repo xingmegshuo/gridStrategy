@@ -334,7 +334,7 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 }
 
 func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
-	log.Println("等待订单交易.......")
+	log.Println("等待订单交易.......", t.u.ObjectId, orderId)
 	start := time.Now()
 	for {
 		if t.SearchOrder(orderId, cli) {

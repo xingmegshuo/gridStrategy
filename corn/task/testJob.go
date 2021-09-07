@@ -31,7 +31,7 @@ var (
 	crawLock sync.Mutex
 	count    = 0
 	port     = "1124"
-	readWs   = true
+	readWs   = false
 	OpenWs   = false
 	startWs  = time.Now()
 )

@@ -163,7 +163,6 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							}
 							t.u.BasePrice = p
 							t.u.RealGrids = "***"
-							t.u.IsRun = 1000
 							t.u.Update()
 							model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
 							log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
@@ -197,7 +196,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 	errorCount := 0
 	count := 0
 	t.GetLastPrice()
-	log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "策略开始", "用户:", t.u.ObjectId, "限价启动:", t.arg.LimitHigh)
+	log.Println("上次交易:", t.last, "基础价格:", t.basePrice, "投入金额:", t.pay, "当前持仓:", t.amount, "策略开始", "用户:", t.u.ObjectId,
+		"限价启动:", t.arg.LimitHigh, "止损比例", t.arg.StopEnd)
 	var (
 		low     = t.last
 		high    = t.last
@@ -243,7 +243,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
 		}
 
-		if win < -t.arg.StopEnd {
+		if win < -t.arg.StopEnd*0.01 {
 			t.arg.AllSell = true
 		}
 

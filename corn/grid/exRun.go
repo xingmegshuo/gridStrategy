@@ -170,7 +170,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							if t.arg.StopFlow {
 								status = 2
 							} else if !t.automatic {
-								if t.arg.Crile == 2 || t.arg.Crile > 4 {
+								if t.arg.Crile > 2 {
 									status = 1
 								} else {
 									status = 2

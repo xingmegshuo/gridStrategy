@@ -24,13 +24,14 @@ var (
 	ws       goex.SpotWsApi
 	Stop     = make(chan int)
 	mapLock  sync.Mutex
+	err      error
 	// readMapLock sync.Mutex
 )
 
 // NewBIANWsApi 新建币安websocket 现货行情
 func NewBIANWsApi() {
 	os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
-	ws, err := util.ProxySock().BuildSpotWs(goex.BINANCE)
+	ws, err = util.ProxySock().BuildSpotWs(goex.BINANCE)
 	if err == nil {
 		ws.TickerCallback(func(ticker []*goex.Ticker) {
 			// fmt.Println(ticker)
@@ -43,9 +44,6 @@ func NewBIANWsApi() {
 			mapLock.Unlock()
 
 		})
-	} else {
-		readWs = false
-		runtime.Goexit()
 	}
 }
 
@@ -54,6 +52,10 @@ func Begin() {
 	NewBIANWsApi()
 	// start := time.Now()
 	// send := false
+	if err != nil {
+		readWs = false
+		runtime.Goexit()
+	}
 	fmt.Println("开启websocket")
 	ws.SubscribeTicker()
 	for {

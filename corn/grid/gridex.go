@@ -152,7 +152,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 		msg = "市价买入"
 	}
 	// log.Println(t.arg.Crile)
-	if t.goex.symbol.Future && t.arg.Crile == 3 {
+	if t.arg.Crile == 5 || t.arg.Crile == 3 {
 		orderType = OpenDL
 		if t.u.Future == 2 || t.u.Future == 4 {
 			amount = t.grids[t.base].TotalBuy
@@ -160,7 +160,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 			amount = t.grids[t.base].AmountBuy
 		}
 		msg = "开多"
-	} else if t.goex.symbol.Future && t.arg.Crile == 4 {
+	} else if t.arg.Crile == 6 || t.arg.Crile == 4 {
 		orderType = OpenLL
 		if t.u.Future == 2 || t.u.Future == 4 {
 			amount = t.grids[t.base].TotalBuy
@@ -200,10 +200,10 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (*On
 		price = decimal.Decimal{}
 		msg = "市价卖出"
 	}
-	if t.goex.symbol.Future && t.arg.Crile == 3 {
+	if t.arg.Crile == 5 || t.arg.Crile == 3 {
 		msg = "平多"
 		orderType = OpenDM
-	} else if t.goex.symbol.Future && t.arg.Crile == 4 {
+	} else if t.arg.Crile == 6 || t.arg.Crile == 4 {
 		orderType = OpenLM
 		msg = "平空"
 	}

@@ -131,11 +131,11 @@ func (ws *WsConn) NewWs() *WsConn {
 	if ws.HeartbeatIntervalTime == 0 {
 		ws.readDeadLineTime = time.Minute
 	} else {
-		ws.readDeadLineTime = ws.HeartbeatIntervalTime * 2
+		ws.readDeadLineTime = ws.HeartbeatIntervalTime * 10
 	}
 
 	if err := ws.connect(); err != nil {
-		Log.Panic(fmt.Errorf("[%s] %s", ws.WsUrl, err.Error()))
+		Log.Println(fmt.Errorf("[%s] %s", ws.WsUrl, err.Error()))
 	}
 
 	ws.close = make(chan bool, 1)

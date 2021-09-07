@@ -163,6 +163,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							}
 							t.u.BasePrice = p
 							t.u.RealGrids = "***"
+							t.u.IsRun = 1000
 							t.u.Update()
 							model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
 							log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)

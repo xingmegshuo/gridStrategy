@@ -30,18 +30,23 @@ var (
 // NewBIANWsApi 新建币安websocket 现货行情
 func NewBIANWsApi() {
 	os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:1124")
-	ws, _ = util.ProxySock().BuildSpotWs(goex.BINANCE)
-	ws.TickerCallback(func(ticker []*goex.Ticker) {
-		// fmt.Println(ticker)
-		// time.Sleep(time.Second * 2)
-		// BianSpot = map[string]*goex.Ticker{}
-		mapLock.Lock()
-		for _, t := range ticker {
-			BianSpot[t.Pair.ToSymbol("")] = t
-		}
-		mapLock.Unlock()
+	ws, err := util.ProxySock().BuildSpotWs(goex.BINANCE)
+	if err == nil {
+		ws.TickerCallback(func(ticker []*goex.Ticker) {
+			// fmt.Println(ticker)
+			time.Sleep(time.Second * 2)
+			// BianSpot = map[string]*goex.Ticker{}
+			mapLock.Lock()
+			for _, t := range ticker {
+				BianSpot[t.Pair.ToSymbol("")] = t
+			}
+			mapLock.Unlock()
 
-	})
+		})
+	} else {
+		readWs = false
+		runtime.Goexit()
+	}
 }
 
 // Begin 开启websocket 连接更新行情

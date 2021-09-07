@@ -86,7 +86,7 @@ func CrawRun() {
 				if isOver {
 					runtime.Goexit()
 				}
-				if time.Since(startWs) > time.Hour*8 {
+				if time.Since(startWs) > time.Minute*3 {
 					OpenWs = false
 					Stop <- 2
 					runtime.Goexit()

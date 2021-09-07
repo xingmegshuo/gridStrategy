@@ -63,7 +63,7 @@ type Args struct {
 	IsLimit      bool        // 是否限高
 	LimitHigh    float64     // 限高价格
 	StrategyType int64       // 1Bi乘方限 2Bi多元限 3Bi乘方市 4Bi多元市 5Bi高频市
-	Crile        float64     // 是否循环
+	Crile        float64     // 是否循环  1单次,2循环,3做多,4做空,5 单次做多,6单次做空
 	OneBuy       bool        // 一键补仓
 	AllSell      bool        // 一键平仓
 	StopBuy      bool        // 停止买入

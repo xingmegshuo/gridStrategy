@@ -33,8 +33,7 @@ var l sync.Mutex
 func exitHandle() {
 	<-exitChan
 	fmt.Println("接收到信号")
-	job.Stop <- 2
-	fmt.Println("向websocket发送退出")
+	
 	l.Lock()
 	job.Exit()
 	l.Unlock()

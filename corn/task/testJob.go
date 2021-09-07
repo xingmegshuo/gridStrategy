@@ -48,6 +48,10 @@ func InitJob(j model.Job, f func()) {
 func JobExit(job model.Job) {
 	job.Status = model.ConfigMap["jobStatus2"]
 	job.UpdateJob()
+	if OpenWs {
+		Stop <- 2
+		fmt.Println("向websocket发送退出")
+	}
 	Wg.Done()
 }
 

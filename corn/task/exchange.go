@@ -54,9 +54,10 @@ func RunWG() {
 				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 2 {
 					log.Println("等待重新开始", u.ObjectId)
 					u.IsRun = 99
-					u.Base = 0
+					u.RealGrids = "***"
 					u.RunCount++
 					u.Update()
+					model.UpdateBase(u.ObjectId)
 					time.Sleep(time.Second * 3)
 					u.IsRun = -1
 					model.AddRun(u.ObjectId, u.RunCount)

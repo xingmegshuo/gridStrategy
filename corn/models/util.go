@@ -404,3 +404,7 @@ func floatLen(d string) int {
 	}
 	return 0
 }
+
+func UpdateBase(objectId interface{}) {
+	DB.Exec("update users set base=0 where object_id = ?", objectId)
+}

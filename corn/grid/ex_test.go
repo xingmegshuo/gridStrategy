@@ -167,10 +167,10 @@ func TestFutureAccount(t *testing.T) {
 	bian := model.SymbolCategory{
 		Key:    "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
 		Secret: "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4",
-		Symbol: "XRP/USDT",
+		Symbol: "DOT/USD",
 		// Host:            "https://fapi.binace.com",
 		BaseCurrency:    "ADA",
-		QuoteCurrency:   "USDT",
+		QuoteCurrency:   "USD",
 		AmountPrecision: 2,
 		PricePrecision:  6,
 		Category:        "币安",
@@ -187,7 +187,7 @@ func TestFutureAccount(t *testing.T) {
 	// cl := util.Config{Name: "币安"}
 	// p, err := cl.GetPrice("ETH/USD", true)
 	// fmt.Println(p, err)
-	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
+	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
 
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
 	fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
@@ -195,11 +195,11 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(o, err)
 	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
 	// fmt.Println("下单数据", order, result)
-	orderId := "16937024572"
+	// orderId := "16937024572"
 	// orderId := order.OrderId
 	// time.Sleep(time.Second * 5)
-	n, r, o := cli.SearchOrder(orderId)
-	fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
+	// n, r, o := cli.SearchOrder(orderId)
+	// fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

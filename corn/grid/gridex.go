@@ -3,6 +3,7 @@ package grid
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 	model "zmyjobs/corn/models"
 
@@ -341,6 +342,7 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 			return true
 		}
 		if time.Since(start) >= time.Minute*10 {
+			fmt.Printf("用户%v下单id%v无法找到", t.u.ObjectId, orderId)
 			return false
 		} else {
 			time.Sleep(time.Second * 2)
@@ -383,13 +385,13 @@ func (t *ExTrader) WaitBuy(price decimal.Decimal, amount decimal.Decimal, rate f
 	} else {
 		if o.ClientId != "" {
 			t.ParseOrder(o)
-			t.last = price
+			t.last = decimal.NewFromFloat(o.Price)
 			return nil
 		}
 		if t.WaitOrder(o.OrderId, o.ClientId) {
 			return nil
 		} else {
-			t.goex.CancelOrder(o.OrderId)
+			t.sell(price, t.CountHold(), 0, 0) // 无法获取买入状态就结束任务，不再买入,防止以上买入订单成交,卖出一次
 			return errors.New("买入出错")
 		}
 	}

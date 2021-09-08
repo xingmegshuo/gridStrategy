@@ -165,11 +165,11 @@ func TestFutureAccount(t *testing.T) {
 	// }
 	// symbol := model.StringSymobol(u.Symbol)
 	bian := model.SymbolCategory{
-		Key:    "DwKk9rNVVPQuDpvU3Z2grTPZBxgWqZQt5GRtVbJp7cswsRv1UqjxAUxONWJNwycF",
-		Secret: "pwWvUZiC8iu7KHIM1e2ai99om20yALMkwzrWGJ3CqFp9j28E2bRIlsVfwb8E0ioL",
-		Symbol: "ETH/USDT",
+		Key:    "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
+		Secret: "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4",
+		Symbol: "XRP/USDT",
 		// Host:            "https://fapi.binace.com",
-		BaseCurrency:    "ETH",
+		BaseCurrency:    "ADA",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 2,
 		PricePrecision:  6,
@@ -191,15 +191,15 @@ func TestFutureAccount(t *testing.T) {
 
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
 	fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
-	// // o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
-	// // fmt.Println(o, err)
+	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
+	// fmt.Println(o, err)
 	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
 	// fmt.Println("下单数据", order, result)
-	// // orderId := "8389765505725968384"
+	orderId := "16937024572"
 	// orderId := order.OrderId
 	// time.Sleep(time.Second * 5)
-	// n, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
+	n, r, o := cli.SearchOrder(orderId)
+	fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

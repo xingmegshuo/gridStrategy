@@ -48,7 +48,7 @@ func RunWG() {
 					log.Println("符合要求", model.UpdateStatus(u.ID))
 					for i := 1; i < 2; i++ {
 						start = 1
-						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)
+						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.RealGrids)
 						go RunStrategy(u)
 					}
 				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 2 {
@@ -64,7 +64,6 @@ func RunWG() {
 					u = model.UpdateUser(u)
 					u.Update()
 					log.Println("重新开始", u.ObjectId)
-					// runtime.Goexit()
 				} else {
 					runtime.Gosched()
 				}

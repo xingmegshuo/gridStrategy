@@ -33,7 +33,6 @@ func RunEx(ctx context.Context, u model.User) {
 				GridDone <- u.ObjectId
 			} else {
 				g.u = u
-				// fmt.Println("ggggg")
 				go g.Trade(ctx)
 			}
 		} else {
@@ -99,20 +98,19 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 	if ex.goex.Future != nil {
 		if u.Future == 2 || u.Future == 4 {
 			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) {
-				log.Println("修改杠杆倍数出错", symbol.Lever)
+				log.Println("修改杠杆倍数出错", symbol.Lever, ex.u.ObjectId)
 				return nil
 			}
 		}
 		if u.Future == 1 || u.Future == 3 {
 			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_USDT_CONTRACT) {
-				log.Println("修改杠杆倍数出错", symbol.Lever)
+				log.Println("修改杠杆倍数出错", symbol.Lever, ex.u.ObjectId)
 				return nil
 			}
 		}
 	} else if u.Future > 0 {
 		return nil
 	}
-
 	log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v", u.ObjectId, ex.goex.Currency, u.Future, ex.arg.Crile, ex.RealGrids)
 	return
 }

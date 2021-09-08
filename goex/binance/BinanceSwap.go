@@ -375,7 +375,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	if OPEN_SELL == openType || CLOSE_SELL == openType {
 		params.Set("positionSide", "SHORT")
 	}
-	// }
 	switch openType {
 	case OPEN_BUY, CLOSE_SELL:
 		params.Set("side", "BUY")
@@ -389,7 +388,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	} else {
 		params.Set("type", "MARKET")
 	}
-	// fmt.Printf("%+v", params)
 	fOrder := &FutureOrder{
 		Currency: currencyPair,
 		// ClientOid:    clientOid,
@@ -404,8 +402,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 
 	resp, err := HttpPostForm2(bs.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bs.accessKey})
-	// fmt.Println(resp, err)
-
 	if err != nil {
 		return fOrder, err
 	}
@@ -416,7 +412,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 		return fOrder, err
 	}
 	orderId := ToInt(respmap["orderId"])
-	// fmt.Println(fmt.Sprintf("下单返回数据---:%+v;解析的订单id:%v", respmap, orderId))
 
 	if orderId <= 0 {
 		return fOrder, errors.New(string(resp))
@@ -650,7 +645,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	}
 
 	currencyPair1 := bs.adaptCurrencyPair(currencyPair)
-
+	// fmt.Println(currencyPair1)
 	params := url.Values{}
 	params.Set("symbol", currencyPair1.ToSymbol(""))
 	params.Set("orderId", "")
@@ -667,13 +662,16 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	ordId, _ := strconv.Atoi(orderId)
 	// fmt.Println(result, "api返回数据------")
 	for _, info := range result {
-		// fmt.Println(info)
 		_ord := info.(map[string]interface{})
 		// fmt.Println(ordId, _ord["orderId"])
+		// fmt.Println(fmt.Sprintf("订单id:%v;订单时间:%v;", ToInt(_ord["orderId"]),
+		// 	time.Unix(0, ToInt64(_ord["updateTime"])*int64(time.Millisecond)).Format("2006-01-02 15:04:05:03:01")))
 
 		if ToInt(_ord["orderId"]) != ordId {
 			continue
 		}
+		// fmt.Println(fmt.Sprintf("时间:%+v,更新时间:%v", ToInt(_ord["time"]), ToInt(_ord["updateTime"])))
+
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
 		// fmt.Println(fmt.Sprintf("订单数据:-----%+v", order))
@@ -688,7 +686,7 @@ func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
 	order.Amount = ToFloat64(rsp["origQty"])
 	order.DealAmount = ToFloat64(rsp["executedQty"])
 	order.AvgPrice = ToFloat64(rsp["avgPrice"])
-	order.OrderTime = ToInt64(rsp["time"])
+	order.OrderTime = ToInt64(rsp["updateTime"])
 	order.Cash = ToFloat64(rsp["cumQuote"])
 	status := rsp["status"].(string)
 	order.Status = bs.parseOrderStatus(status)

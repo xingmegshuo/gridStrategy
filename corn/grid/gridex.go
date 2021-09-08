@@ -253,7 +253,11 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		log.Printf("当前单数:%v,卖出单数:%v;%v", t.base, b, t.SellOrder)
 		sellMoney := price.Mul(amount).Abs().Sub(fee)
 		t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
-		t.RealGrids[b].AmountSell = t.SellMoney  // 修改卖出
+		t.RealGrids[b].AmountSell = sellMoney    // 修改卖出
+		// 币本位记录卖出币种数量
+		if t.u.Future == 2 || t.u.Future == 4 {
+			t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
+		}
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
 		model.RebotUpdateBy(order.OrderId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
@@ -327,8 +331,18 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 		pay = pay.Add(b.TotalBuy)
 		my = my.Add(b.AmountSell)
 	}
+	if t.u.Future == 2 || t.u.Future == 4 {
+		for _, b := range t.RealGrids {
+			pay = pay.Add(b.AmountBuy)
+		}
+		if t.arg.Crile == 4 || t.arg.Crile == 6 {
+			return pay.Sub(my).Mul(t.last)
+		} else {
+			return my.Sub(pay).Mul(t.last)
+		}
+	}
 	log.Printf("用户%v投入资金:%v;清仓获得资金:%v", t.u.ObjectId, pay, my)
-	if t.arg.Crile == 4 {
+	if t.arg.Crile == 4 || t.arg.Crile == 6 {
 		return pay.Sub(my)
 	}
 	return my.Sub(pay)

@@ -404,8 +404,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			// 立即买入
 			if t.arg.OneBuy && t.base < len(t.grids) {
 				log.Printf("%v用户一键补仓----实际操作", t.u.ObjectId)
-				t.arg.OneBuy = false
-				model.OneBuy(t.u.ObjectId)
+				t.OneBuy()
 				err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
 				if err != nil {
 					errorCount++
@@ -458,9 +457,19 @@ func (t *ExTrader) Tupdate() {
 func (t *ExTrader) AllSellMy() {
 	model.OneSell(t.u.ObjectId)
 	log.Println("一键平仓：", t.u.ObjectId)
-	// t.arg.AllSell = false
-	// t.u.Arg = model.ToStringJson(&t.arg)
-	// t.u.Update()
+	t.arg.AllSell = false
+	t.u.Arg = model.ToStringJson(&t.arg)
+	t.u.Update()
+}
+
+// OneBuy 补仓操作
+func (t *ExTrader) OneBuy() {
+	t.arg.OneBuy = false
+	log.Println("一键补仓：", t.u.ObjectId)
+	model.OneBuy(t.u.ObjectId)
+	t.arg.OneBuy = false
+	t.u.Arg = model.ToStringJson(&t.arg)
+	t.u.Update()
 }
 
 func (t *ExTrader) ToPrecision(p decimal.Decimal) decimal.Decimal {

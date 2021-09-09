@@ -178,7 +178,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							}
 							model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
-							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v", t.u.ObjectId, t.automatic, t.arg.IsHand)
+							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status)
 						}
 					}
 				} else {

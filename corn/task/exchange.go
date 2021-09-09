@@ -51,7 +51,7 @@ func RunWG() {
 						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.RealGrids)
 						go RunStrategy(u)
 					}
-				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 2 {
+				} else if model.UpdateStatus(u.ID) == int64(100) && model.UpdateRun(u.ID) == 2 {
 					log.Println("等待重新开始", u.ObjectId)
 					u.IsRun = 99
 					u.RealGrids = "***"

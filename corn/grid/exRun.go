@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"runtime"
 	"time"
+	logs "zmyjobs/corn/logs"
 	model "zmyjobs/corn/models"
 	"zmyjobs/goex"
 
 	"github.com/shopspring/decimal"
 )
+
+var GridDone = make(chan int32) // 停止策略
+var log = logs.Log
 
 // RunEx 策略执行入口
 func RunEx(ctx context.Context, u model.User) {
@@ -172,8 +176,6 @@ func (t *ExTrader) Trade(ctx context.Context) {
 									status = 1
 								} else {
 									status = 2
-									t.u.Status = 3
-									t.u.Update()
 								}
 							} else if t.automatic {
 								status = 0

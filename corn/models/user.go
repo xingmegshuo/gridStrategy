@@ -263,6 +263,12 @@ func UpdateStatus(id uint) (res int64) {
 	return
 }
 
+// UpdateRun 刷新
+func UpdateRun(id uint) (res float64) {
+	DB.Raw("select status from users where id = ?", id).Scan(&res)
+	return
+}
+
 // LoadSymbols 获取交易对
 func LoadSymbols(name string) []map[string]interface{} {
 	switch name {

@@ -168,7 +168,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							if t.arg.StopFlow {
 								status = 2
 							} else if !t.automatic {
-								if t.arg.Crile > 2 {
+								if t.arg.Crile == 2 || t.arg.Crile == 5 || t.arg.Crile == 6 {
 									status = 1
 								} else {
 									status = 2
@@ -178,7 +178,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							}
 							model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
-							log.Printf("%v任务结束;是否用户主动结束:%v;策略类型:%v", t.u.ObjectId, t.automatic, t.arg.IsHand)
+							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v", t.u.ObjectId, t.automatic, t.arg.IsHand)
 						}
 					}
 				} else {
@@ -225,7 +225,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		// 计算盈利
 		win := float64(0)
 		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
-			if t.arg.Crile == 4 {
+			if t.arg.Crile == 4 || t.arg.Crile == 6 {
 				win, _ = (t.pay.Sub(price.Mul(t.amount))).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 			} else {
 				win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
@@ -234,7 +234,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		reduce, _ := high.Sub(price).Div(t.last).Float64() // 当前回降
 		top, _ := price.Sub(low).Div(t.last).Float64()     // 当前回调
 		die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
-		if t.arg.Crile == 4 {
+		if t.arg.Crile == 4 || t.arg.Crile == 6 {
 			die, _ = price.Sub(t.last).Div(t.last).Float64() // 当前跌幅
 		}
 		if count == 50 {
@@ -242,6 +242,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		}
 
 		if win < -t.arg.StopEnd*0.01 {
+			log.Printf("用户%v损失达到%v,平仓止损", t.u.ObjectId, win)
 			t.arg.AllSell = true
 		}
 
@@ -272,6 +273,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		// 		}
 		// 	}
 		default:
+			if t.arg.AllSell && t.base == 0 {
+				log.Printf("用户%v发送清仓，但是没有仓位，正常停止", t.u.ObjectId)
+				t.over = true
+			}
 			//  第一单 进场时机无所谓
 			if t.base == 0 && !t.arg.StopBuy {
 				if t.arg.IsLimit && price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Add(decimal.NewFromFloat(1))) >= 0 &&

@@ -172,6 +172,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
 									status = 1
 								} else {
 									status = 2
+									t.u.Status = 3
+									t.u.Update()
 								}
 							} else if t.automatic {
 								status = 0

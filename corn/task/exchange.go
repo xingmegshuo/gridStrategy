@@ -60,7 +60,7 @@ func RunWG() {
 					u.Update()
 					time.Sleep(time.Second)
 					model.UpdateBase(u.ObjectId)
-					time.Sleep(time.Second)
+					time.Sleep(time.Second * 5)
 					u.IsRun = -1
 					model.AddRun(u.ObjectId, u.RunCount)
 					u = model.UpdateUser(u)

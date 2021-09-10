@@ -118,9 +118,9 @@ func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{
 	old := GetOldAmount(orderId)
 	var data = map[string]interface{}{}
 	data["status"] = status
-	// 分红金额小于5 结束任务
-	if GetAccount(id.(float64)) < 5 {
-		data["status"] = 0 // 跟随者不重新开启直接结束
+	// 预充值金额减去分红金额小于5 结束任务
+	if GetAccount(id.(float64))-b.(float64)*0.24 < 5 {
+		data["status"] = 0 // 循环中不重新开启直接结束
 	}
 	if b.(float64) > 0 {
 		log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))

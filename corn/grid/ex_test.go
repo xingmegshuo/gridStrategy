@@ -165,12 +165,12 @@ func TestFutureAccount(t *testing.T) {
 	// }
 	// symbol := model.StringSymobol(u.Symbol)
 	bian := model.SymbolCategory{
-		Key:    "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
-		Secret: "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4",
-		Symbol: "DOT/USD",
+		Key:    "sn2jFfLWTtmR2mv5y5oaex6XbBmWFeFQiYSNJDtlM02HEpmx7AI2Bi3aRZqtOyZs",
+		Secret: "mjVnBvK5TslMcJjkjdcKFiiJpAvmvOq3D3p9GDhpEQfQMaDb3KLtE4daUSTc4BsX",
+		Symbol: "ETH/USDT",
 		// Host:            "https://fapi.binace.com",
-		BaseCurrency:    "ADA",
-		QuoteCurrency:   "USD",
+		BaseCurrency:    "ETH",
+		QuoteCurrency:   "USDT",
 		AmountPrecision: 2,
 		PricePrecision:  6,
 		Category:        "币安",
@@ -203,9 +203,9 @@ func TestFutureAccount(t *testing.T) {
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)
-	// orderId := "8389765504833933312"
-	// h, over, o := cli.SearchOrder(orderId)
-	// fmt.Println(h, over, o)
+	orderId := "8389765506715143168"
+	h, over, o := cli.SearchOrder(orderId)
+	fmt.Println(h, over, o)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

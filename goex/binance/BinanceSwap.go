@@ -658,26 +658,32 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	if err != nil {
 		return nil, err
 	}
-	order := &FutureOrder{}
+	var orders []*FutureOrder
 	ordId, _ := strconv.Atoi(orderId)
-	// fmt.Println(result, "api返回数据------")
 	for _, info := range result {
+		// fmt.Println(info)
+		order := &FutureOrder{}
 		_ord := info.(map[string]interface{})
-		// fmt.Println(ordId, _ord["orderId"])
-		// fmt.Println(fmt.Sprintf("订单id:%v;订单时间:%v;", ToInt(_ord["orderId"]),
-		// 	time.Unix(0, ToInt64(_ord["updateTime"])*int64(time.Millisecond)).Format("2006-01-02 15:04:05:03:01")))
 
 		if ToInt(_ord["orderId"]) != ordId {
 			continue
 		}
 		// fmt.Println(fmt.Sprintf("时间:%+v,更新时间:%v", ToInt(_ord["time"]), ToInt(_ord["updateTime"])))
+		// fmt.Println(fmt.Sprintf("%+v", _ord))
 
 		order = bs.parseOrder(_ord)
+		fmt.Println(fmt.Sprintf("%+v", order))
 		order.Currency = currencyPair
-		// fmt.Println(fmt.Sprintf("订单数据:-----%+v", order))
-		return order, nil
+		orders = append(orders, order)
+		fmt.Println(fmt.Sprintf("订单数据:-----%+v", _ord))
+		// return order, nil
 	}
-	return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))
+	// 因为查出多个订单，返回最后一个为当前订单
+	if len(orders) > 0 {
+		return orders[len(orders)-1], nil
+	} else {
+		return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))
+	}
 }
 
 func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {

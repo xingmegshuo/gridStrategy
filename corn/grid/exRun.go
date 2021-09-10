@@ -145,7 +145,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 					} else {
 						t.setupGridOrders(ctx)
 						if t.ErrString != "" {
-							log.Println("网络链接问题：", t.u.ObjectId)
+							log.Println("网络链接问题：", t.u.ObjectId, "错误原因:", t.ErrString)
 							t.u.IsRun = -10
 							t.u.Error = t.ErrString
 							t.u.Update()
@@ -158,7 +158,11 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							res := t.CalCulateProfit()
 							p, _ := res.Float64()
 							// 盈利ctx
-							if t.arg.Crile >= 2 && !t.automatic {
+							if t.arg.Crile == 2 && !t.automatic {
+								t.u.IsRun = 100
+							} else if t.arg.Crile == 5 && !t.automatic {
+								t.u.IsRun = 100
+							} else if t.arg.Crile == 6 && !t.automatic {
 								t.u.IsRun = 100
 							} else {
 								t.u.IsRun = 2
@@ -182,7 +186,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							}
 							model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
-							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status)
+							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun)
 						}
 					}
 				} else {

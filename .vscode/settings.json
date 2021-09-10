@@ -3,5 +3,6 @@
         "other": true,
         "comments": true,
         "strings": false
-    }
+    },
+    "go.inferGopath": false
 }

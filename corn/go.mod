@@ -18,3 +18,7 @@ require (
 	gorm.io/driver/mysql v1.1.1
 	gorm.io/gorm v1.21.12
 )
+
+require zmyjobs/goex v0.0.0
+
+replace zmyjobs/goex => ../goex

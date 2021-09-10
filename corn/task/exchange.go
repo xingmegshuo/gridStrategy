@@ -64,6 +64,7 @@ func RunWG() {
 					u = model.UpdateUser(u)
 					u.Update()
 					log.Println("重新开始", u.ObjectId)
+					continue
 				} else {
 					runtime.Gosched()
 				}

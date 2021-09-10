@@ -340,9 +340,9 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 		}
 		log.Printf("用户%v投入币种:%v;清仓获得币种:%v", t.u.ObjectId, pay, my)
 		if t.arg.Crile == 4 || t.arg.Crile == 6 {
-			return pay.Sub(my).Mul(t.last)
-		} else {
 			return my.Sub(pay).Mul(t.last)
+		} else {
+			return pay.Sub(my).Mul(t.last)
 		}
 	}
 	// 正常u本位和现货盈利计算

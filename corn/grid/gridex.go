@@ -333,15 +333,16 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 	}
 	// 币本位的盈利计算
 	if t.u.Future == 2 || t.u.Future == 4 {
+		pay = decimal.NewFromFloat(0)
 		my = my.Abs()
 		for _, b := range t.RealGrids {
 			pay = pay.Add(b.AmountBuy)
 		}
 		log.Printf("用户%v投入币种:%v;清仓获得币种:%v", t.u.ObjectId, pay, my)
 		if t.arg.Crile == 4 || t.arg.Crile == 6 {
-			return pay.Sub(my.Mul(t.last))
+			return pay.Sub(my).Mul(t.last)
 		} else {
-			return my.Mul(t.last).Sub(pay)
+			return my.Sub(pay).Mul(t.last)
 		}
 	}
 	// 正常u本位和现货盈利计算

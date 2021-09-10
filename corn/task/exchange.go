@@ -56,6 +56,7 @@ func RunWG() {
 					u.IsRun = 99
 					u.RealGrids = "***"
 					u.RunCount++
+					u.Status = 0
 					u.Update()
 					time.Sleep(time.Second)
 					model.UpdateBase(u.ObjectId)
@@ -65,7 +66,7 @@ func RunWG() {
 					u = model.UpdateUser(u)
 					u.Update()
 					log.Println("重新开始", u.ObjectId, "单数", u.Status)
-					continue
+					runtime.Goexit()
 				} else {
 					runtime.Gosched()
 				}

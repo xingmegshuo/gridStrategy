@@ -212,10 +212,10 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 	for {
 		count++
 		time.Sleep(time.Second * 3) // 间隔0.5秒查询
-		
+
 		// 从缓存中获取价格
 		price := model.GetPrice(model.ParseFloatString(t.arg.CoinId.(float64)))
-		
+
 		var u model.User
 		model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
 		t.arg = model.ParseStrategy(u)

@@ -57,13 +57,14 @@ func RunWG() {
 					u.RealGrids = "***"
 					u.RunCount++
 					u.Update()
+					time.Sleep(time.Second)
 					model.UpdateBase(u.ObjectId)
 					time.Sleep(time.Second)
 					u.IsRun = -1
 					model.AddRun(u.ObjectId, u.RunCount)
 					u = model.UpdateUser(u)
 					u.Update()
-					log.Println("重新开始", u.ObjectId)
+					log.Println("重新开始", u.ObjectId, "单数", u.Status)
 					continue
 				} else {
 					runtime.Gosched()

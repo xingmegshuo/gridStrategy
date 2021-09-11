@@ -320,3 +320,9 @@ func UpdateUser(u User) User {
 	log.Println("解析参数完成", u.ObjectId)
 	return u
 }
+
+// 从数据库获取user
+func GetUserFromDB(id int32) (u User) {
+	DB.Raw("select * from users where object_id = ?", id).Scan(&u)
+	return u
+}

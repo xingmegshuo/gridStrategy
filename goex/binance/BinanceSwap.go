@@ -668,15 +668,9 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 		if ToInt(_ord["orderId"]) != ordId {
 			continue
 		}
-		// fmt.Println(fmt.Sprintf("时间:%+v,更新时间:%v", ToInt(_ord["time"]), ToInt(_ord["updateTime"])))
-		// fmt.Println(fmt.Sprintf("%+v", _ord))
-
 		order = bs.parseOrder(_ord)
-		fmt.Println(fmt.Sprintf("%+v", order))
 		order.Currency = currencyPair
 		orders = append(orders, order)
-		fmt.Println(fmt.Sprintf("订单数据:-----%+v", _ord))
-		// return order, nil
 	}
 	// 因为查出多个订单，返回最后一个为当前订单
 	if len(orders) > 0 {

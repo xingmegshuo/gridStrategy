@@ -185,7 +185,7 @@ func ParseStrategy(u User) *Args {
 	arg.Crile = data["frequency"].(float64)
 
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
-	if data["allSell"].(float64) >= 2 {
+	if data["allSell"].(float64) == 2 {
 		arg.AllSell = true
 	}
 	if data["allSell"].(float64) == 3 {

@@ -364,8 +364,7 @@ func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, o
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_log").Create(&data)
 	var id interface{}
-	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
-
+	UserDB.Raw("select id from db_task_order_log where create_time = ? and order_id = ? and member_id = ? ", data["create_time"], order, member).Scan(&id)
 	m, _ := money.(decimal.Decimal).Float64()
 	RunOver(member, m, order, id, isHand, status)
 }

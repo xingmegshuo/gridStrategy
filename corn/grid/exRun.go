@@ -219,6 +219,11 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		var u model.User
 		model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
 		t.arg = model.ParseStrategy(u)
+		if t.arg.StopFlow {
+			// 停止任务就可以
+			t.automatic = true
+			t.over = true
+		}
 
 		// 实时获取价格
 		// price, err := t.goex.GetPrice()

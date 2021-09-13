@@ -32,7 +32,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
             FlowType:       62,
             CustomerId:     uId,
             FromCustomerId: float64(from.(int64)),
-            Direction:      1,
+            Direction:      2,
             CoinId:         2,
             Amount:         realMoney,
             BeforeAmount:   t,

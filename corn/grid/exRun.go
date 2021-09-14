@@ -437,29 +437,31 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 				}
 			}
 			// 立即买入
-			if t.arg.OneBuy && t.base < len(t.grids) {
+			if t.arg.OneBuy {
 				canBuy = false
 				log.Printf("%v用户一键补仓----实际操作", t.u.ObjectId)
 				t.OneBuy()
-				err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
-				if err != nil {
-					errorCount++
-					if errorCount > 2 {
-						log.Printf("买入错误: %d, err: %s", t.base, err)
-						t.ErrString = err.Error()
-						time.Sleep(time.Second * 5)
-						t.over = true
+				if t.base < len(t.grids) {
+					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
+					if err != nil {
+						errorCount++
+						if errorCount > 2 {
+							log.Printf("买入错误: %d, err: %s", t.base, err)
+							t.ErrString = err.Error()
+							time.Sleep(time.Second * 5)
+							t.over = true
+						} else {
+							time.Sleep(time.Second * 10)
+							continue
+						}
 					} else {
-						time.Sleep(time.Second * 10)
-						continue
+						high = price
+						low = price
+						t.last = t.RealGrids[t.base].Price
+						t.base = t.base + 1
+						canBuy = true
+						t.Tupdate()
 					}
-				} else {
-					high = price
-					low = price
-					t.last = t.RealGrids[t.base].Price
-					t.base = t.base + 1
-					canBuy = true
-					t.Tupdate()
 				}
 				time.Sleep(time.Second * 3)
 			}

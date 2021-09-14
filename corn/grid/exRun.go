@@ -12,8 +12,11 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var GridDone = make(chan int32) // 停止策略
-var log = logs.Log
+var (
+	GridDone = make(chan int32) // 停止策略
+	log      = logs.Log
+	canBuy   = true
+)
 
 // RunEx 策略执行入口
 func RunEx(ctx context.Context, u model.User) {
@@ -69,8 +72,10 @@ func DelEx(u model.User) {
 				g.u.Update()
 				model.DB.Exec("update users set base = 0 where object_id = ?", g.u.ObjectId)
 				log.Println("实际的买入信息清空,用户单数清空", g.u.ObjectId)
-				model.LogStrategy(g.arg.CoinId, g.goex.symbol.Category, g.u.Name, g.u.ObjectId,
-					g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, 0)
+				if p != 0 {
+					model.LogStrategy(g.arg.CoinId, g.goex.symbol.Category, g.u.Name, g.u.ObjectId,
+						g.u.Custom, g.CountBuy(), g.cost, g.arg.IsHand, res, 0)
+				}
 				log.Println("任务结束,删除平仓或者暂停平仓", g.u.ObjectId)
 			}
 		}
@@ -184,8 +189,10 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else if t.automatic {
 								status = 0
 							}
-							model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
-								t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
+							if p != 0 {
+								model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
+									t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
+							}
 							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun)
 						}
 					}
@@ -305,6 +312,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					willbuy = true
 				}
 				if willbuy {
+					canBuy = false
 					log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
 					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
 					if err != nil {
@@ -318,14 +326,16 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 						t.last = t.RealGrids[0].Price
 						t.base = t.base + 1
 						log.Printf("用户%v首次买入成功;交易价格%v", t.u.ObjectId, t.last)
+						canBuy = true
 						t.Tupdate()
 					}
 				}
 			}
 			// 后续买入按照跌幅+回调来下单
-			if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy {
+			if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy && canBuy {
 				if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
 					log.Printf("第%d买入信息:{价格:%v,数量:%v,用户:%v,钱:%v,跌幅:%v}", t.base+1, price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy, die)
+					canBuy = false
 					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
 					if err != nil {
 						errorCount++
@@ -344,6 +354,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 						t.last = t.RealGrids[t.base].Price
 						t.base = t.base + 1
 						log.Printf("用户%v第%v次买入成功;交易价格%v", t.u.ObjectId, t.base, t.last)
+						canBuy = true
 						t.Tupdate()
 					}
 				}
@@ -358,6 +369,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					t.over = true
 				}
 				if t.arg.AllSell {
+					canBuy = false
 					log.Printf("%v用户智乘方清仓-----实际操作", t.u.ObjectId)
 					t.AllSellMy()
 					err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
@@ -392,6 +404,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					t.over = true
 				}
 				if t.arg.AllSell {
+					canBuy = false
 					log.Printf("%v用户智多元清仓=---实际操作", t.u.ObjectId)
 					t.AllSellMy()
 					for {
@@ -425,6 +438,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			}
 			// 立即买入
 			if t.arg.OneBuy && t.base < len(t.grids) {
+				canBuy = false
 				log.Printf("%v用户一键补仓----实际操作", t.u.ObjectId)
 				t.OneBuy()
 				err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
@@ -444,6 +458,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					low = price
 					t.last = t.RealGrids[t.base].Price
 					t.base = t.base + 1
+					canBuy = true
 					t.Tupdate()
 				}
 				time.Sleep(time.Second * 3)

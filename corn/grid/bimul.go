@@ -32,6 +32,7 @@ func (t *Trader) setupBi(win float64, reduce float64, price decimal.Decimal) err
 func (t *ExTrader) setupBi(win float64, reduce float64, price decimal.Decimal) error {
 	if win*100 > t.arg.Stop && reduce*100 > t.arg.Callback {
 		log.Println("智乘方盈利卖出", t.u.ObjectId, "当前价格:", price, "回降:", reduce, t.arg.Callback)
+		canBuy = false
 		err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
 		if err != nil {
 			log.Printf("error when setupGridOrders, grid number: %d, err: %s", t.base, err)

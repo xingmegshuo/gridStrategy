@@ -648,7 +648,7 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	// fmt.Println(currencyPair1)
 	params := url.Values{}
 	params.Set("symbol", currencyPair1.ToSymbol(""))
-	params.Set("orderId", "")
+	params.Set("orderId", orderId)
 	// params.Set("orderId", orderId)
 	bs.buildParamsSigned(&params)
 

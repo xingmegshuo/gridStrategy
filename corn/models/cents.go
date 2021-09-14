@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// CentsUser 用户分红
 func CentsUser(money float64, uId float64, from interface{}) {
     t := GetAccount(uId)
     realMoney := money * 0.24 // 分红盈利

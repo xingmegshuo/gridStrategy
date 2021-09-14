@@ -649,10 +649,10 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	params := url.Values{}
 	params.Set("symbol", currencyPair1.ToSymbol(""))
 	// params.Set("orderId", orderId)
-	// params.Set("orderId", orderId)
+	params.Set("orderId", "")
 	bs.buildParamsSigned(&params)
 
-	path := bs.apiV1 + "order?" + params.Encode()
+	path := bs.apiV1 + "allOrders?" + params.Encode()
 
 	result, err := HttpGet3(bs.httpClient, path, map[string]string{"X-MBX-APIKEY": bs.accessKey})
 	if err != nil {

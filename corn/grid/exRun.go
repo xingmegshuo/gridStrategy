@@ -333,7 +333,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 				}
 			}
 			// 后续买入按照跌幅+回调来下单
-			if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy && canBuy {
+			if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy && t.canBuy {
 				if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
 					log.Printf("第%d买入信息:{价格:%v,数量:%v,用户:%v,钱:%v,跌幅:%v}", t.base+1, price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy, die)
 					t.canBuy = false
@@ -382,8 +382,8 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 							t.ErrString = err.Error()
 							time.Sleep(time.Second * 5)
 							t.over = true
-							canBuy = true
-							centMoney = false
+							t.canBuy = true
+							t.centMoney = false
 						} else {
 							time.Sleep(time.Second * 10)
 							continue

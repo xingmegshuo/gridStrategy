@@ -29,6 +29,9 @@ type ExTrader struct {
 	SellMoney decimal.Decimal // 卖出金额
 	OrderOver bool            // 一次订单是否结束
 	goex      *Cliex          // goex
+	canBuy    bool            // 是否可以买入
+	centMoney bool            // 是否可以分红
+
 }
 
 // 策略预览内容

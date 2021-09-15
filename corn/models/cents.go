@@ -9,8 +9,8 @@
 package model
 
 import (
-	"fmt"
-	"time"
+    "fmt"
+    "time"
 )
 
 // CentsUser 用户分红
@@ -53,10 +53,10 @@ func CentsUser(money float64, uId float64, from interface{}) {
             realMoney -= fiveRate
             SaveMoney(1, fiveRate)
 
-            // 股东 20%的85%
+            // 股东 20%
             boss := money * 0.2 * 0.2
             realMoney -= boss
-            eightyFive := boss * 0.85
+            eightyFive := boss
             SaveMoney(2, eightyFive)
 
             // 市场

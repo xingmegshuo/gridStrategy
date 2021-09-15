@@ -146,7 +146,7 @@ func xhttp(url string, name string) {
 
 // craw
 func craw() {
-	if count%2 == 0 {
+	if count%5 == 0 {
 		crawHuobiSpot()
 		CrawBianSpot()
 		CrawOkSpot()

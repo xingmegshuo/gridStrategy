@@ -62,6 +62,8 @@ func Begin() {
 		select {
 		case <-Stop:
 			fmt.Println("关闭webSocket")
+			readWs = false
+			OpenWs = false
 			runtime.Goexit()
 		default:
 			time.Sleep(time.Second)

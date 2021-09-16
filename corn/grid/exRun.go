@@ -190,6 +190,8 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else if t.automatic {
 								status = 0
 							}
+							t.u.Status = status.(float64) + 1
+							t.u.Update()
 							if p != 0 && t.centMoney {
 								model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 									t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
@@ -229,8 +231,11 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		t.arg = model.ParseStrategy(u)
 		if t.arg.StopFlow {
 			// 停止任务就可以
+			log.Printf("用户%v停止跟随", t.u.ObjectId)
 			t.automatic = true
+			t.centMoney = false
 			t.over = true
+			break
 		}
 
 		// 实时获取价格
@@ -301,6 +306,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			if t.arg.AllSell && t.base == 0 {
 				log.Printf("用户%v发送清仓，但是没有仓位，正常停止", t.u.ObjectId)
 				t.over = true
+				break
 			}
 			//  第一单 进场时机无所谓
 			if t.base == 0 && !t.arg.StopBuy {
@@ -308,7 +314,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Sub(decimal.NewFromFloat(1))) < 0 {
 					log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动")
 					willbuy = true
-				} else if !t.arg.IsLimit && count > 2 {
+				} else if !t.arg.IsLimit && count > 5 {
 					time.Sleep(time.Second * 2)
 					willbuy = true
 				}
@@ -475,7 +481,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			}
 		}
 		if t.over {
-			log.Printf("%v用户任务结束", t.u.ObjectId)
+			log.Printf("%v用户任务结束,是否可以分红%v", t.u.ObjectId, t.centMoney)
 			break
 		}
 	}

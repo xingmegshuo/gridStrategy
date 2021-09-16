@@ -178,7 +178,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							t.u.Update()
 							model.DB.Exec("update users set base = 0 where object_id = ?", t.u.ObjectId)
 							log.Println("实际的买入信息清空,用户单数清空", t.u.ObjectId)
-							var status interface{}
+							var status float64
 							if t.arg.StopFlow {
 								status = 2
 							} else if !t.automatic {
@@ -190,7 +190,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else if t.automatic {
 								status = 0
 							}
-							t.u.Status = status.(float64) + 1
+							t.u.Status = status + 1
 							t.u.Update()
 							if p != 0 && t.centMoney {
 								model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,

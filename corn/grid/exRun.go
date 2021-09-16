@@ -173,9 +173,9 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else {
 								t.u.IsRun = 2
 							}
-							if t.arg.StopFlow {
-								t.u.IsRun = 0002
-							}
+							// if t.arg.StopFlow {
+							// 	t.u.IsRun = 10086
+							// }
 							t.u.BasePrice = p
 							t.u.RealGrids = "***"
 							t.u.Update()
@@ -193,11 +193,15 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else if t.automatic {
 								status = 0
 							}
-							t.u.Status = status + 1
-							t.u.Update()
+							// t.u.Status = status + 1
+							// t.u.Update()
 							if p != 0 && t.centMoney {
 								model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 									t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
+							} else {
+								var data = map[string]interface{}{}
+								data["status"] = status
+								model.UpdateOrder(t.u.ObjectId, data)
 							}
 							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun)
 						}

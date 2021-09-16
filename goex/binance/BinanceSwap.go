@@ -98,7 +98,7 @@ func (bs *BinanceSwap) ChangeLever(currency CurrencyPair, contractType string) b
 		if err == nil {
 			return true
 		}
-
+		fmt.Println(err)
 	}
 	return false
 }

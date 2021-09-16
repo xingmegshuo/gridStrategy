@@ -193,8 +193,6 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else if t.automatic {
 								status = 0
 							}
-							// t.u.Status = status + 1
-							// t.u.Update()
 							if p != 0 && t.centMoney {
 								model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
 									t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
@@ -380,7 +378,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					log.Printf("%v卖出错误: %d, err: %s", t.u.ObjectId, t.base, err)
 					t.ErrString = err.Error()
 					time.Sleep(time.Second * 5)
-					t.centMoney = true
 					t.over = true
 				}
 				if t.arg.AllSell {
@@ -402,6 +399,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 							continue
 						}
 					} else {
+						t.centMoney = true
 						t.Tupdate()
 					}
 					time.Sleep(time.Second * 3)
@@ -418,7 +416,6 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 					t.over = true
 				}
 				if t.HaveOver() {
-
 					t.over = true
 					t.centMoney = true
 				}

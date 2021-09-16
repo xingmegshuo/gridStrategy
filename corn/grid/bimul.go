@@ -40,6 +40,7 @@ func (t *ExTrader) setupBi(win float64, reduce float64, price decimal.Decimal) e
 			return err
 		} else {
 			t.over = true
+			t.centMoney = true
 		}
 	}
 	return nil

@@ -5,8 +5,6 @@ import (
 	"testing"
 	model "zmyjobs/corn/models"
 	"zmyjobs/goex"
-
-	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -34,8 +32,8 @@ func TestGetMoney(t *testing.T) {
 	// }
 
 	bian := model.SymbolCategory{
-		Key:             "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
-		Secret:          "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4",
+		Key:             "b0pHDmqinoKMWW4mlAj4mJ6urfwgI3F1OnACcZr3Vocr0RJ1NVHcdYniqAwac6CA",
+		Secret:          "UxtPFv116Y4pC6itHH25guzVfTO0lhiKKA5jyFcsSmsgqFcubPmrVQWBrRZP613f",
 		BaseCurrency:    "SAND",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 8,
@@ -61,11 +59,11 @@ func TestGetMoney(t *testing.T) {
 	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 
-	price := decimal.NewFromFloat(0)
+	// price := decimal.NewFromFloat(0)
 	// 买入
-	amount := decimal.NewFromFloat(21)
-	o, err := ex.Exchanges(amount, price, SellM, false)
-	fmt.Println(o, err)
+	// amount := decimal.NewFromFloat(21)
+	// o, err := ex.Exchanges(amount, price, SellM, false)
+	// fmt.Println(o, err)
 
 	//
 	// cliId := "338280716011966"
@@ -165,8 +163,8 @@ func TestFutureAccount(t *testing.T) {
 	// }
 	// symbol := model.StringSymobol(u.Symbol)
 	bian := model.SymbolCategory{
-		Key:    "sn2jFfLWTtmR2mv5y5oaex6XbBmWFeFQiYSNJDtlM02HEpmx7AI2Bi3aRZqtOyZs",
-		Secret: "mjVnBvK5TslMcJjkjdcKFiiJpAvmvOq3D3p9GDhpEQfQMaDb3KLtE4daUSTc4BsX",
+		Key:    "b0pHDmqinoKMWW4mlAj4mJ6urfwgI3F1OnACcZr3Vocr0RJ1NVHcdYniqAwac6CA",
+		Secret: "UxtPFv116Y4pC6itHH25guzVfTO0lhiKKA5jyFcsSmsgqFcubPmrVQWBrRZP613f",
 		Symbol: "ETH/USDT",
 		// Host:            "https://fapi.binace.com",
 		BaseCurrency:    "ETH",
@@ -176,21 +174,22 @@ func TestFutureAccount(t *testing.T) {
 		Category:        "币安",
 		Label:           "u20",
 		Future:          true,
+		Lever:           19,
 	}
 	// fmt.Println(bian)
 	cli := NewEx(&bian)
 
 	b := goex.NewCurrencyPair2(bian.Symbol)
 	// fmt.Println(b.String())
-	// cli.Future.ChangeLever(b, goex.SWAP_CONTRACT)
+	fmt.Println(cli.Future.ChangeLever(b, goex.SWAP_USDT_CONTRACT))
 	// fmt.Println(cli.Currency)
 	// cl := util.Config{Name: "币安"}
 	// p, err := cl.GetPrice("ETH/USD", true)
 	// fmt.Println(p, err)
-	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
+	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
 
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
-	fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
+	// fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
 	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
@@ -203,9 +202,9 @@ func TestFutureAccount(t *testing.T) {
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)
-	orderId := "8389765506715143168"
-	h, over, o := cli.SearchOrder(orderId)
-	fmt.Println(h, over, o)
+	// orderId := "8389765506715143168"
+	// h, over, o := cli.SearchOrder(orderId)
+	// fmt.Println(h, over, o)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

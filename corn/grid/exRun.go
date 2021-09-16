@@ -173,6 +173,9 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							} else {
 								t.u.IsRun = 2
 							}
+							if t.arg.StopFlow {
+								t.u.IsRun = 0002
+							}
 							t.u.BasePrice = p
 							t.u.RealGrids = "***"
 							t.u.Update()

@@ -97,6 +97,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 			symbol.Lever = 10
 		}
 	}
+
 	ex = &ExTrader{
 		grids:     *grid,
 		arg:       &arg,
@@ -195,13 +196,13 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							}
 							if p != 0 && t.centMoney {
 								model.LogStrategy(t.arg.CoinId, t.goex.symbol.Category, t.u.Name, t.u.ObjectId,
-									t.u.Custom, t.CountBuy(), t.cost, t.arg.IsHand, res, status)
+									t.u.Custom, t.CountBuy(), t.last, t.arg.IsHand, res, status)
 							} else {
 								var data = map[string]interface{}{}
 								data["status"] = status
 								model.UpdateOrder(t.u.ObjectId, data)
 							}
-							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun)
+							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v;arg%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun, t.arg.Crile)
 						}
 					}
 				} else {
@@ -309,6 +310,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		// 	}
 		default:
 			if t.arg.AllSell && t.base == 0 {
+				t.automatic = true
 				log.Printf("用户%v发送清仓，但是没有仓位，正常停止", t.u.ObjectId)
 				t.over = true
 				break

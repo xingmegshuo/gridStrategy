@@ -78,16 +78,16 @@ func init() {
 		DB:       0,
 	})
 
-	serverDB.SetMaxIdleConns(2000) //设置最大连接数
-	serverDB.SetMaxOpenConns(2000)
+	serverDB.SetMaxIdleConns(128) //设置最大连接数
+	serverDB.SetMaxOpenConns(128)
 	db, err := gorm.Open(mysql.New(mysql.Config{Conn: serverDB}), &gorm.Config{Logger: newLogger, PrepareStmt: true})
 
 	if err != nil {
 		panic("failed to connect database")
 	}
 	sqlDB, _ := sql.Open("mysql", dsn)
-	sqlDB.SetMaxIdleConns(2000) //设置最大连接数
-	sqlDB.SetMaxOpenConns(2000)
+	sqlDB.SetMaxIdleConns(24) //设置最大连接数
+	sqlDB.SetMaxOpenConns(24)
 	sqlDB.SetConnMaxLifetime(time.Second * 600) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{
 		Logger:      newLogger,

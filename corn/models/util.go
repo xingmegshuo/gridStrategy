@@ -164,7 +164,9 @@ func ParseStrategy(u User) *Args {
 	var data = map[string]interface{}{}
 	var arg Args
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
-	arg.Price, _ = GetPrice(ParseFloatString(data["coin_id"].(float64))).Float64()
+	if data["coin_id"] != nil {
+		arg.Price, _ = GetPrice(ParseFloatString(data["coin_id"].(float64))).Float64()
+	}
 	u.BasePrice = arg.Price
 	arg.FirstBuy = ParseStringFloat(data["FirstBuy"].(string))
 	arg.Rate = ParseStringFloat(data["rate"].(string))
@@ -220,6 +222,29 @@ func ParseStrategy(u User) *Args {
 	}
 	// log.Printf("arg数据:%+v", arg)
 	return &arg
+}
+
+// ListenU 监听变化的字段
+func ListenU(u User, arg *Args) *Args {
+	var data = map[string]interface{}{}
+	_ = json.Unmarshal([]byte(u.Strategy), &data)
+	if data["allSell"].(float64) == 2 {
+		arg.AllSell = true
+	}
+	if data["allSell"].(float64) == 3 {
+		// arg.AllSell = true
+		arg.StopFlow = true
+	}
+	if data["one_buy"].(float64) == 2 {
+		arg.OneBuy = true
+	}
+
+	if data["stop_buy"].(float64) == 2 {
+		arg.StopBuy = true
+	} else {
+		arg.StopBuy = false
+	}
+	return arg
 }
 
 func GetPrice(coin string) decimal.Decimal {

@@ -82,7 +82,9 @@ func DelEx(u model.User) {
 }
 
 //* NewGrid 实例化对象，并验证api key的正确性
-func NewExStrategy(u model.User) (ex *ExTrader) {
+func NewExStrategy(oldU model.User) (ex *ExTrader) {
+	var u model.User
+	model.DB.Raw("select * from users where object_id = ?", oldU.ObjectId).Scan(&u)
 	arg := model.StringArg(u.Arg)
 	grid, _ := model.SourceStrategy(u, false)
 	var realGrid []model.Grid
@@ -122,7 +124,7 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 	} else if u.Future > 0 {
 		return nil
 	}
-	log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v", u.ObjectId, ex.goex.Currency, u.Future, ex.arg.Crile, ex.RealGrids)
+	log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v;当前单数:%v", u.ObjectId, ex.goex.Currency, u.Future, ex.arg.Crile, ex.RealGrids, ex.u.Base)
 	return
 }
 
@@ -234,7 +236,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 
 		var u model.User
 		model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
-		t.arg = model.ParseStrategy(u)
+		t.arg = model.ListenU(u, t.arg)
 		if t.arg.StopFlow {
 			// 停止任务就可以
 			log.Printf("用户%v停止跟随", t.u.ObjectId)

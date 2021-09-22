@@ -66,7 +66,7 @@ func RunWG() {
 					model.AddRun(u.ObjectId, u.RunCount)
 					u = model.UpdateUser(u)
 					u.Update()
-					log.Println("重新开始", u.ObjectId, "单数", u.Status)
+					log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
 					runtime.Goexit()
 				} else {
 					runtime.Gosched()

@@ -366,8 +366,8 @@ func (t *ExTrader) WaitOrder(orderId string, cli string) bool {
 		if t.SearchOrder(orderId, cli) {
 			return true
 		}
-		if time.Since(start) >= time.Minute*10 {
-			fmt.Printf("用户%v下单id%v无法找到", t.u.ObjectId, orderId)
+		if time.Since(start) >= time.Minute*30 {
+			fmt.Println(fmt.Sprintf("用户%v下单id%v无法找到", t.u.ObjectId, orderId))
 			return false
 		} else {
 			time.Sleep(time.Second * 2)
@@ -394,7 +394,7 @@ func (t *ExTrader) WaitSell(price decimal.Decimal, amount decimal.Decimal, rate 
 			t.last = price
 			return nil
 		} else {
-			t.goex.CancelOrder(o.OrderId)
+			// t.goex.CancelOrder(o.OrderId)
 			return errors.New("卖出出错")
 		}
 	}

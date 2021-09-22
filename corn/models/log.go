@@ -338,7 +338,7 @@ func DeleteRebotLog(orderId string) {
 // LogStrategy 卖出盈利日志
 func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, order interface{},
 	member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}, status interface{}) {
-	log.Println("盈利日志", name, member, coin_name)
+	log.Printf("盈利日志,交易所名称:%v,用户:%v,币种名称:%v", name, member, coin_name)
 	var (
 		data     = map[string]interface{}{}
 		categroy = map[string]interface{}{}

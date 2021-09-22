@@ -95,7 +95,7 @@ func CrawRun() {
 					Stop <- 2
 					runtime.Goexit()
 				}
-				if time.Since(start) > time.Second*20 && !isOver {
+				if time.Since(start) > time.Second*30 && !isOver {
 					fmt.Println("超时退出", time.Since(start), count, isOver)
 					StopHttp <- 2
 					runtime.Goexit()

@@ -135,7 +135,7 @@ func NewUser() {
 					StrategyError(u.ObjectId, u.Error)
 				}
 			}
-			if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
+			if u.Strategy != parseInput(order) {
 				// old := ParseStrategy(u)
 				u.Strategy = parseInput(order)
 				u = UpdateUser(u)
@@ -317,7 +317,7 @@ func UpdateUser(u User) User {
 		u.Error = e.Error()
 		StrategyError(u.ObjectId, e.Error())
 	}
-	log.Println("解析参数完成", u.ObjectId)
+	log.Printf("用户%v解析参数完成;策略数据:%v;;", u.ObjectId, u.Arg)
 	return u
 }
 

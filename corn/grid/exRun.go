@@ -204,7 +204,7 @@ func (t *ExTrader) Trade(ctx context.Context) {
 								data["status"] = status
 								model.UpdateOrder(t.u.ObjectId, data)
 							}
-							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v;arg%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun, t.arg.Crile)
+							log.Printf("%v任务结束;是否用户主动结束:%v;是否自动策略:%v;状态%v;is_run:%v;arg:%v", t.u.ObjectId, t.automatic, t.arg.IsHand, status, t.u.IsRun, t.arg.Crile)
 						}
 					}
 				} else {

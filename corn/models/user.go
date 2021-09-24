@@ -152,7 +152,7 @@ func NewUser() {
 				UpdateBase(u.ObjectId)
 				AddRun(u.ObjectId, u.RunCount)
 			}
-			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2 && u.Status == 0 && u.RealGrids == "***" {
+			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2  && u.RealGrids == "***" {
 				u.IsRun = -1
 				u.Update()
 				// u = model.UpdateUser(u)

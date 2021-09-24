@@ -88,7 +88,9 @@ func NewExStrategy(oldU model.User) (ex *ExTrader) {
 	arg := model.StringArg(u.Arg)
 	grid, _ := model.SourceStrategy(u, false)
 	var realGrid []model.Grid
-	_ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
+	if u.Base > 0 {
+		_ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
+	}
 	symbol := model.StringSymobol(u.Symbol)
 	if arg.Level == nil {
 		symbol.Lever = 10

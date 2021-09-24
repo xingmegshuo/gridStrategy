@@ -56,8 +56,9 @@ func RunWG() {
 					log.Println("等待重新开始", u.ObjectId)
 					u.IsRun = 99
 					u.RealGrids = "***"
+					u.Base = 0
 					u.RunCount++
-					u.Status = 0
+					// u.Status = 0
 					u.Update()
 					time.Sleep(time.Second)
 					model.UpdateBase(u.ObjectId)

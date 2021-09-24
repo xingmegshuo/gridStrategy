@@ -141,8 +141,24 @@ func NewUser() {
 				u = UpdateUser(u)
 				u.Update()
 			}
-		}
 
+			if UpdateStatus(u.ID) == int64(100) && UpdateRun(u.ID) == 2 {
+				log.Println("等待重新开始", u.ObjectId)
+				u.IsRun = 99
+				u.RealGrids = "***"
+				u.Base = 0
+				u.RunCount++
+				u.Update()
+				UpdateBase(u.ObjectId)
+				AddRun(u.ObjectId, u.RunCount)
+			}
+			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2 && u.Status == 0 && u.RealGrids == "***" {
+				u.IsRun = -1
+				u.Update()
+				// u = model.UpdateUser(u)
+				log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
+			}
+		}
 		mutex.Unlock()
 	}
 }

@@ -82,15 +82,12 @@ func DelEx(u model.User) {
 }
 
 //* NewGrid 实例化对象，并验证api key的正确性
-func NewExStrategy(oldU model.User) (ex *ExTrader) {
-	var u model.User
-	model.DB.Raw("select * from users where object_id = ?", oldU.ObjectId).Scan(&u)
+func NewExStrategy(u model.User) (ex *ExTrader) {
 	arg := model.StringArg(u.Arg)
 	grid, _ := model.SourceStrategy(u, false)
 	var realGrid []model.Grid
-	if u.Base > 0 {
-		_ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
-	}
+	_ = json.Unmarshal([]byte(u.RealGrids), &realGrid)
+
 	symbol := model.StringSymobol(u.Symbol)
 	if arg.Level == nil {
 		symbol.Lever = 10
@@ -109,6 +106,10 @@ func NewExStrategy(oldU model.User) (ex *ExTrader) {
 		goex:      NewEx(&symbol),
 		canBuy:    true,
 		centMoney: false,
+		u:         u,
+	}
+	if u.Base != len(realGrid) {
+		ex.RealGrids = []model.Grid{}
 	}
 	if ex.goex.Future != nil {
 		if u.Future == 2 || u.Future == 4 {
@@ -126,7 +127,8 @@ func NewExStrategy(oldU model.User) (ex *ExTrader) {
 	} else if u.Future > 0 {
 		return nil
 	}
-	log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v;当前单数:%v", u.ObjectId, ex.goex.Currency, u.Future, ex.arg.Crile, ex.RealGrids, ex.u.Base)
+	log.Printf("用户:%v;交易对:%v;期货标识:%v;策略类型:%v;实际交易信息:%v;当前单数:%v", u.ObjectId,
+		ex.goex.Currency, u.Future, ex.arg.Crile, ex.RealGrids, ex.u.Base)
 	return
 }
 

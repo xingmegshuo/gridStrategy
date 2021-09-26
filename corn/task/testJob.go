@@ -75,7 +75,7 @@ func CrawRun() {
 						if count%20 == 0 {
 							xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
 							xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-							crawAccount()
+							// crawAccount()
 						}
 						isOver = true
 						count++
@@ -98,6 +98,7 @@ func CrawRun() {
 				if time.Since(start) > time.Second*30 && !isOver {
 					fmt.Println("超时退出", time.Since(start), count, isOver)
 					StopHttp <- 2
+					time.Sleep(time.Second)
 					runtime.Goexit()
 				} else {
 					time.Sleep(time.Second)

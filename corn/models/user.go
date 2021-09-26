@@ -97,6 +97,7 @@ func NewUser() {
 				}
 			}
 		} else {
+			// log.Println("查找到用户----", u.ObjectId)
 			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
 			if order["status"].(float64)+1 != u.Status {
 				log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
@@ -141,7 +142,9 @@ func NewUser() {
 				u = UpdateUser(u)
 				u.Update()
 			}
-
+			if u.IsRun > 10 {
+				log.Printf("数据: status：%v;Base:%v;user:%v;实际交易信息:%v", u.Status, u.Base, u.ObjectId, u.RealGrids)
+			}
 			if UpdateStatus(u.ID) == int64(100) && UpdateRun(u.ID) == 2 {
 				log.Println("等待重新开始", u.ObjectId)
 				u.IsRun = 99
@@ -152,7 +155,7 @@ func NewUser() {
 				UpdateBase(u.ObjectId)
 				AddRun(u.ObjectId, u.RunCount)
 			}
-			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2  && u.RealGrids == "***" {
+			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2 && u.RealGrids == "***" && u.Base == 0 {
 				u.IsRun = -1
 				u.Update()
 				// u = model.UpdateUser(u)

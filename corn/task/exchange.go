@@ -46,7 +46,6 @@ func RunWG() {
 					log.Println("符合要求", model.UpdateStatus(u.ID), u.ObjectId)
 					for i := 1; i < 2; i++ {
 						start = 1
-						log.Printf("协程开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
 						u = model.GetUserFromDB(u.ObjectId)
 						log.Printf("协程开始-数据库用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
 						go RunStrategy(u)
@@ -101,7 +100,11 @@ OuterLoop:
 			time.Sleep(time.Millisecond * 100)
 			if model.UpdateStatus(u.ID) == -1 {
 				u.IsRun = 10
+				u.Base = 0
+				u.RealGrids = "***"
 				u.Update()
+				time.Sleep(time.Millisecond * 200)
+				log.Printf("协程重新开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
 				for i := 0; i < 1; i++ {
 					go grid.RunEx(ctx, u) //goex
 				}

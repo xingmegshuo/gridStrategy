@@ -221,6 +221,8 @@ func ParseStrategy(u User) *Args {
 		arg.OrderType = 2
 	}
 	// log.Printf("arg数据:%+v", arg)
+	arg.Callback = 0
+	arg.Reduce = 0
 	return &arg
 }
 
@@ -244,6 +246,7 @@ func ListenU(u User, arg *Args) *Args {
 	} else {
 		arg.StopBuy = false
 	}
+
 	return arg
 }
 

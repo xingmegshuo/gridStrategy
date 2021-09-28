@@ -142,9 +142,6 @@ func NewUser() {
 				u = UpdateUser(u)
 				u.Update()
 			}
-			// if u.IsRun > 10 {
-			// 	log.Printf("数据: status：%v;Base:%v;user:%v;实际交易信息:%v", u.Status, u.Base, u.ObjectId, u.RealGrids)
-			// }
 			if UpdateStatus(u.ID) == int64(100) && UpdateRun(u.ID) == 2 {
 				log.Println("等待重新开始", u.ObjectId)
 				u.IsRun = 99
@@ -298,7 +295,7 @@ func LoadSymbols(name string) []map[string]interface{} {
 	}
 }
 
-// SourceStrategy 生成并写入表
+// SourceStrategy 生成策略内容并写入表
 func SourceStrategy(u User, load bool) (*[]Grid, error) {
 	if data, ok := LoadStrategy(u); ok && !load {
 		return data, nil

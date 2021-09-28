@@ -58,5 +58,4 @@ func WriteCache(name string, t time.Duration) {
 	// fmt.Println(name, string(byteData), Data, err)
 	model.Del(name)
 	model.SetCache(name, string(byteData), t)
-
 }

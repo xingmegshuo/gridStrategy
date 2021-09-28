@@ -104,8 +104,9 @@ OuterLoop:
 				u.RealGrids = "***"
 				u.Update()
 				time.Sleep(time.Millisecond * 200)
-				log.Printf("协程重新开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
+
 				for i := 0; i < 1; i++ {
+					log.Printf("协程重新开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
 					go grid.RunEx(ctx, u) //goex
 				}
 			} else {

@@ -282,7 +282,7 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		if count == 50 {
 			log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
 		}
-
+		log.Println(win, t.arg.StopEnd)
 		if win < -t.arg.StopEnd*0.01 {
 			log.Printf("用户%v损失达到%v,平仓止损", t.u.ObjectId, win)
 			t.arg.AllSell = true

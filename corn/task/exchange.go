@@ -100,13 +100,19 @@ OuterLoop:
 			time.Sleep(time.Millisecond * 100)
 			if model.UpdateStatus(u.ID) == -1 {
 				u.IsRun = 10
-				u.Base = 0
-				u.RealGrids = "***"
 				u.Update()
 				time.Sleep(time.Millisecond * 200)
-
 				for i := 0; i < 1; i++ {
-					log.Printf("协程重新开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
+					go grid.RunEx(ctx, u) //goex
+				}
+			} else if model.UpdateStatus(u.ID) == 99 {
+				u.Base = 0
+				u.RealGrids = "***"
+				u.IsRun = 10
+				u.Update()
+				log.Printf("协程重新开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
+				time.Sleep(time.Millisecond * 200)
+				for i := 0; i < 1; i++ {
 					go grid.RunEx(ctx, u) //goex
 				}
 			} else {

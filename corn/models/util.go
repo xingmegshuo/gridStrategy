@@ -246,7 +246,9 @@ func ListenU(u User, arg *Args) *Args {
 	} else {
 		arg.StopBuy = false
 	}
-
+	if data["Crile"] != nil {
+		arg.Crile = data["Crile"].(float64)
+	}
 	return arg
 }
 

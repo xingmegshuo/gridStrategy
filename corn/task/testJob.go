@@ -484,6 +484,7 @@ func crawAccount() {
 	model.UserDB.Raw("select id from db_customer").Scan(&ids)
 	for _, id := range ids {
 		data := map[string]interface{}{
+			"id": model.ParseFloatString(id),
 			"1": map[string][]map[string]interface{}{
 				"spot": GetUserHold(id, 1, 0),
 			},

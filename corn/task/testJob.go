@@ -79,7 +79,7 @@ func CrawRun() {
 						if count%20 == 0 {
 							xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
 							xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-							crawAccount()
+							// crawAccount()
 						}
 						isOver = true
 						count++
@@ -436,7 +436,7 @@ func CrawOkSpot() {
 				var id interface{}
 				if name := util.ToMySymbol(symbol); name != "none" && name[len(name)-4:] == "USDT" {
 					model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 0, name, 5).Scan(&id)
-					fmt.Println(id, symbol)
+					// fmt.Println(id, symbol)
 					if id != nil {
 						var (
 							raf       float64
@@ -483,7 +483,6 @@ func crawAccount() {
 		ids   []float64
 	)
 	model.UserDB.Raw("select id from db_customer").Scan(&ids)
-	// fmt.Println(ids)
 	for _, id := range ids {
 		data := map[string]interface{}{
 			"1": map[string][]map[string]interface{}{
@@ -496,7 +495,6 @@ func crawAccount() {
 			},
 		}
 		str, _ := json.Marshal(&data)
-		// fmt.Println(string(str), id)
 		users = append(users, &redis.Z{
 			Score:  id,
 			Member: string(str),
@@ -514,10 +512,8 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 	if b && t == 0 {
 		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Pashare: pashare})
 		value, err := c.Ex.GetAccount()
-		// fmt.Println(err, value)
 		if err == nil {
 			for k, v := range value.SubAccounts {
-				// fmt.Println("hhh", v, k)
 				if v.Amount > 0 {
 					one := map[string]interface{}{}
 					one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
@@ -525,7 +521,6 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 					if k.Symbol != "USDT" {
 						var id float64
 						model.UserDB.Raw("select id from db_task_coin where category_id = ? and en_name = ? and coin_type = 0 ", cate, k.Symbol).Scan(&id)
-						// fmt.Println(id)
 						if id > 0 {
 							one["money"] = model.GetPrice(model.ParseFloatString(id)).Mul(decimal.NewFromFloat(v.Amount)).Round(8)
 						} else {
@@ -534,7 +529,6 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 					} else {
 						one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
 					}
-					// fmt.Println("00000", one)
 					data = append(data, one)
 				}
 

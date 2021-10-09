@@ -248,7 +248,9 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 		if a["category_id"] == category && a["member_id"] == memberid {
 			apiKey = a["apikey"].(string)
 			secret = a["secretkey"].(string)
-			pashare = a["pashare"].(string)
+			if a["pashare"] != nil {
+				pashare = a["pashare"].(string)
+			}
 		}
 	}
 	if name != "" && apiKey != "" && secret != "" {

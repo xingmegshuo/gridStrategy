@@ -494,7 +494,7 @@ func crawAccount() {
 			},
 		}
 		str, _ := json.Marshal(&data)
-		if data["1"].(map[string]interface{})["spot"] != nil || data["2"].(map[string]interface{})["spot"] != nil || data["2"].(map[string]interface{})["B"] != nil || data["2"].(map[string]interface{})["U"] != nil {
+		if data["1"].(map[string][]map[string]interface{})["spot"] != nil || data["2"].(map[string][]map[string]interface{})["spot"] != nil || data["2"].(map[string][]map[string]interface{})["B"] != nil || data["2"].(map[string][]map[string]interface{})["U"] != nil {
 			model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
 		}
 		model.ListCacheAddOne("ZMYUSERS", &redis.Z{

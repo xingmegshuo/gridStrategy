@@ -386,10 +386,10 @@ func CrawOkSwap() {
 
 			var id interface{}
 			if symbol[len(symbol)-4:] == "USDT" {
-				model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 1, symbol, 5).Scan(&id)
+				model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 1, symbol, 3).Scan(&id)
 
 			} else if symbol[len(symbol)-3:] == "USD" {
-				model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 3, symbol, 5).Scan(&id)
+				model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 3, symbol, 3).Scan(&id)
 			}
 			if id != nil {
 				model.ListCacheRm("ZMYCOINS", model.ParseFloatString(float64(id.(int64))), model.ParseFloatString(float64(id.(int64))))

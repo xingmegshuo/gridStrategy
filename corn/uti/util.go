@@ -9,19 +9,19 @@
 package util
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "os"
+    "strings"
+    "time"
 
-	"zmyjobs/goex"
-	"zmyjobs/goex/builder"
+    "zmyjobs/goex"
+    "zmyjobs/goex/builder"
 
-	"github.com/shopspring/decimal"
-	"golang.org/x/net/proxy"
+    "github.com/shopspring/decimal"
+    "golang.org/x/net/proxy"
 )
 
 // Config 创建client需要的配置Struct
@@ -144,6 +144,7 @@ func SwitchCoinType(name string) int {
         return 3
     }
     if name[len(name)-4:] == "usd" || name[len(name)-4:] == "USD" {
+        fmt.Println(name[len(name)-4:])
         return 2
     }
     if strings.Contains(name, "USD") || strings.Contains(name, "usd") {

@@ -368,7 +368,7 @@ func CrawOkSwap() {
 		for _, s := range data.RealData {
 			symbol := util.ToMySymbol(s["instId"])
 			var coin model.Coin
-			coin.CategoryId = 5
+			coin.CategoryId = 3
 			coin.Name = symbol
 			coin.PriceUsd = model.ParseStringFloat(s["last"])
 			coin.Price = coin.PriceUsd * 6.5

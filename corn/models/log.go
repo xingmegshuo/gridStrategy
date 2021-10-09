@@ -116,6 +116,7 @@ func AddRun(id interface{}, b interface{}) {
 
 // RunOver 运行完成
 func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isHand bool, status interface{}) {
+	// fmt.Println(isHand)
 	old := GetOldAmount(orderId)
 	var data = map[string]interface{}{}
 	data["status"] = status

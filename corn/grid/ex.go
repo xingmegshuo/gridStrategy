@@ -126,7 +126,7 @@ func NewFromFutureOrder(order *goex.FutureOrder) *OneOrder {
 
 func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
-		Host: symbol.Host, ClientID: symbol.Label, Lever: symbol.Lever}
+		Host: symbol.Host, ClientID: symbol.Label, Lever: symbol.Lever, Passhare: symbol.Pashare}
 	if symbol.Future {
 		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
 	} else {
@@ -226,6 +226,7 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 		order *goex.Order
 		err   error
 	)
+
 	if c.symbol.Future {
 		var FutureOrder *goex.FutureOrder
 		if c.symbol.QuoteCurrency == "USDT" {

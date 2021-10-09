@@ -287,8 +287,9 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		if count == 50 {
 			log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
 		}
-		if win*100 < -t.arg.StopEnd {
-			log.Printf("用户%v损失达到%v,平仓止损", t.u.ObjectId, win)
+
+		if win < -t.arg.StopEnd*0.01 {
+			log.Printf("用户%v损失达到%v,平仓止损,上次交易价格:%v;当前价格:%v", t.u.ObjectId, win, t.last, price)
 			t.arg.AllSell = true
 		}
 
@@ -327,10 +328,13 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 			}
 			//  第一单 进场时机无所谓
 			if t.base == 0 && !t.arg.StopBuy {
-				if t.arg.IsLimit && price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Add(decimal.NewFromFloat(1))) >= 0 &&
-					price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Sub(decimal.NewFromFloat(1))) < 0 {
-					log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动")
-					willbuy = true
+				if t.arg.IsLimit {
+					if price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Mul(decimal.NewFromFloat(1.001))) <= 0 &&
+						price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Mul(decimal.NewFromFloat(0.999))) >= 0 {
+						log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动")
+						willbuy = true
+						model.UpdateLimit(t.u.ObjectId)
+					}
 				} else if !t.arg.IsLimit && count > 5 {
 					time.Sleep(time.Second * 2)
 					willbuy = true

@@ -86,16 +86,17 @@ func (t *ExTrader) ReBalance(ctx context.Context) error {
 	t.base = t.u.Base
 	t.amount = t.CountHold()
 	moneyNeed := t.CountNeed()
-	log.Printf("数量:%v;用户:%v;需要:%v", t.amount, t.u.ObjectId, moneyNeed)
 	if len(t.RealGrids) == 0 {
 		t.base = 0
 	}
 	for i := 0; i < len(t.RealGrids); i++ {
 		if i < t.base {
-			t.pay = t.pay.Add(t.RealGrids[i].TotalBuy)
 			t.SellMoney = t.SellMoney.Add(t.RealGrids[i].AmountSell)
 		}
 	}
+	t.pay = t.CountPay()
+	log.Printf("数量:%v;用户:%v;需要:%v,投入金额:%v", t.amount, t.u.ObjectId, moneyNeed, t.pay)
+
 	moneyNeed = decimal.Decimal{}
 	b, moneyHeld, coinHeld := t.goex.GetAccount()
 	if b {
@@ -140,8 +141,6 @@ func (t *ExTrader) CountNeed() (moneyNeed decimal.Decimal) {
 }
 
 /*
-
-
 	 @title   : buy
 	 @desc    : 买入操作
 	 @auth    : small_ant / time(2021/08/12 10:06:40)
@@ -176,13 +175,15 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 		}
 		msg = "开空"
 	}
+	if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
+		amount = t.grids[t.base].Mesure
+	}
 	// amount = decimal.Decimal{}
 	o, err := t.goex.Exchanges(amount, price, orderType, false)
 	clientId, orderId := o.ClientId, o.OrderId
 	log.Printf("[Order][buy] 价格: %s, 数量: %s, 用户:%d,订单号:%v,自定义订单号:%v,类型:%s", price, amount, t.u.ObjectId, orderId, clientId, msg)
 	// 增加一个真实成交
 	if err == nil {
-		// fmt.Println("已经挂单的买入", t.u.ObjectId)
 		log.Printf("买入下单返回的数据用户%v[%v][%v]:amount:%v,price:%v", t.u.ObjectId, o.Slide, o.Type, o.Amount, o.Price)
 		t.log(orderId, price, msg, t.base, amount, rate, "买入")
 		g := model.Grid{
@@ -191,7 +192,8 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 			Order:   orderId,
 		}
 		if t.u.Future > 0 {
-			g.Mesure = t.grids[t.base].AmountBuy
+			g.Mesure = t.grids[t.base].Mesure
+			g.AmountBuy = t.grids[t.base].AmountBuy
 		}
 		t.RealGrids = append(t.RealGrids, g)
 	}
@@ -214,7 +216,7 @@ func (t *ExTrader) sell(price, amount decimal.Decimal, rate float64, n int) (*On
 		orderType = OpenLM
 		msg = "平空"
 	}
-	if t.u.Future == 2 || t.u.Future == 4 {
+	if t.u.Future == 2 || t.u.Future == 4 || t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
 		amount = t.CountMesure()
 	}
 	log.Printf("类型:%v,数量:%v,价格:%v;用户:%v", msg, amount, price, t.u.ObjectId)
@@ -253,6 +255,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 	if t.u.Future == 2 || t.u.Future == 4 {
 		amount = decimal.NewFromFloat(order.Cash)
 	}
+
 	t.hold = t.myMoney()
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 	if b, ok := t.SellOrder[order.OrderId]; ok {
@@ -264,27 +267,35 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		if t.u.Future == 2 || t.u.Future == 4 {
 			t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
 		}
+		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
+			t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Mul(price)
+		}
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
-		model.RebotUpdateBy(order.OrderId, price, amount.Abs(), fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
+		model.RebotUpdateBy(order.OrderId, price, t.RealGrids[b].AmountBuy, fee, t.RealGrids[b].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
 		if b == 0 {
 			t.over = true
 			model.AsyncData(t.u.ObjectId, 0.00, 0.00, 0.00, 0)
 		} else {
-			model.AsyncData(t.u.ObjectId, t.amount, t.pay.Div(t.amount), t.pay, b)
+			model.AsyncData(t.u.ObjectId, t.amount, t.pay.Div(amount), t.pay, b)
 		}
 	} else {
 		log.Printf("当前单数:%v,用户:%v", t.base, t.u.ObjectId)
-		t.RealGrids[t.base].AmountBuy = amount.Sub(fee)
+		if t.goex.symbol.Category != "OKex" && t.u.Future <= 0 {
+			t.RealGrids[t.base].AmountBuy = amount.Sub(fee)
+		}
 		t.RealGrids[t.base].Price = price
 		t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(fee))
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
 		}
+		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
+			t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].AmountBuy.Mul(price)
+		}
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
 		t.cost = t.CostPrice()
-		model.RebotUpdateBy(order.OrderId, price, amount.Sub(fee), fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
+		model.RebotUpdateBy(order.OrderId, price, t.RealGrids[t.base].AmountBuy, fee, t.RealGrids[t.base].TotalBuy, t.hold, "成功", order.ClientId, t.u.Future, t.arg.CoinId)
 		model.AsyncData(t.u.ObjectId, t.amount, t.cost, t.pay, t.base+1)
 	}
 }
@@ -384,11 +395,11 @@ func (t *ExTrader) WaitSell(price decimal.Decimal, amount decimal.Decimal, rate 
 		log.Printf("卖出错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if o.ClientId != "" {
-			t.ParseOrder(o)
-			t.last = price
-			return nil
-		}
+		// if o.ClientId != "" {
+		// 	t.ParseOrder(o)
+		// 	t.last = price
+		// 	return nil
+		// }
 		if t.WaitOrder(o.OrderId, o.ClientId) {
 			// t.ParseOrder(o)
 			t.last = price
@@ -408,7 +419,7 @@ func (t *ExTrader) WaitBuy(price decimal.Decimal, amount decimal.Decimal, rate f
 		log.Printf("买入错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if o.ClientId != "" {
+		if o.ClientId != "" && t.goex.symbol.Category != "OKex" {
 			t.ParseOrder(o)
 			t.last = decimal.NewFromFloat(o.Price)
 			return nil
@@ -448,6 +459,7 @@ func (t *ExTrader) SellCount(sell decimal.Decimal) (coin decimal.Decimal) {
 		coin = c
 	}
 	coin = t.ToPrecision(coin)
+
 	log.Printf("用户%v卖出计算:%v", t.u.ObjectId, coin)
 	return
 }

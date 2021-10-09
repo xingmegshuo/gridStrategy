@@ -16,6 +16,7 @@ var OperateCh = make(chan Operate) // 操作管道
 // SymbolCategory 交易对参数
 type SymbolCategory struct {
 	Category        string          // 平台
+	Pashare         string          // okex 自定义
 	Symbol          string          // 交易对
 	AmountPrecision int32           // 精度
 	PricePrecision  int32           // 价格精度
@@ -38,6 +39,7 @@ type CategorySymbols struct {
 	PricePrecision  int32           // 价格精度
 	MinTotal        decimal.Decimal // 最小交易钱
 	MinAmount       decimal.Decimal // 最小交易数量
+	CtVal           float64         // ok 合约张数价值
 }
 
 // Args 策略输入参数

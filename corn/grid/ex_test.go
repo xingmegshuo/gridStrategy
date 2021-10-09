@@ -3,8 +3,10 @@ package grid
 import (
 	"fmt"
 	"testing"
+	"time"
 	model "zmyjobs/corn/models"
-	"zmyjobs/goex"
+
+	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -38,7 +40,7 @@ func TestGetMoney(t *testing.T) {
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 8,
 		PricePrecision:  8,
-		Category:        "币安",
+		Category:        "ok",
 		Label:           "u20",
 	}
 
@@ -162,26 +164,34 @@ func TestFutureAccount(t *testing.T) {
 	// 	Custom: 2,
 	// }
 	// symbol := model.StringSymobol(u.Symbol)
+
+	// ok 模拟盘 : b3f3f6e2-7243-4602-bdaf-2de3fee7564f   CF67295C5D9450ED625206EB04285D52
+	//    ok 实盘 : eb861d6c-711c-4e16-a656-48839b5b1dd1  90775A06A926AC9AFDAA657C2AF06ED1
 	bian := model.SymbolCategory{
-		Key:    "b0pHDmqinoKMWW4mlAj4mJ6urfwgI3F1OnACcZr3Vocr0RJ1NVHcdYniqAwac6CA",
-		Secret: "UxtPFv116Y4pC6itHH25guzVfTO0lhiKKA5jyFcsSmsgqFcubPmrVQWBrRZP613f",
+		Key:    "b3f3f6e2-7243-4602-bdaf-2de3fee7564f",
+		Secret: "CF67295C5D9450ED625206EB04285D52",
 		Symbol: "ETH/USDT",
 		// Host:            "https://fapi.binace.com",
 		BaseCurrency:    "ETH",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 2,
 		PricePrecision:  6,
-		Category:        "币安",
+		Category:        "ok",
 		Label:           "u20",
 		Future:          true,
-		Lever:           19,
+		Lever:           60,
 	}
 	// fmt.Println(bian)
 	cli := NewEx(&bian)
 
-	b := goex.NewCurrencyPair2(bian.Symbol)
+	// b := goex.NewCurrencyPair2(bian.Symbol)
+	// fmt.Println("获取账户信息:")
+	// fmt.Println(cli.GetAccount())
+
 	// fmt.Println(b.String())
-	fmt.Println(cli.Future.ChangeLever(b, goex.SWAP_USDT_CONTRACT))
+	// fmt.Println("修改交易对杠杆倍数:")
+	// fmt.Println(cli.Future.ChangeLever(b, goex.SWAP_USDT_CONTRACT))
+
 	// fmt.Println(cli.Currency)
 	// cl := util.Config{Name: "币安"}
 	// p, err := cl.GetPrice("ETH/USD", true)
@@ -192,13 +202,16 @@ func TestFutureAccount(t *testing.T) {
 	// fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
-	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
-	// fmt.Println("下单数据", order, result)
-	// orderId := "16937024572"
-	// orderId := order.OrderId
-	// time.Sleep(time.Second * 5)
-	// n, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
+
+	order, result := cli.Exchanges(decimal.NewFromFloat(100), decimal.Decimal{}, OpenLL, false)
+	fmt.Println("下单数据", order, result)
+
+	fmt.Println("查找订单数据:")
+	// orderId := "363283586224631809"
+	orderId := order.OrderId
+	time.Sleep(time.Second * 5)
+	n, r, o := cli.SearchOrder(orderId)
+	fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

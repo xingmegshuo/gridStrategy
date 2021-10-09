@@ -55,15 +55,15 @@ func GetCache(name string) string {
 func Del(name string) {
 	CacheDB.Del(ctx, name)
 }
-
+// ListCacheGet 从缓存中获取
 func ListCacheGet(name string, op *redis.ZRangeBy) *redis.StringSliceCmd {
 	return CacheDB.ZRangeByScore(ctx, name, op)
 }
-
+// ListCacheRm 从缓存中删除
 func ListCacheRm(name string, min string, max string) {
 	CacheDB.ZRemRangeByScore(ctx, name, min, max)
 }
-
+// ListCacheAddOne 向缓存中添加一个
 func ListCacheAddOne(name string, data *redis.Z) {
 	CacheDB.ZAdd(ctx, name, data)
 }

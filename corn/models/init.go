@@ -32,6 +32,8 @@ var (
 	BianSymbol  = GetSymbols("币安")
 	BianFutureU = GetSymbols("币安u")
 	BianFutureB = GetSymbols("币安b")
+	OkexSymbol  = GetSymbols("ok")
+	OkexFuture  = GetSymbols("okSwap")
 )
 
 var ConfigMap = map[string]string{
@@ -55,26 +57,18 @@ func init() {
 			Colorful:      false,
 		},
 	)
-	// serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	// dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
+	// localHost
+	serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
+	dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	// rdb := redis.NewClient(&redis.Options{
 	// 	Addr:     "8.210.86.77:6379",
 	// 	Password: "lookupld",
 	// 	DB:       0,
 	// })
 
-	// rdb := redis.NewClient(&redis.Options{
-	// 	Addr:     "127.0.0.1:6379",
-	// 	Password: "",
-	// 	DB:       0,
-	// })
-
-	// server
-	serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "172.31.213.84:6379",
-		Password: "lookupld",
+		Addr:     "127.0.0.1:6379",
+		Password: "",
 		DB:       0,
 	})
 

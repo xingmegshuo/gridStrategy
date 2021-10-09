@@ -273,7 +273,7 @@ func (builder *APIBuilder) BuildFuture(exName string) (api FutureRestAPI) {
 	// 		ApiSecretKey: builder.secretkey,
 	// 	})
 	// case OKEX_FUTURE, OKEX_V3:
-	// 	//return okcoin.NewOKEx(builder.client, builder.apiKey, builder.secretkey)
+	// 	return okcoin.NewOKEx(builder.client, builder.apiKey, builder.secretkey)
 	// 	return okex.NewOKEx(&APIConfig{
 	// 		HttpClient: builder.client,
 	// 		//	Endpoint:      "https://www.okex.com",
@@ -297,14 +297,14 @@ func (builder *APIBuilder) BuildFuture(exName string) (api FutureRestAPI) {
 	// 		ApiSecretKey: builder.secretkey,
 	// 		Lever:        builder.futuresLever,
 	// 	})
-	// case OKEX_SWAP:
-	// 	return okex.NewOKEx(&APIConfig{
-	// 		HttpClient:    builder.client,
-	// 		Endpoint:      builder.futuresEndPoint,
-	// 		ApiKey:        builder.apiKey,
-	// 		ApiSecretKey:  builder.secretkey,
-	// 		ApiPassphrase: builder.apiPassphrase,
-	// 		Lever:         builder.futuresLever}).OKExSwap
+	case OKEX_SWAP:
+		return okex.NewOKEx(&APIConfig{
+			HttpClient:    builder.client,
+			Endpoint:      builder.futuresEndPoint,
+			ApiKey:        builder.apiKey,
+			ApiSecretKey:  builder.secretkey,
+			ApiPassphrase: builder.apiPassphrase,
+			Lever:         builder.futuresLever}).OKExSwap
 	// case COINBENE:
 	// 	return coinbene.NewCoinbeneSwap(APIConfig{
 	// 		HttpClient: builder.client,

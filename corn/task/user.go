@@ -20,11 +20,11 @@ var (
 )
 
 func UserJobRun() {
-	userData()
-	for i := 0; i < 1; i++ {
-		go model.NewUser()
-		go RunWG()
-	}
+	// userData()
+	// for i := 0; i < 1; i++ {
+	// go model.NewUser()
+	// go RunWG()
+	// }
 }
 
 func userData() {
@@ -42,7 +42,7 @@ func WriteCache(name string, t time.Duration) {
 	var Data []map[string]interface{}
 	switch name {
 	case "ZMYdb_task_api":
-		db.Raw("select apikey,secretkey,member_id,category_id from db_task_api").Scan(&Data)
+		db.Raw("select apikey,secretkey,member_id,category_id,pashare from db_task_api").Scan(&Data)
 	case "ZMYdb_task_category":
 		db.Raw("select `id`,`name` from db_task_category").Scan(&Data)
 	case "ZMYdb_task_order":

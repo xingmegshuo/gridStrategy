@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+	. "zmyjobs/goex"
 
 	"github.com/google/uuid"
 )
@@ -56,6 +55,7 @@ func (ok *OKEx) DoRequest(httpMethod, uri, reqBody string, response interface{})
 	url := ok.config.Endpoint + uri
 	sign, timestamp := ok.doParamSign(httpMethod, uri, reqBody)
 	//logger.Log.Debug("timestamp=", timestamp, ", sign=", sign)
+	// fmt.Println(fmt.Sprintf("%+v", ok.config))
 	resp, err := NewHttpRequest(ok.config.HttpClient, httpMethod, url, reqBody, map[string]string{
 		CONTENT_TYPE: APPLICATION_JSON_UTF8,
 		ACCEPT:       APPLICATION_JSON,
@@ -65,11 +65,12 @@ func (ok *OKEx) DoRequest(httpMethod, uri, reqBody string, response interface{})
 		OK_ACCESS_SIGN:       sign,
 		OK_ACCESS_TIMESTAMP:  fmt.Sprint(timestamp)})
 	if err != nil {
-		//log.Println(err)
 		return err
 	} else {
-		logger.Log.Debug(string(resp))
-		return json.Unmarshal(resp, &response)
+		// logger.Log.Debug(string(resp))
+		// fmt.Println(string(resp))
+		json.Unmarshal(resp, &response)
+		return nil
 	}
 }
 

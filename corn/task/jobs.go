@@ -26,7 +26,7 @@ func Init() {
 	log.Println("start job")
 	Wg.Add(1)
 	// InitJob(*job,TestRun)
-	// InitJob(*user, UserJobRun)
+	InitJob(*user, UserJobRun)
 	InitJob(*crawJob, CrawRun)
 }
 

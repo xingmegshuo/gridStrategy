@@ -76,7 +76,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.BuildFuture(goex.BINANCE_SWAP)
     case "OKex":
-        api = ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+        api = builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
         cli = api.ApiPassphrase(c.Passhare).BuildFuture(goex.OKEX_SWAP)
     default:
         // 火币没有期货api

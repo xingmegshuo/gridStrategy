@@ -143,7 +143,7 @@ func SwitchCoinType(name string) int {
     if strings.Contains(name, "USDT") || strings.Contains(name, "usdt") {
         return 3
     }
-    if name[len(name)-4:] == "usd" || name[len(name)-4:] == "USD" {
+    if name[len(name)-3:] == "usd" || name[len(name)-3:] == "USD" {
         return 2
     }
     if strings.Contains(name, "USD") || strings.Contains(name, "usd") {

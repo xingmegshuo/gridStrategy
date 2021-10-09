@@ -45,25 +45,29 @@ func RunWG() {
 				time.Sleep(time.Millisecond * 100)
 				// fmt.Println(u.Status, u.IsRun)
 				if u.Status == 2 && model.UpdateStatus(u.ID) == int64(-1) && start == 0 {
-					log.Println("符合要求", model.UpdateStatus(u.ID))
+					log.Println("符合要求", model.UpdateStatus(u.ID), u.ObjectId)
 					for i := 1; i < 2; i++ {
 						start = 1
-						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.Grids)
+						u = model.GetUserFromDB(u.ObjectId)
+						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.RealGrids, u.Base)
 						go RunStrategy(u)
 					}
-				} else if model.UpdateStatus(u.ID) == int64(100) && u.Status == 1 {
-					log.Println("等待重新开始", u.ObjectId)
-					u.IsRun = 99
-					u.Base = 0
-					u.RunCount++
-					u.Update()
-					time.Sleep(time.Second * 5)
-					u.IsRun = -1
-					model.AddRun(u.ObjectId, u.RunCount)
-					u = model.UpdateUser(u)
-					u.Update()
-					log.Println("重新开始", u.ObjectId)
-					runtime.Goexit()
+					// } else if model.UpdateStatus(u.ID) == int64(100) && model.UpdateRun(u.ID) == 2 {
+					// 	log.Println("等待重新开始", u.ObjectId)
+					// 	u.IsRun = 99
+					// 	u.RealGrids = "***"
+					// 	u.Base = 0
+					// 	u.RunCount++
+					// 	u.Update()
+					// 	model.UpdateBase(u.ObjectId)
+					// 	time.Sleep(time.Second * 5)
+					// 	model.AddRun(u.ObjectId, u.RunCount)
+					// 	u.IsRun = -1
+					// 	u.Update()
+					// 	// u = model.UpdateUser(u)
+					// 	log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
+					// 	runtime.Goexit()
+					// go RunStrategy(u)
 				} else {
 					runtime.Gosched()
 				}

@@ -72,7 +72,8 @@ type Ticker struct {
 	High float64      `json:"high,string"`
 	Low  float64      `json:"low,string"`
 	Vol  float64      `json:"vol,string"`
-	Date uint64       `json:"date"` // 单位:ms
+	Date uint64       `json:"date"`       // 单位:ms
+	Raf  float64      `json:"raf,string"` //价格波动
 }
 
 type FutureTicker struct {

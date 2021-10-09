@@ -13,6 +13,7 @@ import (
     "time"
 )
 
+// CentsUser 用户分红
 func CentsUser(money float64, uId float64, from interface{}) {
     t := GetAccount(uId)
     realMoney := money * 0.24 // 分红盈利
@@ -32,7 +33,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
             FlowType:       62,
             CustomerId:     uId,
             FromCustomerId: float64(from.(int64)),
-            Direction:      1,
+            Direction:      2,
             CoinId:         2,
             Amount:         realMoney,
             BeforeAmount:   t,
@@ -52,10 +53,10 @@ func CentsUser(money float64, uId float64, from interface{}) {
             realMoney -= fiveRate
             SaveMoney(1, fiveRate)
 
-            // 股东 20%的85%
+            // 股东 20%
             boss := money * 0.2 * 0.2
             realMoney -= boss
-            eightyFive := boss * 0.85
+            eightyFive := boss
             SaveMoney(2, eightyFive)
 
             // 市场
@@ -78,7 +79,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
             sameLevel := float64(0)
             for {
                 var myMoney float64
-                if u["inviter_id"].(uint32) > 0 {
+                if u["inviter_id"].(uint32) > 0 && realMoney > 0 {
                     // time.Sleep(time.Second)
                     tx.Raw("select `id`,`team_amount`,`team_min_amount`,`level`,`inviter_id`,`is_meal` from db_customer where id = ?", u["inviter_id"]).Scan(&u) // 获取用户
                     // ChangeAmount(money, &u, tx, true)
@@ -86,24 +87,25 @@ func CentsUser(money float64, uId float64, from interface{}) {
                     var thisLog = &AmountLog{
                         FlowType:       float64(59),
                         CoinId:         float64(2),
-                        Direction:      2,
+                        Direction:      1,
                         Hash:           "",
                         Remark:         "级差分红",
                         FromCustomerId: uId,
                         CustomerId:     float64(u["id"].(int32)),
                         BeforeAmount:   GetAccountCach(float64(u["id"].(int32))),
+                        CreateTime:     time.Now().Unix(),
                     }
 
                     if thisLevel >= baseLevel && realMoney > 0 {
                         // baseLevel = thisLevel // 上级的vip等级，下次分红vip必须大于此等级
-                        if thisLevel == 1 {
+                        if thisLevel == 1 && baseLevel != 1 {
                             myMoney = levelMoney * 0.2
                         }
                         if thisLevel == 2 {
                             // l.Println("我分25%")
                             if thisLevel-baseLevel == 1 {
                                 myMoney = levelMoney * 0.1
-                            } else {
+                            } else if thisLevel-baseLevel == 2 {
                                 myMoney = levelMoney * 0.3
                             }
                         }
@@ -113,7 +115,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 myMoney = levelMoney * 0.1
                             } else if thisLevel-baseLevel == 2 {
                                 myMoney = levelMoney * 0.2
-                            } else {
+                            } else if thisLevel-baseLevel == 3 {
                                 myMoney = levelMoney * 0.4
                             }
                         }
@@ -125,7 +127,7 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 myMoney = levelMoney * 0.2
                             } else if thisLevel-baseLevel == 3 {
                                 myMoney = levelMoney * 0.3
-                            } else {
+                            } else if thisLevel-baseLevel == 4 {
                                 myMoney = levelMoney * 0.5
                             }
                         }
@@ -147,11 +149,15 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 sameLevel = myMoney
                             } else {
                                 myMoney = sameLevel * 0.1 //平级
+                                baseLevel = 7
                             }
                         }
                         if thisLevel == 6 {
                             // log.Println(thisLevel, baseLevel)
                             // l.Println("我要60%")
+                            if baseLevel == 7 {
+                                baseLevel = 5
+                            }
                             if thisLevel-baseLevel == 1 {
                                 myMoney = levelMoney * 0.05
                             } else if thisLevel-baseLevel == 2 {
@@ -162,19 +168,19 @@ func CentsUser(money float64, uId float64, from interface{}) {
                                 myMoney = levelMoney * 0.3
                             } else if thisLevel-baseLevel == 5 {
                                 myMoney = levelMoney * 0.4
-                            } else {
+                            } else if thisLevel-baseLevel == 6 {
                                 myMoney = levelMoney * 0.6
                             }
-                            f = false
                         }
-
-                        thisLog.Amount = myMoney
-                        thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
-                        log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v;之前账户余额%v;现在账户余额%v", myMoney, u["id"], thisLevel, thisLog.BeforeAmount, thisLog.AfterAmount))
-                        thisLog.Write(UserDB)
-                        tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
                         if myMoney > 0 {
-                            baseLevel = thisLevel
+                            thisLog.Amount = myMoney
+                            thisLog.AfterAmount = thisLog.BeforeAmount + myMoney
+                            log.Println(fmt.Sprintf("分红金额:%2f---用户:%v---我的vip:%v;之前账户余额%v;现在账户余额%v", myMoney, u["id"], thisLevel, thisLog.BeforeAmount, thisLog.AfterAmount))
+                            thisLog.Write(UserDB)
+                            tx.Table("db_coin_amount").Where("customer_id = ? and coin_id = 2", thisLog.CustomerId).Update("amount", thisLog.AfterAmount)
+                            if baseLevel != 7 {
+                                baseLevel = thisLevel
+                            }
                             realMoney -= myMoney
                         }
                     }

@@ -173,10 +173,10 @@ func GetAccountHandler(w http.ResponseWriter, r *http.Request) {
         if category == "" {
             category = "1"
         }
-        b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
+        b, name, key, secret, pashare := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
         // fmt.Println(b, name, key)
         if b {
-            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com"})
+            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Host: "https://api.huobi.de.com", Pashare: pashare})
             data, err := c.Ex.GetAccount()
             if err == nil {
                 response["status"] = "success"
@@ -249,11 +249,11 @@ func GetFuture(w http.ResponseWriter, r *http.Request) {
             category = "2"
         }
         // fmt.Println(id,category)
-        b, name, key, secret := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
+        b, name, key, secret, pashare := model.GetApiConfig(model.ParseStringFloat(id), model.ParseStringFloat(category))
 
         // fmt.Println(b, name, key)
         if b {
-            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
+            c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Pashare: pashare, Future: true})
             // fmt.Println(fmt.Sprintf("%+v", c))
             data, err := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_USDT_CONTRACT)
             if err == nil {

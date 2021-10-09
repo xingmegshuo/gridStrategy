@@ -273,7 +273,7 @@ func (builder *APIBuilder) BuildFuture(exName string) (api FutureRestAPI) {
 	// 		ApiSecretKey: builder.secretkey,
 	// 	})
 	// case OKEX_FUTURE, OKEX_V3:
-	// 	//return okcoin.NewOKEx(builder.client, builder.apiKey, builder.secretkey)
+	// 	return okcoin.NewOKEx(builder.client, builder.apiKey, builder.secretkey)
 	// 	return okex.NewOKEx(&APIConfig{
 	// 		HttpClient: builder.client,
 	// 		//	Endpoint:      "https://www.okex.com",
@@ -297,14 +297,14 @@ func (builder *APIBuilder) BuildFuture(exName string) (api FutureRestAPI) {
 	// 		ApiSecretKey: builder.secretkey,
 	// 		Lever:        builder.futuresLever,
 	// 	})
-	// case OKEX_SWAP:
-	// 	return okex.NewOKEx(&APIConfig{
-	// 		HttpClient:    builder.client,
-	// 		Endpoint:      builder.futuresEndPoint,
-	// 		ApiKey:        builder.apiKey,
-	// 		ApiSecretKey:  builder.secretkey,
-	// 		ApiPassphrase: builder.apiPassphrase,
-	// 		Lever:         builder.futuresLever}).OKExSwap
+	case OKEX_SWAP:
+		return okex.NewOKEx(&APIConfig{
+			HttpClient:    builder.client,
+			Endpoint:      builder.futuresEndPoint,
+			ApiKey:        builder.apiKey,
+			ApiSecretKey:  builder.secretkey,
+			ApiPassphrase: builder.apiPassphrase,
+			Lever:         builder.futuresLever}).OKExSwap
 	// case COINBENE:
 	// 	return coinbene.NewCoinbeneSwap(APIConfig{
 	// 		HttpClient: builder.client,
@@ -358,10 +358,10 @@ func (builder *APIBuilder) BuildFuturesWs(exName string) (FuturesWsApi, error) {
 
 func (builder *APIBuilder) BuildSpotWs(exName string) (SpotWsApi, error) {
 	switch exName {
-	case OKEX_V3, OKEX:
-		return okex.NewOKExSpotV3Ws(nil), nil
-	case HUOBI_PRO, HUOBI:
-		return huobi.NewSpotWs(), nil
+	// case OKEX_V3, OKEX:
+	// 	return okex.NewOKExSpotV3Ws(nil), nil
+	// case HUOBI_PRO, HUOBI:
+	// 	return huobi.NewSpotWs(), nil
 	case BINANCE:
 		return binance.NewSpotWs(), nil
 	}

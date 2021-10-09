@@ -22,8 +22,8 @@ type SwapPositionHolding struct {
 }
 
 type BizWarmTips struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    string `json:"code"`
+	Message string `json:"msg"`
 }
 
 type SwapPosition struct {
@@ -84,18 +84,23 @@ type SwapBatchCancelOrderResult struct {
 }
 
 type BaseOrderInfo struct {
-	InstrumentId string  `json:"instrument_id"`
-	Status       int     `json:"status,string"`
-	OrderId      string  `json:"order_id"`
-	ClientOid    string  `json:"client_oid"`
-	Timestamp    string  `json:"timestamp"`
-	Price        float64 `json:"price,string"`
-	PriceAvg     float64 `json:"price_avg,string"`
-	Size         float64 `json:"size,string"`
+	InstrumentId string  `json:"instId"`
+	OrderId      string  `json:"ordId"`
+	ClientOid    string  `json:"clOrdId"`
+	Timestamp    string  `json:"fillTime"`
+	Price        float64 `json:"px,string"`
+	PriceAvg     float64 `json:"avgPx,string"`
+	Size         float64 `json:"accFillSz,string"`
 	Fee          float64 `json:"fee,string"`
-	FilledQty    float64 `json:"filled_qty,string"`
-	ContractVal  string  `json:"contract_val"`
-	Type         int     `json:"type,string"`
+	OrdType      string  `json:"ordType"`
+	Slide        string  `json:"side"`
+	State        string  `json:"state"`
+	PostSlde     string  `json:"posSide"`
+	Pnl          float64 `json:"pnl,string"`
+	FilledQty    float64 `json:"lever,string"`
+	ContractVal  string
+	Type         int
+	Status       int
 }
 
 type SwapOrdersInfo struct {
@@ -252,3 +257,23 @@ type BaseHistoricalFundingRate struct {
 }
 
 type SwapHistoricalFundingRateList []BaseHistoricalFundingRate
+
+type SwapAccountMoney struct {
+	Currency string `json:"ccy"`     // 币种
+	CashBal  string `json:"cashBal"` // 余额
+	AvailEq  string `json:"availEq"` // 可用余额
+}
+
+type SwapAccountDetail struct {
+	Details []SwapAccountMoney `json:"details"`
+}
+
+type SwapAccountBalance struct {
+	BizWarmTips
+	Info []SwapAccountDetail `json:"data"`
+}
+
+type SwapOrderInfo struct {
+	ClientId string `json:"clOrdId"` // 自定义订单号
+	OrdId    string `json:"ordId"`   // 交易所订单号
+}

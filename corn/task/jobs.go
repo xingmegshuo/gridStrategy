@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	C         = cron.New()
-	Wg        sync.WaitGroup
-	coinCount = 0
+	C       = cron.New()
+	Wg      sync.WaitGroup
+	coinIds []float64
 )
 
 // Init 开始任务

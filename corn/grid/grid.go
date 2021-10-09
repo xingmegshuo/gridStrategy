@@ -8,17 +8,12 @@ import (
 	"strings"
 	"time"
 	"zmyjobs/corn/exchange/huobi"
-	logs "zmyjobs/corn/logs"
 	model "zmyjobs/corn/models"
 
 	"github.com/huobirdcenter/huobi_golang/logging/applogger"
 	"github.com/huobirdcenter/huobi_golang/pkg/model/order"
 	"github.com/shopspring/decimal"
 )
-
-var GridDone = make(chan int32) // 停止策略
-
-var log = logs.Log
 
 type Cli struct {
 	huobi *huobi.Client

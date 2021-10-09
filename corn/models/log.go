@@ -65,6 +65,7 @@ func RebotUpdateBy(orderId string, price decimal.Decimal, hold decimal.Decimal,
 	DB.Table("rebot_logs").Where("order_id = ?", orderId).Update("status", status).Update("account_money", money).Update("price", price).
 		Update("hold_num", hold).Update("transact_fee", transactFee).Update("hold_money", price.Mul(hold).Sub(transactFee)).
 		Update("pay_money", hold_m).Update("order_id", cli)
+	time.Sleep(time.Second * 3)
 	var r RebotLog
 	DB.Raw("select * from rebot_logs where `order_id` = ?", cli).Scan(&r)
 	AddModelLog(&r, money, f, coin_id)
@@ -114,13 +115,14 @@ func AddRun(id interface{}, b interface{}) {
 }
 
 // RunOver 运行完成
-func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isAuto bool) {
+func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{}, isHand bool, status interface{}) {
+	fmt.Println(isHand)
 	old := GetOldAmount(orderId)
 	var data = map[string]interface{}{}
-	if isAuto {
-		data["status"] = 0
-	} else {
-		data["status"] = 1
+	data["status"] = status
+	// 预充值金额减去分红金额小于5 结束任务
+	if GetAccount(id.(float64))-b.(float64)*0.24 < 5 {
+		data["status"] = 2 // 循环中不重新开启直接结束
 	}
 	if b.(float64) > 0 {
 		log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))
@@ -260,7 +262,7 @@ func GotMoney(money float64, uId float64, from interface{}) {
 				log.Printf("用户:%+v", u)
 				var thisLog = &AmountLog{
 					CoinId:         float64(2),
-					Direction:      2,
+					Direction:      1,
 					Hash:           "",
 					FromCustomerId: uId,
 					CustomerId:     float64(u["id"].(int32)),
@@ -336,8 +338,8 @@ func DeleteRebotLog(orderId string) {
 
 // LogStrategy 卖出盈利日志
 func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, order interface{},
-	member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}, isAuto bool) {
-	log.Println("盈利日志", name, member, coin_name)
+	member interface{}, amount interface{}, price interface{}, isHand bool, money interface{}, status interface{}) {
+	log.Printf("盈利日志,交易所名称:%v,用户:%v,币种名称:%v", name, member, coin_name)
 	var (
 		data     = map[string]interface{}{}
 		categroy = map[string]interface{}{}
@@ -364,8 +366,7 @@ func LogStrategy(coin_id interface{}, name interface{}, coin_name interface{}, o
 	data["update_time"] = time.Now().Unix()
 	UserDB.Table("db_task_order_log").Create(&data)
 	var id interface{}
-	UserDB.Raw("select id from db_task_order_log where create_time = ?", data["create_time"]).Scan(&id)
-
+	UserDB.Raw("select id from db_task_order_log where create_time = ? and order_id = ? and member_id = ? ", data["create_time"], order, member).Scan(&id)
 	m, _ := money.(decimal.Decimal).Float64()
-	RunOver(member, m, order, id, isAuto)
+	RunOver(member, m, order, id, isHand, status)
 }

@@ -3,12 +3,13 @@ package okex
 import (
 	"encoding/json"
 	"errors"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+	"zmyjobs/goex"
+	"zmyjobs/goex/internal/logger"
 
 	. "zmyjobs/goex"
 )
@@ -69,11 +70,11 @@ const (
 
 	/*Rest Endpoint*/
 	Endpoint              = "https://www.okex.com"
-	GET_ACCOUNTS          = "/api/swap/v3/accounts"
-	PLACE_ORDER           = "/api/swap/v3/order"
+	GET_ACCOUNTS          = "/api/v5/account/balance"
+	PLACE_ORDER           = "/api/v5/trade/order"
 	CANCEL_ORDER          = "/api/swap/v3/cancel_order/%s/%s"
-	GET_ORDER             = "/api/swap/v3/orders/%s/%s"
-	GET_POSITION          = "/api/swap/v3/%s/position"
+	GET_ORDER             = "/api/v5/trade/order?ordId=%s&instId=%s"
+	GET_POSITION          = "/api/v5/account/positions?instId=%s"
 	GET_DEPTH             = "/api/swap/v3/instruments/%s/depth?size=%d"
 	GET_TICKER            = "/api/swap/v3/instruments/%s/ticker"
 	GET_ALL_TICKER        = "/api/swap/v3/instruments/ticker"
@@ -81,6 +82,7 @@ const (
 	PLACE_ALGO_ORDER      = "/api/swap/v3/order_algo"
 	CANCEL_ALGO_ORDER     = "/api/swap/v3/cancel_algos"
 	GET_ALGO_ORDER        = "/api/swap/v3/order_algo/%s?order_type=%d&"
+	PLACE_LERVERAGE       = "/api/v5/account/set-leverage"
 )
 
 type BaseResponse struct {
@@ -96,6 +98,25 @@ type OKExSwap struct {
 
 func NewOKExSwap(config *APIConfig) *OKExSwap {
 	return &OKExSwap{OKEx: &OKEx{config: config}, config: config}
+}
+
+func (bs *OKExSwap) ChangeLever(currency CurrencyPair, contractType string) bool {
+	symbol := bs.adaptContractType(currency)
+	data := map[string]string{
+		"instId":  symbol,
+		"mgnMode": "cross",
+		"lever":   strconv.Itoa(int(bs.config.Lever)),
+	}
+
+	var resp struct {
+		BizWarmTips
+	}
+	resq, _, _ := bs.OKEx.BuildRequestBody(data)
+	err := bs.DoRequest("POST", PLACE_LERVERAGE, resq, &resp)
+	if err == nil && resp.BizWarmTips.Code == "0" {
+		return true
+	}
+	return false
 }
 
 func (ok *OKExSwap) GetExchangeName() string {
@@ -188,60 +209,31 @@ func (ok *OKExSwap) GetFutureDepth(currencyPair CurrencyPair, contractType strin
 
 func (ok *OKExSwap) GetFutureUserinfo(currencyPair ...CurrencyPair) (*FutureAccount, error) {
 	var (
-		err   error
-		infos SwapAccounts
+		err error
 	)
 
-	if len(currencyPair) == 1 {
-		accountInfo, err := ok.GetFutureAccountInfo(currencyPair[0])
-		if err != nil {
-			return nil, err
-		}
-
-		if accountInfo == nil {
-			return nil, errors.New("api return info is empty")
-		}
-
-		infos.Info = append(infos.Info, *accountInfo)
-
-		goto wrapperF
-	}
-
-	err = ok.OKEx.DoRequest("GET", GET_ACCOUNTS, "", &infos)
+	accountInfo, err := ok.GetFutureAccountInfo(currencyPair[0])
 	if err != nil {
 		return nil, err
 	}
 
-	//log.Println(infos)
-wrapperF:
 	acc := FutureAccount{}
 	acc.FutureSubAccounts = make(map[Currency]FutureSubAccount, 2)
 
-	for _, account := range infos.Info {
-		subAcc := FutureSubAccount{AccountRights: account.Equity,
-			KeepDeposit: account.Margin, ProfitReal: account.RealizedPnl,
-			ProfitUnreal: account.UnrealizedPnl, RiskRate: account.MarginRatio}
-		meta := strings.Split(account.InstrumentId, "-")
-		if len(meta) > 0 {
-			subAcc.Currency = NewCurrency(meta[0], "")
+	for _, account := range accountInfo.Info[0].Details {
+		ccy := goex.NewCurrency(account.Currency, "")
+		acc.FutureSubAccounts[ccy] = FutureSubAccount{
+			Currency:      ccy,
+			CanEX:         ToFloat64(account.AvailEq),
+			AccountRights: ToFloat64(account.CashBal),
 		}
-		acc.FutureSubAccounts[subAcc.Currency] = subAcc
 	}
-
 	return &acc, nil
 }
 
-func (ok *OKExSwap) GetFutureAccountInfo(currency CurrencyPair) (*SwapAccountInfo, error) {
-	var infos struct {
-		Info SwapAccountInfo `json:"info"`
-	}
-
-	err := ok.OKEx.DoRequest("GET", fmt.Sprintf("/api/swap/v3/%s/accounts", ok.adaptContractType(currency)), "", &infos)
-	if err != nil {
-		return nil, err
-	}
-
-	return &infos.Info, nil
+func (ok *OKExSwap) GetFutureAccountInfo(currency CurrencyPair) (infos *SwapAccountBalance, e error) {
+	e = ok.OKEx.DoRequest("GET", GET_ACCOUNTS, "", &infos)
+	return
 }
 
 /*
@@ -252,17 +244,21 @@ func (ok *OKExSwap) GetFutureAccountInfo(currency CurrencyPair) (*SwapAccountInf
 */
 
 type BasePlaceOrderInfo struct {
-	ClientOid  string `json:"client_oid"`
-	Price      string `json:"price"`
-	MatchPrice string `json:"match_price"`
-	Type       string `json:"type"`
-	Size       string `json:"size"`
-	OrderType  string `json:"order_type"`
+	ClientOid string `json:"clOrdId"`
+	Price     string `json:"px"`
+	// MatchPrice string `json:"match_price"`
+	// Type       string `json:"type"`
+	Size string `json:"sz"`
+	// OrderType  string `json:"order_type"`
 }
 
 type PlaceOrderInfo struct {
 	BasePlaceOrderInfo
-	InstrumentId string `json:"instrument_id"`
+	InstrumentId string `json:"instId"`  // 交易对
+	TdMode       string `json:"tdMode"`  // 保证金模式
+	Sliede       string `json:"side"`    // 买还是卖
+	PosSide      string `json:"posSide"` // 双向持仓
+	OrdType      string `json:"ordType"` // 订单类型
 }
 
 type PlaceOrdersInfo struct {
@@ -277,29 +273,30 @@ func (ok *OKExSwap) PlaceFutureOrder(currencyPair CurrencyPair, contractType, pr
 
 func (ok *OKExSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, price, amount string, openType, matchPrice int, opt ...LimitOrderOptionalParameter) (*FutureOrder, error) {
 	cid := GenerateOrderClientId(32)
+	cid = strings.Replace(cid, "_", "", 1)
 	param := PlaceOrderInfo{
-		BasePlaceOrderInfo{
-			ClientOid:  cid,
-			Price:      price,
-			MatchPrice: fmt.Sprint(matchPrice),
-			Type:       fmt.Sprint(openType),
-			Size:       amount,
-			OrderType:  "0",
+		BasePlaceOrderInfo: BasePlaceOrderInfo{
+			ClientOid: cid,
+			Price:     price,
+			Size:      amount,
 		},
-		ok.adaptContractType(currencyPair),
+		InstrumentId: ok.adaptContractType(currencyPair),
+		TdMode:       "cross",
+		OrdType:      "market",
 	}
 
-	if len(opt) > 0 {
-		switch opt[0] {
-		case PostOnly:
-			param.OrderType = "1"
-		case Fok:
-			param.OrderType = "2"
-		case Ioc:
-			param.OrderType = "3"
-		}
+	if OPEN_BUY == openType || CLOSE_BUY == openType {
+		param.PosSide = "long"
 	}
-
+	if OPEN_SELL == openType || CLOSE_SELL == openType {
+		param.PosSide = "short"
+	}
+	switch openType {
+	case OPEN_BUY, CLOSE_SELL:
+		param.Sliede = "buy"
+	case OPEN_SELL, CLOSE_BUY:
+		param.Sliede = "sell"
+	}
 	reqBody, _, _ := ok.OKEx.BuildRequestBody(param)
 
 	fOrder := &FutureOrder{
@@ -312,9 +309,8 @@ func (ok *OKExSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, p
 	}
 
 	var resp struct {
-		BaseResponse
-		OrderID   string `json:"order_id"`
-		ClientOid string `json:"client_oid"`
+		BizWarmTips
+		Data []SwapOrderInfo `json:"data" `
 	}
 
 	err := ok.DoRequest("POST", PLACE_ORDER, reqBody, &resp)
@@ -323,13 +319,14 @@ func (ok *OKExSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType, p
 		return fOrder, err
 	}
 
-	if resp.ErrorMessage != "" {
+	if resp.BizWarmTips.Code != "0" {
 		logger.Errorf("[param] %s", param)
-		return fOrder, errors.New(fmt.Sprintf("%s:%s", resp.ErrorCode, resp.ErrorMessage))
+		return fOrder, errors.New(fmt.Sprintf("%s:%s", resp.BizWarmTips.Message, resp.BizWarmTips.Message))
 	}
-
-	fOrder.OrderID2 = resp.OrderID
-
+	if resp.Data[0].OrdId == "" {
+		return nil, errors.New(fOrder.OrderID2 + "失败")
+	}
+	fOrder.OrderID2 = resp.Data[0].OrdId
 	return fOrder, nil
 }
 
@@ -440,46 +437,54 @@ func (ok *OKExSwap) GetFutureOrders(orderIds []string, currencyPair CurrencyPair
  *获取单个订单信息
  */
 func (ok *OKExSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, contractType string) (*FutureOrder, error) {
-	var getOrderParam struct {
-		OrderId      string `json:"order_id"`
-		InstrumentId string `json:"instrument_id"`
-	}
 
 	var resp struct {
 		BizWarmTips
-		BaseOrderInfo
+		Data []BaseOrderInfo `json:"data"`
 	}
 
 	contractType = ok.adaptContractType(currencyPair)
 
-	getOrderParam.OrderId = orderId
-	getOrderParam.InstrumentId = contractType
-
-	//reqBody, _, _ := BuildRequestBody(getOrderParam)
-
-	err := ok.DoRequest("GET", fmt.Sprintf(GET_ORDER, contractType, orderId), "", &resp)
+	err := ok.DoRequest("GET", fmt.Sprintf(GET_ORDER, orderId, contractType), "", &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.Message != "" {
-		return nil, errors.New(fmt.Sprintf("{\"ErrCode\":%d,\"ErrMessage\":\"%s\"}", resp.Code, resp.Message))
+	if resp.BizWarmTips.Message != "" {
+		return nil, errors.New(fmt.Sprintf("{\"ErrCode\":%s,\"ErrMessage\":\"%s\"}", resp.BizWarmTips.Code, resp.BizWarmTips.Message))
 	}
 
-	oTime, err := time.Parse(time.RFC3339, resp.Timestamp)
+	oTime, err := time.Parse(time.RFC3339, resp.Data[0].Timestamp)
+	var oType int
+	if resp.Data[0].Slide == "buy" {
+		if resp.Data[0].PostSlde == "long" {
+			oType = 1
+		} else {
+			oType = 2
+		}
+	} else if resp.Data[0].Slide == "sell" {
+		if resp.Data[0].PostSlde == "long" {
+			oType = 3
+		} else {
+			oType = 4
+		}
+	}
+	if resp.Data[0].State == "filled" {
+		resp.Data[0].Status = 2
+	}
 
 	return &FutureOrder{
-		ClientOid:    resp.ClientOid,
+		ClientOid:    resp.Data[0].ClientOid,
 		Currency:     currencyPair,
 		ContractName: contractType,
-		OrderID2:     resp.OrderId,
-		Amount:       resp.Size,
-		Price:        resp.Price,
-		DealAmount:   resp.FilledQty,
-		AvgPrice:     resp.PriceAvg,
-		OType:        resp.Type,
-		Fee:          resp.Fee,
-		Status:       ok.AdaptTradeStatus(resp.Status),
+		OrderID2:     resp.Data[0].OrderId,
+		Amount:       resp.Data[0].FilledQty,
+		Price:        resp.Data[0].Price,
+		DealAmount:   resp.Data[0].Size,
+		AvgPrice:     resp.Data[0].PriceAvg,
+		OType:        oType,
+		Fee:          resp.Data[0].Pnl,
+		Status:       ok.AdaptTradeStatus(resp.Data[0].Status),
 		OrderTime:    oTime.UnixNano() / int64(time.Millisecond),
 	}, nil
 }
@@ -487,8 +492,7 @@ func (ok *OKExSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, co
 func (ok *OKExSwap) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
 	var resp SwapPosition
 	contractType = ok.adaptContractType(currencyPair)
-
-	err := ok.DoRequest("GET", fmt.Sprintf(GET_POSITION, contractType), "", &resp)
+	err := ok.DoRequest("GET", fmt.Sprintf(GET_POSITION, currencyPair.String()), "", &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -684,7 +688,7 @@ func (ok *OKExSwap) AdaptTradeStatus(status int) TradeStatus {
 }
 
 func (ok *OKExSwap) adaptContractType(currencyPair CurrencyPair) string {
-	return fmt.Sprintf("%s-SWAP", currencyPair.ToSymbol("-"))
+	return fmt.Sprintf("%s-SWAP", currencyPair.ToSymbol3())
 }
 
 type Instrument struct {

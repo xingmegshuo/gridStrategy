@@ -3,8 +3,10 @@ package grid
 import (
 	"fmt"
 	"testing"
+	"time"
 	model "zmyjobs/corn/models"
-	"zmyjobs/goex"
+
+	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -15,36 +17,35 @@ import (
 
 func TestGetMoney(t *testing.T) {
 	// fmt.Println("testing start .....")
-	huobiSymbol := model.SymbolCategory{
-		Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
-		Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
+	// huobiSymbol := model.SymbolCategory{
+	// 	Key:    "405a3c54-5dce3618-7yngd7gh5g-326cc", // 不是我的
+	// 	Secret: "4e59ae57-01e1c38c-cb63e660-d273b",
 
-		// Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
-		// Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
+	// Key:    "7b5d41cb-8f7e2626-h6n2d4f5gh-c2d91", // 李彬彬
+	// Secret: "f09fba02-a5c1b946-d2b57c4e-04335",
 
-		// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
-		// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
-		Host:            "api.huobi.de.com",
-		BaseCurrency:    "DOGE",
-		QuoteCurrency:   "USDT",
-		AmountPrecision: 4,
-		PricePrecision:  2,
-	}
-
-	// bian := model.SymbolCategory{
-	// 	Key:    "l6OXxzbfFUSkCFKTrmAPLw1LYpL0RoKwdDw8ASOVA51qBXUSWgn7WU1kZr8vQ2Qk",
-	// 	Secret: "EBkFBeqbkjw9woUGs5QnLg1u2FeK4OjMOk0i4rhOzHYnZbavfj4opULuWt42m3kR",
-	// Host:            "https://fapi.binace.com",
-	// 	BaseCurrency:    "USDT",
-	// 	QuoteCurrency:   "DOGE",
-	// 	AmountPrecision: 2,
-	// 	PricePrecision:  6,
-	// 	Category:        "币安",
-	// 	Label:           "u20",
+	// Key:             "8c892879-hrf5gdfghe-4332a67f-a0851", //我的
+	// Secret:          "5af10cd5-ca04c723-6a621d2e-32c76",   // 我的
+	// 	Host:            "api.huobi.de.com",
+	// 	BaseCurrency:    "DOGE",
+	// 	QuoteCurrency:   "USDT",
+	// 	AmountPrecision: 4,
+	// 	PricePrecision:  2,
 	// }
 
+	bian := model.SymbolCategory{
+		Key:             "b0pHDmqinoKMWW4mlAj4mJ6urfwgI3F1OnACcZr3Vocr0RJ1NVHcdYniqAwac6CA",
+		Secret:          "UxtPFv116Y4pC6itHH25guzVfTO0lhiKKA5jyFcsSmsgqFcubPmrVQWBrRZP613f",
+		BaseCurrency:    "SAND",
+		QuoteCurrency:   "USDT",
+		AmountPrecision: 8,
+		PricePrecision:  8,
+		Category:        "ok",
+		Label:           "u20",
+	}
+
 	// 账户测试
-	ex := NewEx(&huobiSymbol)
+	ex := NewEx(&bian)
 	b, m, coin := ex.GetAccount()
 	fmt.Println(b, m, coin)
 	// 价格测试
@@ -60,11 +61,11 @@ func TestGetMoney(t *testing.T) {
 	// .Round(ex.symbol.AmountPrecision)
 	// fmt.Println(amount)
 
-	// price := decimal.NewFromFloat(152.93)
+	// price := decimal.NewFromFloat(0)
 	// 买入
-	// amount := decimal.NewFromFloat(40.31)
-	// cliId, orderId, err := ex.Exchanges(amount, price, SellM, false)
-	// fmt.Println(cliId, err, orderId, amount, price)
+	// amount := decimal.NewFromFloat(21)
+	// o, err := ex.Exchanges(amount, price, SellM, false)
+	// fmt.Println(o, err)
 
 	//
 	// cliId := "338280716011966"
@@ -163,46 +164,58 @@ func TestFutureAccount(t *testing.T) {
 	// 	Custom: 2,
 	// }
 	// symbol := model.StringSymobol(u.Symbol)
+
+	// ok 模拟盘 : b3f3f6e2-7243-4602-bdaf-2de3fee7564f   CF67295C5D9450ED625206EB04285D52
+	//    ok 实盘 : eb861d6c-711c-4e16-a656-48839b5b1dd1  90775A06A926AC9AFDAA657C2AF06ED1
 	bian := model.SymbolCategory{
-		Key:    "DwKk9rNVVPQuDpvU3Z2grTPZBxgWqZQt5GRtVbJp7cswsRv1UqjxAUxONWJNwycF",
-		Secret: "pwWvUZiC8iu7KHIM1e2ai99om20yALMkwzrWGJ3CqFp9j28E2bRIlsVfwb8E0ioL",
+		Key:    "b3f3f6e2-7243-4602-bdaf-2de3fee7564f",
+		Secret: "CF67295C5D9450ED625206EB04285D52",
 		Symbol: "ETH/USDT",
 		// Host:            "https://fapi.binace.com",
 		BaseCurrency:    "ETH",
 		QuoteCurrency:   "USDT",
 		AmountPrecision: 2,
 		PricePrecision:  6,
-		Category:        "币安",
+		Category:        "ok",
 		Label:           "u20",
 		Future:          true,
+		Lever:           60,
 	}
 	// fmt.Println(bian)
 	cli := NewEx(&bian)
 
-	b := goex.NewCurrencyPair2(bian.Symbol)
+	// b := goex.NewCurrencyPair2(bian.Symbol)
+	// fmt.Println("获取账户信息:")
+	// fmt.Println(cli.GetAccount())
+
 	// fmt.Println(b.String())
-	// cli.Future.ChangeLever(b, goex.SWAP_CONTRACT)
+	// fmt.Println("修改交易对杠杆倍数:")
+	// fmt.Println(cli.Future.ChangeLever(b, goex.SWAP_USDT_CONTRACT))
+
 	// fmt.Println(cli.Currency)
 	// cl := util.Config{Name: "币安"}
 	// p, err := cl.GetPrice("ETH/USD", true)
 	// fmt.Println(p, err)
-	p, err := cli.Future.GetFuturePosition(b, goex.SWAP_USDT_CONTRACT)
+	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
 
 	// p, err := cli.Future.GetFuturePosition(b, goex.SWAP_CONTRACT)
-	fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
-	// // o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
-	// // fmt.Println(o, err)
-	// order, result := cli.Exchanges(decimal.NewFromFloat(0.003), decimal.Decimal{}, OpenDM, false)
-	// fmt.Println("下单数据", order, result)
-	// // orderId := "8389765505725968384"
-	// orderId := order.OrderId
-	// time.Sleep(time.Second * 5)
-	// n, r, o := cli.SearchOrder(orderId)
-	// fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
+	// fmt.Println(fmt.Sprintf("持仓数据:%+v", p), err)
+	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
+	// fmt.Println(o, err)
+
+	order, result := cli.Exchanges(decimal.NewFromFloat(100), decimal.Decimal{}, OpenLL, false)
+	fmt.Println("下单数据", order, result)
+
+	fmt.Println("查找订单数据:")
+	// orderId := "363283586224631809"
+	orderId := order.OrderId
+	time.Sleep(time.Second * 5)
+	n, r, o := cli.SearchOrder(orderId)
+	fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)
-	// orderId := "8389765504833933312"
+	// orderId := "8389765506715143168"
 	// h, over, o := cli.SearchOrder(orderId)
 	// fmt.Println(h, over, o)
 

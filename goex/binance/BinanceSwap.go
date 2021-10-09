@@ -94,11 +94,11 @@ func (bs *BinanceSwap) ChangeLever(currency CurrencyPair, contractType string) b
 
 		_, err := HttpPostForm2(bs.httpClient, uri, data,
 			map[string]string{"X-MBX-APIKEY": bs.f.apikey})
-		fmt.Println(err, bs.f.Level)
+		// fmt.Println(err, bs.f.Level)
 		if err == nil {
 			return true
 		}
-
+		fmt.Println(err)
 	}
 	return false
 }
@@ -375,7 +375,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	if OPEN_SELL == openType || CLOSE_SELL == openType {
 		params.Set("positionSide", "SHORT")
 	}
-	// }
 	switch openType {
 	case OPEN_BUY, CLOSE_SELL:
 		params.Set("side", "BUY")
@@ -389,7 +388,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 	} else {
 		params.Set("type", "MARKET")
 	}
-	// fmt.Printf("%+v", params)
 	fOrder := &FutureOrder{
 		Currency: currencyPair,
 		// ClientOid:    clientOid,
@@ -404,8 +402,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 
 	resp, err := HttpPostForm2(bs.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bs.accessKey})
-	// fmt.Println(resp, err)
-
 	if err != nil {
 		return fOrder, err
 	}
@@ -416,7 +412,6 @@ func (bs *BinanceSwap) PlaceFutureOrder2(currencyPair CurrencyPair, contractType
 		return fOrder, err
 	}
 	orderId := ToInt(respmap["orderId"])
-	// fmt.Println(fmt.Sprintf("下单返回数据---:%+v;解析的订单id:%v", respmap, orderId))
 
 	if orderId <= 0 {
 		return fOrder, errors.New(string(resp))
@@ -650,11 +645,11 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	}
 
 	currencyPair1 := bs.adaptCurrencyPair(currencyPair)
-
+	// fmt.Println(currencyPair1)
 	params := url.Values{}
 	params.Set("symbol", currencyPair1.ToSymbol(""))
-	params.Set("orderId", "")
 	// params.Set("orderId", orderId)
+	params.Set("orderId", "")
 	bs.buildParamsSigned(&params)
 
 	path := bs.apiV1 + "allOrders?" + params.Encode()
@@ -663,23 +658,26 @@ func (bs *BinanceSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair,
 	if err != nil {
 		return nil, err
 	}
-	order := &FutureOrder{}
+	var orders []*FutureOrder
 	ordId, _ := strconv.Atoi(orderId)
-	// fmt.Println(result, "api返回数据------")
 	for _, info := range result {
 		// fmt.Println(info)
+		order := &FutureOrder{}
 		_ord := info.(map[string]interface{})
-		// fmt.Println(ordId, _ord["orderId"])
 
 		if ToInt(_ord["orderId"]) != ordId {
 			continue
 		}
 		order = bs.parseOrder(_ord)
 		order.Currency = currencyPair
-		// fmt.Println(fmt.Sprintf("订单数据:-----%+v", order))
-		return order, nil
+		orders = append(orders, order)
 	}
-	return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))
+	// 因为查出多个订单，返回最后一个为当前订单
+	if len(orders) > 0 {
+		return orders[len(orders)-1], nil
+	} else {
+		return nil, errors.New(fmt.Sprintf("not found order:%s", orderId))
+	}
 }
 
 func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
@@ -688,7 +686,7 @@ func (bs *BinanceSwap) parseOrder(rsp map[string]interface{}) *FutureOrder {
 	order.Amount = ToFloat64(rsp["origQty"])
 	order.DealAmount = ToFloat64(rsp["executedQty"])
 	order.AvgPrice = ToFloat64(rsp["avgPrice"])
-	order.OrderTime = ToInt64(rsp["time"])
+	order.OrderTime = ToInt64(rsp["updateTime"])
 	order.Cash = ToFloat64(rsp["cumQuote"])
 	status := rsp["status"].(string)
 	order.Status = bs.parseOrderStatus(status)

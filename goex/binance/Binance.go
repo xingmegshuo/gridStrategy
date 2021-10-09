@@ -3,7 +3,6 @@ package binance
 import (
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	. "zmyjobs/goex"
 )
 
 const (
@@ -330,7 +330,7 @@ func (bn *Binance) placeOrder(amount, price string, pair CurrencyPair, orderType
 	}
 
 	bn.buildParamsSigned(&params)
-
+	// fmt.Println(params)
 	resp, err := HttpPostForm2(bn.httpClient, path, params,
 		map[string]string{"X-MBX-APIKEY": bn.accessKey})
 	if err != nil {

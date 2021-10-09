@@ -55,6 +55,7 @@ type User struct {
 	Arg       string  // 策略参数
 	Symbol    string  // 交易对参数
 	Future    int     // 期货标识
+	Pashare   string  // okex 自定义
 }
 
 // NewUser 从缓存获取如果数据库不存在就添加
@@ -67,8 +68,8 @@ func NewUser() {
 		result := DB.Raw("select * from users where object_id = ?", order["id"]).Scan(&u)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 			// 符合条件的订单
-			b, cate, api, sec := GetApiConfig(order["customer_id"], order["category_id"])
-			if b {
+			b, cate, api, pashare, sec := GetApiConfig(order["customer_id"], order["category_id"])
+			if b && order["status"].(float64) < 3 {
 				// 数据库查找存在与否
 				// log.Println("新建用户:", order["id"])
 				u = User{
@@ -79,25 +80,23 @@ func NewUser() {
 					Name:     order["task_coin_name"].(string),
 					IsRun:    -1,
 					Strategy: parseInput(order),
-					// MinPrice: order["price_stop"].(string),
-					// MaxPrice: order["price_add"].(string),
-					Money:  GetAccount(order["customer_id"].(float64)),
-					Number: order["num"].(float64),
-					// Total:    order["hold_num"].(string),
-					Type:   order["frequency"].(float64),
-					Status: 1,
-					Base:   0,
-					Custom: order["customer_id"].(float64),
-					Future: int(order["coin_type"].(float64)),
+					Money:    GetAccount(order["customer_id"].(float64)),
+					Number:   order["num"].(float64),
+					Type:     order["frequency"].(float64),
+					Status:   1,
+					Base:     0,
+					Custom:   order["customer_id"].(float64),
+					Future:   int(order["coin_type"].(float64)),
+					Pashare:  pashare,
 				}
 				u = UpdateUser(u)
-
 				result = DB.Exec("select id from users where object_id = ?", order["id"])
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected == 0 {
 					DB.Create(&u)
 				}
 			}
 		} else {
+			// log.Println("查找到用户----", u.ObjectId)
 			// status 0 暂停, 1 启用 2 完成 3 删除 缓存与数据不相等
 			if order["status"].(float64)+1 != u.Status {
 				log.Println("状态改变协程同步之策略协程", order["status"], u.ObjectId)
@@ -136,16 +135,30 @@ func NewUser() {
 					StrategyError(u.ObjectId, u.Error)
 				}
 			}
-			if u.Strategy != parseInput(order) && UpdateStatus(u.ID) == 10 {
+			if u.Strategy != parseInput(order) {
 				// old := ParseStrategy(u)
 				u.Strategy = parseInput(order)
-				// log.Printf("旧状态;买入状态:%v;补仓状态:%v;清仓状态:%v", old.StopBuy, old.AllSell, old.OneBuy)
-				// if old.StopBuy {
-				// 	log.Println("发送恢复买入", u.ObjectId)
-				// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 4}
-				// }
 				u = UpdateUser(u)
 				u.Update()
+			}
+			// if u.IsRun > 10 {
+			// 	log.Printf("数据: status：%v;Base:%v;user:%v;实际交易信息:%v", u.Status, u.Base, u.ObjectId, u.RealGrids)
+			// }
+			if UpdateStatus(u.ID) == int64(100) && UpdateRun(u.ID) == 2 {
+				log.Println("等待重新开始", u.ObjectId)
+				u.IsRun = 99
+				u.RealGrids = "***"
+				u.Base = 0
+				u.RunCount++
+				u.Update()
+				UpdateBase(u.ObjectId)
+				AddRun(u.ObjectId, u.RunCount)
+			}
+			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2 && u.RealGrids == "***" && u.Base == 0 {
+				u.IsRun = -1
+				u.Update()
+				// u = model.UpdateUser(u)
+				log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
 			}
 		}
 		mutex.Unlock()
@@ -207,17 +220,19 @@ func parseInput(order map[string]interface{}) string {
 	strategy["stop_buy"] = order["stop_buy"]          // 停止买入
 	strategy["order_type"] = order["order_type"]      // 手动自动
 	strategy["add_type"] = order["price_growth_type"] // 补仓增幅类型
-	strategy["leverage"] = order["leverage"]
-	strategy["coin_id"] = order["task_coin_id"]
+	strategy["leverage"] = order["leverage"]          // 杠杆倍数
+	strategy["coin_id"] = order["task_coin_id"]       // 交易对id
+	strategy["end"] = order["price_end"]              // 止损比例
 	return ToStringJson(strategy)
 }
 
 // GetApiConfig 获取用户设置的平台分类及秘钥
-func GetApiConfig(memberid interface{}, category interface{}) (bool, string, string, string) {
+func GetApiConfig(memberid interface{}, category interface{}) (bool, string, string, string, string) {
 	var (
-		name   string
-		apiKey string
-		secret string
+		name    string
+		apiKey  string
+		secret  string
+		pashare string
 	)
 
 	api := StringMap(GetCache("ZMYdb_task_api"))
@@ -233,12 +248,13 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 		if a["category_id"] == category && a["member_id"] == memberid {
 			apiKey = a["apikey"].(string)
 			secret = a["secretkey"].(string)
+			pashare = a["pashare"].(string)
 		}
 	}
 	if name != "" && apiKey != "" && secret != "" {
-		return true, name, apiKey, secret
+		return true, name, apiKey, pashare, secret
 	} else {
-		return false, "", "", ""
+		return false, "", "", "", ""
 	}
 }
 
@@ -264,6 +280,12 @@ func GetAccountCach(uId float64) (amount float64) {
 // UpdateStatus 刷新状态
 func UpdateStatus(id uint) (res int64) {
 	DB.Raw("select is_run from users where id = ?", id).Scan(&res)
+	return
+}
+
+// UpdateRun 刷新
+func UpdateRun(id uint) (res float64) {
+	DB.Raw("select status from users where id = ?", id).Scan(&res)
 	return
 }
 
@@ -315,6 +337,12 @@ func UpdateUser(u User) User {
 		u.Error = e.Error()
 		StrategyError(u.ObjectId, e.Error())
 	}
-	log.Println("解析参数完成", u.ObjectId)
+	log.Printf("用户%v解析参数完成;策略数据:%v;;", u.ObjectId, u.Arg)
+	return u
+}
+
+// 从数据库获取user
+func GetUserFromDB(id int32) (u User) {
+	DB.Raw("select * from users where object_id = ?", id).Scan(&u)
 	return u
 }

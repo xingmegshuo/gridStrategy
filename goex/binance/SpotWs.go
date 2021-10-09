@@ -2,13 +2,13 @@ package binance
 
 import (
 	json2 "encoding/json"
-	"zmyjobs/goex/internal/logger"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+	"zmyjobs/goex/internal/logger"
 
 	"zmyjobs/goex"
 )
@@ -38,14 +38,13 @@ type SpotWs struct {
 	reqId int
 
 	depthCallFn  func(depth *goex.Depth)
-	tickerCallFn func(ticker *goex.Ticker)
+	tickerCallFn func(ticker []*goex.Ticker)
 	tradeCallFn  func(trade *goex.Trade)
 }
 
 func NewSpotWs() *SpotWs {
 	spotWs := &SpotWs{}
-	logger.Debugf("proxy url: %s", os.Getenv("HTTPS_PROXY"))
-
+	fmt.Printf("proxy url: %s", os.Getenv("HTTPS_PROXY"))
 	spotWs.wsBuilder = goex.NewWsBuilder().
 		WsUrl("wss://stream.binance.com:9443/stream?streams=depth/miniTicker/ticker/trade").
 		ProxyUrl(os.Getenv("HTTPS_PROXY")).
@@ -66,7 +65,7 @@ func (s *SpotWs) DepthCallback(f func(depth *goex.Depth)) {
 	s.depthCallFn = f
 }
 
-func (s *SpotWs) TickerCallback(f func(ticker *goex.Ticker)) {
+func (s *SpotWs) TickerCallback(f func(ticker []*goex.Ticker)) {
 	s.tickerCallFn = f
 }
 
@@ -90,17 +89,19 @@ func (s *SpotWs) SubscribeDepth(pair goex.CurrencyPair) error {
 	})
 }
 
-func (s *SpotWs) SubscribeTicker(pair goex.CurrencyPair) error {
+func (s *SpotWs) SubscribeTicker() error {
 	defer func() {
 		s.reqId++
 	}()
-
+	fmt.Println("连接...")
 	s.connect()
-
+	fmt.Println("连接成功...")
 	return s.c.Subscribe(req{
 		Method: "SUBSCRIBE",
-		Params: []string{pair.ToLower().ToSymbol("") + "@ticker"},
-		Id:     s.reqId,
+		Params: []string{
+			"!ticker@arr",
+		},
+		Id: s.reqId,
 	})
 }
 
@@ -111,6 +112,7 @@ func (s *SpotWs) SubscribeTrade(pair goex.CurrencyPair) error {
 func (s *SpotWs) handle(data []byte) error {
 	var r resp
 	err := json2.Unmarshal(data, &r)
+	// fmt.Println(err, data)
 	if err != nil {
 		logger.Errorf("json unmarshal ws response error [%s] , response data = %s", err, string(data))
 		return err
@@ -120,8 +122,9 @@ func (s *SpotWs) handle(data []byte) error {
 		return s.depthHandle(r.Data, adaptStreamToCurrencyPair(r.Stream))
 	}
 
-	if strings.HasSuffix(r.Stream, "@ticker") {
-		return s.tickerHandle(r.Data, adaptStreamToCurrencyPair(r.Stream))
+	if strings.Contains(r.Stream, "ticker") {
+		// fmt.Println("hhhh")
+		return s.tickerHandle(r.Data)
 	}
 
 	logger.Warn("unknown ws response:", string(data))
@@ -166,28 +169,37 @@ func (s *SpotWs) depthHandle(data json2.RawMessage, pair goex.CurrencyPair) erro
 	return nil
 }
 
-func (s *SpotWs) tickerHandle(data json2.RawMessage, pair goex.CurrencyPair) error {
+func (s *SpotWs) tickerHandle(data json2.RawMessage) error {
 	var (
-		tickerData = make(map[string]interface{}, 4)
-		ticker     goex.Ticker
+		tickerDatas = []map[string]interface{}{}
+		tickerData  = map[string]interface{}{}
+		tickers     []*goex.Ticker
 	)
 
-	err := json2.Unmarshal(data, &tickerData)
+	err := json2.Unmarshal(data, &tickerDatas)
+	// fmt.Println("hhhh")
 	if err != nil {
 		logger.Errorf("unmarshal ticker response data error [%s] , data = %s", err, string(data))
 		return err
 	}
 
-	ticker.Pair = pair
-	ticker.Vol = goex.ToFloat64(tickerData["v"])
-	ticker.Last = goex.ToFloat64(tickerData["c"])
-	ticker.Sell = goex.ToFloat64(tickerData["a"])
-	ticker.Buy = goex.ToFloat64(tickerData["b"])
-	ticker.High = goex.ToFloat64(tickerData["h"])
-	ticker.Low = goex.ToFloat64(tickerData["l"])
-	ticker.Date = goex.ToUint64(tickerData["E"])
-
-	s.tickerCallFn(&ticker)
-
+	for _, tickerData = range tickerDatas {
+		// fmt.Println(tickerData["s"])
+		str := tickerData["s"].(string)
+		if str[len(str)-4:] == "USDT" {
+			ticker := goex.Ticker{}
+			ticker.Pair = goex.NewCurrencyPair2(str[:len(str)-4] + "/" + "USDT")
+			ticker.Vol = goex.ToFloat64(tickerData["v"])
+			ticker.Last = goex.ToFloat64(tickerData["c"])
+			ticker.Sell = goex.ToFloat64(tickerData["a"])
+			ticker.Buy = goex.ToFloat64(tickerData["b"])
+			ticker.High = goex.ToFloat64(tickerData["h"])
+			ticker.Low = goex.ToFloat64(tickerData["l"])
+			ticker.Date = goex.ToUint64(tickerData["E"])
+			ticker.Raf = goex.ToFloat64(tickerData["P"])
+			tickers = append(tickers, &ticker)
+		}
+	}
+	s.tickerCallFn(tickers)
 	return nil
 }

@@ -10,7 +10,6 @@ package grid
 
 import (
 	"encoding/json"
-	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
@@ -127,7 +126,7 @@ func NewFromFutureOrder(order *goex.FutureOrder) *OneOrder {
 
 func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
 	c := util.Config{Name: symbol.Category, APIKey: symbol.Key, Secreet: symbol.Secret,
-		Host: symbol.Host, ClientID: symbol.Label, Lever: symbol.Lever}
+		Host: symbol.Host, ClientID: symbol.Label, Lever: symbol.Lever, Passhare: symbol.Pashare}
 	if symbol.Future {
 		cli = &Cliex{Future: util.NewFutrueApi(&c), symbol: symbol}
 	} else {
@@ -182,6 +181,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 				if account.Currency.Symbol == b.Symbol {
 					money = decimal.NewFromFloat(account.Amount)
 				}
+				// fmt.Println(account)
 			}
 			// log.Printf("用户数据:%+v,%+v;%+v", info.SubAccounts[b], info.SubAccounts[d], info.SubAccounts)
 		}
@@ -226,6 +226,7 @@ func (c *Cliex) Exchanges(amount decimal.Decimal, price decimal.Decimal, name st
 		order *goex.Order
 		err   error
 	)
+
 	if c.symbol.Future {
 		var FutureOrder *goex.FutureOrder
 		if c.symbol.QuoteCurrency == "USDT" {
@@ -303,7 +304,7 @@ func (c *Cliex) SearchOrder(orderId string) (bool, bool, *OneOrder) {
 			return true, false, o
 		}
 	} else {
-		fmt.Println(err)
+		// fmt.Println(err)
 		return false, false, nil
 	}
 }

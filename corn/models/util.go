@@ -46,9 +46,17 @@ func NewSymbol(u User) *SymbolCategory {
 			cateSymol = (*BianFutureB)[name]
 		}
 	}
+	if u.Category == "OKex" {
+		if u.Future == 0 {
+			cateSymol = (*OkexSymbol)[name]
+		} else {
+			cateSymol = (*OkexFuture)[name]
+		}
+	}
 
 	symbol := SymbolCategory{
 		Category:        u.Category,
+		Pashare:         u.Pashare,
 		Symbol:          u.Name,
 		AmountPrecision: cateSymol.AmountPrecision,
 		PricePrecision:  cateSymol.PricePrecision,
@@ -64,6 +72,10 @@ func NewSymbol(u User) *SymbolCategory {
 
 	if u.Future != 0 {
 		symbol.Future = true
+	}
+
+	if symbol.Category == "OKex" && u.Future != 0 {
+		symbol.MinTotal = decimal.NewFromFloat(cateSymol.CtVal)
 	}
 	log.Printf("交易对数据:%+v", symbol)
 	return &symbol
@@ -103,6 +115,15 @@ func MakeStrategy(u User) (*[]Grid, error) {
 		AmountBuy: preTotal,
 		TotalBuy:  totalBuy,
 	}
+	if symbol.Category == "OKex" && symbol.Future {
+		if symbol.MinTotal.Cmp(currentGrid.AmountBuy) != -1 {
+			currentGrid.AmountBuy = symbol.MinAmount.Mul(symbol.MinTotal)
+			currentGrid.Mesure = symbol.MinAmount
+		} else {
+			currentGrid.AmountBuy = currentGrid.AmountBuy.Mul(symbol.MinAmount.Div(symbol.MinTotal)).Mul(symbol.MinTotal).Round(symbol.AmountPrecision)
+			currentGrid.Mesure = currentGrid.AmountBuy.Mul(symbol.MinAmount.Div(symbol.MinTotal)).Round(symbol.AmountPrecision)
+		}
+	}
 
 	grids = append(grids, currentGrid)
 	// 补仓
@@ -136,6 +157,15 @@ func MakeStrategy(u User) (*[]Grid, error) {
 			}
 			currentGrid.TotalBuy = currentGrid.AmountBuy
 		}
+		if symbol.Category == "OKex" && symbol.Future {
+			if symbol.MinTotal.Cmp(currentGrid.AmountBuy) != -1 {
+				currentGrid.AmountBuy = symbol.MinAmount.Mul(symbol.MinTotal)
+				currentGrid.Mesure = symbol.MinAmount
+			} else {
+				currentGrid.AmountBuy = currentGrid.AmountBuy.Mul(symbol.MinAmount.Div(symbol.MinTotal)).Mul(symbol.MinTotal).Round(symbol.AmountPrecision)
+				currentGrid.Mesure = currentGrid.AmountBuy.Mul(symbol.MinAmount.Div(symbol.MinTotal)).Round(symbol.AmountPrecision)
+			}
+		}
 		grids = append(grids, currentGrid)
 	}
 
@@ -144,6 +174,7 @@ func MakeStrategy(u User) (*[]Grid, error) {
 		grids[0].AmountBuy = grids[0].TotalBuy.Div(grids[0].Price).Round(symbol.AmountPrecision)
 	}
 	for _, g := range grids {
+
 		log.Printf("id:%2d - - moeny:%s - - 价格: %s - - 买入量: %s - - 卖出:%s--跌幅: %f",
 			g.Id, g.TotalBuy.StringFixed(symbol.AmountPrecision+symbol.PricePrecision),
 			g.Price.StringFixed(symbol.PricePrecision),
@@ -164,7 +195,9 @@ func ParseStrategy(u User) *Args {
 	var data = map[string]interface{}{}
 	var arg Args
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
-	arg.Price, _ = GetPrice(ParseFloatString(data["coin_id"].(float64))).Float64()
+	if data["coin_id"] != nil {
+		arg.Price, _ = GetPrice(ParseFloatString(data["coin_id"].(float64))).Float64()
+	}
 	u.BasePrice = arg.Price
 	arg.FirstBuy = ParseStringFloat(data["FirstBuy"].(string))
 	arg.Rate = ParseStringFloat(data["rate"].(string))
@@ -181,25 +214,19 @@ func ParseStrategy(u User) *Args {
 	if arg.StrategyType == 1 {
 		arg.IsChange = false
 	}
-
+	arg.StopEnd = ParseStringFloat(data["end"].(string))
 	arg.Crile = data["frequency"].(float64)
 
 	arg.Decline = ParseStringFloat(data["decline"].(string)) // 暂设跌幅
 	if data["allSell"].(float64) == 2 {
 		arg.AllSell = true
-		// if UpdateStatus(u.ID) == 10 {
-		// 	log.Println("发送清仓", u.ObjectId)
-		// 	OneSell(u.ObjectId)
-		// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 1}
-		// }
+	}
+	if data["allSell"].(float64) == 3 {
+		// arg.AllSell = true
+		arg.StopFlow = true
 	}
 	if data["one_buy"].(float64) == 2 {
 		arg.OneBuy = true
-		// if UpdateStatus(u.ID) == 10 {
-		// 	log.Println("发送补仓", u.ObjectId)
-		// 	OneBuy(u.ObjectId)
-		// 	OperateCh <- Operate{Id: float64(u.ObjectId), Op: 2}
-		// }
 	}
 	if data["add_type"] != nil && data["add_type"].(float64) == 1 {
 		arg.IsAdd = true
@@ -215,8 +242,6 @@ func ParseStrategy(u User) *Args {
 	}
 	if data["stop_buy"].(float64) == 2 {
 		arg.StopBuy = true
-		// log.Println("发送停止买入", u.ObjectId)
-		// OperateCh <- Operate{Id: float64(u.ObjectId), Op: 3}
 	} else {
 		arg.StopBuy = false
 	}
@@ -230,16 +255,47 @@ func ParseStrategy(u User) *Args {
 	return &arg
 }
 
+// ListenU 监听变化的字段
+func ListenU(u User, arg *Args) *Args {
+	var data = map[string]interface{}{}
+	_ = json.Unmarshal([]byte(u.Strategy), &data)
+	if data["allSell"].(float64) == 2 {
+		arg.AllSell = true
+	}
+	if data["allSell"].(float64) == 3 {
+		// arg.AllSell = true
+		arg.StopFlow = true
+	}
+	if data["one_buy"].(float64) == 2 {
+		arg.OneBuy = true
+	}
+
+	if data["stop_buy"].(float64) == 2 {
+		arg.StopBuy = true
+	} else {
+		arg.StopBuy = false
+	}
+	if data["limit_high"].(float64) == 2 {
+		arg.IsLimit = true
+	} else {
+		arg.IsLimit = false
+	}
+	return arg
+}
+
+// GetPrice 从缓存获取价格
 func GetPrice(coin string) decimal.Decimal {
 	v, _ := decimal.NewFromString(CachePrice(coin))
 	return v
 }
 
+// ToStringJson 转换为字符串类型
 func ToStringJson(v interface{}) string {
 	s, _ := json.Marshal(v)
 	return string(s)
 }
 
+// CheckMinToal 比较是否下单小于最小下单
 func CheckMinToal(name string, f decimal.Decimal) (e error) {
 	switch name {
 	case "币安":
@@ -254,17 +310,19 @@ func CheckMinToal(name string, f decimal.Decimal) (e error) {
 	return
 }
 
-// StringArg string to
+// StringArg 字符串转arg
 func StringArg(data string) (a Args) {
 	_ = json.Unmarshal([]byte(data), &a)
 	return
 }
 
+// ArgString arg 转字符串
 func ArgString(a *Args) string {
 	s, _ := json.Marshal(&a)
 	return string(s)
 }
 
+// StringSymobol 字符串转symbol
 func StringSymobol(data string) (a SymbolCategory) {
 	_ = json.Unmarshal([]byte(data), &a)
 	return
@@ -282,6 +340,10 @@ func GetSymbols(name string) *map[string]CategorySymbols {
 		data = LoadJson("bianFutureU.json")
 	case "币安b":
 		data = LoadJson("bianFutureB.json")
+	case "ok":
+		data = LoadJson("okSpot.json")
+	case "okSwap":
+		data = LoadJson("okSwap.json")
 	}
 	return ParseMapCategorySymobls(data, name)
 }
@@ -325,19 +387,17 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 		for _, data := range v {
 			filter := data["filters"].([]interface{})
 			for _, v := range filter {
-				// if v["filterType"].(string) == "PRICE_FILTER" {
-				// 	v["minPrice"].(float64)
-				// }
 				d := v.(map[string]interface{})
 				if d["filterType"].(string) == "LOT_SIZE" {
 					c.MinAmount, _ = decimal.NewFromString(d["minQty"].(string))
+					c.AmountPrecision = int32(floatLen(d["minQty"].(string)))
 				}
 				if d["filterType"] != nil && d["filterType"].(string) == "MIN_NOTIONAL" {
 					c.MinTotal, _ = decimal.NewFromString(d["minNotional"].(string))
+					c.PricePrecision = int32(8)
 				}
 			}
-			c.PricePrecision = 8
-			c.AmountPrecision = 8
+
 			// c.MinAmount = decimal.NewFromFloat(0)
 			// c.MinTotal = decimal.NewFromFloat(10)
 			c.BaseCurrency = data["baseAsset"].(string)
@@ -377,9 +437,37 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 			res[data["symbol"].(string)] = c
 		}
 	}
+
+	if name == "ok" {
+		for _, data := range v {
+			c.PricePrecision = int32(floatLen(data["tickSz"].(string)))
+			c.AmountPrecision = int32(floatLen(data["lotSz"].(string)))
+			c.MinAmount, _ = decimal.NewFromString(data["minSz"].(string))
+			// c.MinTotal = decimal.NewFromFloat(data["min-order-value"].(float64))
+			c.BaseCurrency = data["baseCcy"].(string)
+			c.QuoteCurrency = data["quoteCcy"].(string)
+			res[strings.ToUpper(strings.Replace(data["instId"].(string), "-", "", 1))] = c
+		}
+	}
+
+	if name == "okSwap" {
+		for _, data := range v {
+			c.PricePrecision = int32(floatLen(data["tickSz"].(string)))
+			c.AmountPrecision = int32(floatLen(data["lotSz"].(string)))
+			c.MinAmount, _ = decimal.NewFromString(data["minSz"].(string))
+			// c.MinTotal = decimal.NewFromFloat(data["min-order-value"].(float64))
+			c.BaseCurrency = data["ctValCcy"].(string)
+			c.QuoteCurrency = data["settleCcy"].(string)
+			c.CtVal = ParseStringFloat(data["ctVal"].(string))
+			res[strings.ToUpper(
+				strings.Replace(strings.Replace(data["instId"].(string), "-", "", 1), "-SWAP", "", 1))] = c
+		}
+	}
+
 	return &res
 }
 
+// CachePrice 从缓存中读取价格
 func CachePrice(b string) string {
 	var (
 		res  = map[string]string{}
@@ -399,4 +487,28 @@ func CachePrice(b string) string {
 	}
 	json.Unmarshal([]byte(data[0]), &res)
 	return res["price_usd"]
+}
+
+// floatLen 计算精度
+func floatLen(d string) int {
+	tmp := strings.Split(d, ".")
+	if len(tmp) <= 1 {
+		return 0
+	}
+	for i := len(tmp[1]); i > 0; i-- {
+		if tmp[1][i-1] != '0' {
+			return i
+		}
+	}
+	return 0
+}
+
+// UpdateBase 更新持仓单数为0
+func UpdateBase(objectId interface{}) {
+	DB.Exec("update users set base=0 where object_id = ?", objectId)
+}
+
+// UpdateLimit 限价单执行后关闭
+func UpdateLimit(objectId interface{}) {
+	UserDB.Exec("update db_task_order set limit_high = 1 where id = ?", objectId)
 }

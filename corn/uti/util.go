@@ -52,7 +52,7 @@ func NewApi(c *Config) (cli goex.API) {
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.Build(goex.BINANCE) //创建现货api实例
     case "ok":
-        api = api.ApiPassphrase("528012")
+        api = api.ApiPassphrase(c.Passhare)
         cli = api.Build(goex.OKEX)
     default:
         cli = api.Build(goex.HUOBI_PRO) //创建现货api实例
@@ -75,8 +75,9 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.BuildFuture(goex.BINANCE_SWAP)
-    // case "ok":
-    //     cli = api.BuildFuture(goex.OKEX_SWAP)
+    case "OKex":
+        api = ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+        cli = api.ApiPassphrase(c.Passhare).BuildFuture(goex.OKEX_SWAP)
     default:
         // 火币没有期货api
         cli = api.BuildFuture(goex.HUOBI)
@@ -86,7 +87,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
 
 // ProxySock socks5代理
 func ProxySock() *builder.APIBuilder {
-    cli := builder.NewCustomAPIBuilder(ProxyHttp("1123"))
+    cli := builder.NewCustomAPIBuilder(ProxyHttp("1124"))
     return cli
 }
 
@@ -101,6 +102,13 @@ func UpString(s string) string {
     return strings.ToUpper(s)
 }
 
+/*
+     @title   : GetPrice
+     @desc    : 获取行情价格 弃用
+     @auth    : small_ant / time(2021/10/08 09:28:38)
+     @param   :  / / ``
+     @return  :  / / ``
+**/
 func (c *Config) GetPrice(symbol string, f bool) (price decimal.Decimal, err error) {
     var b *goex.Ticker
     if f {
@@ -121,6 +129,13 @@ func (c *Config) GetPrice(symbol string, f bool) (price decimal.Decimal, err err
     return
 }
 
+/*
+     @title   : SwitchCoinType
+     @desc    : 从symbol 转换至交易对类型
+     @auth    : small_ant / time(2021/10/08 09:29:49)
+     @param   :  / / ``
+     @return  :  / / ``
+**/
 func SwitchCoinType(name string) int {
     if name[len(name)-4:] == "usdt" || name[len(name)-4:] == "USDT" {
         return 1
@@ -161,14 +176,15 @@ func ToMySymbol(name string) string {
     if len(name) > 5 {
         p = len(name) - 5
     }
-    // fmt.Println(name)
+    // fmt.Println(name[p:])
     if name[p:] == "-USDT" {
         return strings.ToUpper(name[:p]) + "/" + "USDT"
     }
     if name[len(name)-3:] == "USD" {
-        return strings.ToUpper(name[:len(name)-3]) + "/" + "USD"
+        s := strings.Replace(name[:len(name)-3], "-", "", 1)
+        return strings.ToUpper(s) + "/" + "USD"
     }
-    if name[p:] == "_PERP" {
+    if name[p:] == "_PERP" || name[p:] == "-SWAP" {
         return ToMySymbol(name[:p])
     }
     if strings.ToLower(name[d:]) == "usdt" {
@@ -177,6 +193,13 @@ func ToMySymbol(name string) string {
     return name
 }
 
+/*
+     @title   : HttpGet
+     @desc    : 获取http get 请求内容
+     @auth    : small_ant / time(2021/10/08 09:30:55)
+     @param   :  / / ``
+     @return  :  / / ``
+**/
 func HttpGet(url string, client *http.Client) (d interface{}) {
     // client := ProxyHttp("1123")
     // client := ProxyHttp()

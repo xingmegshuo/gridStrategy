@@ -3,13 +3,13 @@ package goex
 import (
 	"encoding/json"
 	"errors"
-	. "zmyjobs/goex/internal/logger"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
 	"time"
+	. "zmyjobs/goex/internal/logger"
 
 	"github.com/gorilla/websocket"
 )
@@ -57,6 +57,7 @@ func NewWsBuilder() *WsBuilder {
 	return &WsBuilder{&WsConfig{
 		ReqHeaders:        make(map[string][]string, 1),
 		reconnectInterval: time.Second * 10,
+		readDeadLineTime:  time.Second * 5,
 	}}
 }
 
@@ -130,11 +131,11 @@ func (ws *WsConn) NewWs() *WsConn {
 	if ws.HeartbeatIntervalTime == 0 {
 		ws.readDeadLineTime = time.Minute
 	} else {
-		ws.readDeadLineTime = ws.HeartbeatIntervalTime * 2
+		ws.readDeadLineTime = ws.HeartbeatIntervalTime * 10
 	}
 
 	if err := ws.connect(); err != nil {
-		Log.Panic(fmt.Errorf("[%s] %s", ws.WsUrl, err.Error()))
+		Log.Println(fmt.Errorf("[%s] %s", ws.WsUrl, err.Error()))
 	}
 
 	ws.close = make(chan bool, 1)

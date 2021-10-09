@@ -440,7 +440,8 @@ func (bs *BinanceFutures) GetFuturePosition(currencyPair CurrencyPair, contractT
 		return nil, err
 	}
 	for _, info := range positionRiskResponse {
-		if symbol != "" && info.Symbol != symbol {
+		// fmt.Println(info.Symbol, symbol)
+		if symbol != "" && !strings.Contains(info.Symbol, symbol) {
 			continue
 		}
 		p := FuturePosition{

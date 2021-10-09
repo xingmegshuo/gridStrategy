@@ -264,6 +264,11 @@ func (pair CurrencyPair) ToSymbol2(joinChar string) string {
 	return strings.Join([]string{pair.CurrencyB.Symbol, pair.CurrencyA.Symbol}, joinChar)
 }
 
+// to ok symbol
+func (pair CurrencyPair) ToSymbol3() string {
+	return strings.Join([]string{pair.CurrencyA.Symbol, pair.CurrencyB.Symbol}, "-")
+}
+
 func (pair CurrencyPair) AdaptUsdtToUsd() CurrencyPair {
 	CurrencyB := pair.CurrencyB
 	if pair.CurrencyB.Eq(USDT) {

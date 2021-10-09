@@ -75,12 +75,12 @@ func CrawRun() {
 					time.Sleep(time.Millisecond * 200)
 					if !stratHttp {
 						stratHttp = true
-						craw()
-						// if count%20 == 0 {
-						// 	xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
-						// 	xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
-						// 	crawAccount()
-						// }
+						// craw()
+						if count%5 == 0 {
+							// 	xhttp("https://dapi.binance.com/dapi/v1/ticker/24hr", "ZMYCOINF")
+							// 	xhttp("https://fapi.binance.com/fapi/v1/ticker/24hr", "ZMYUSDF")
+							crawAccount()
+						}
 						isOver = true
 						count++
 						// fmt.Println("任务完成", count, time.Since(start))
@@ -480,8 +480,7 @@ func makePriceInfo(price float64, dayAmount string, raf float64, name string, id
 // CrawAccount 缓存用户持仓数据
 func crawAccount() {
 	var (
-		users = []*redis.Z{}
-		ids   []float64
+		ids []float64
 	)
 	model.UserDB.Raw("select id from db_customer").Scan(&ids)
 	// fmt.Println(ids)
@@ -497,25 +496,23 @@ func crawAccount() {
 			},
 		}
 		str, _ := json.Marshal(&data)
-		// fmt.Println(string(str), id)
-		users = append(users, &redis.Z{
+		fmt.Println(string(str), "-------- id:", id)
+		model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
+		model.ListCacheAddOne("ZMYUSERS", &redis.Z{
 			Score:  id,
 			Member: string(str),
 		})
-	}
-	if len(users) == len(ids) {
-		model.Del("ZMYUSERS")
-		model.AddCache("ZMYUSERS", users...)
 	}
 }
 
 // GetUserHold 获取用户持仓信息
 func GetUserHold(id float64, cate float64, t float64) (data []map[string]interface{}) {
 	b, name, key, secret, pashare := model.GetApiConfig(id, cate)
+	fmt.Println(b, "---- 平台:", name, "类型:", t)
 	if b && t == 0 {
 		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Pashare: pashare})
 		value, err := c.Ex.GetAccount()
-		// fmt.Println(err, value)
+
 		if err == nil {
 			for k, v := range value.SubAccounts {
 				// fmt.Println("hhh", v, k)
@@ -540,6 +537,7 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 				}
 			}
 		}
+		fmt.Println(err)
 		return
 	} else if t == 1 && b {
 		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
@@ -559,6 +557,7 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 				data = append(data, one)
 			}
 		}
+		fmt.Println(Berr)
 		return
 	} else if t == 2 && b {
 		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
@@ -578,6 +577,7 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 				data = append(data, one)
 			}
 		}
+		fmt.Println(err)
 		return
 	}
 	return

@@ -9,19 +9,19 @@
 package util
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "os"
+    "strings"
+    "time"
 
-	"zmyjobs/goex"
-	"zmyjobs/goex/builder"
+    "zmyjobs/goex"
+    "zmyjobs/goex/builder"
 
-	"github.com/shopspring/decimal"
-	"golang.org/x/net/proxy"
+    "github.com/shopspring/decimal"
+    "golang.org/x/net/proxy"
 )
 
 // Config 创建client需要的配置Struct
@@ -43,9 +43,9 @@ type Config struct {
  *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
  */
 func NewApi(c *Config) (cli goex.API) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).HttpTimeout(time.Second * 60)
     // 本地使用代理
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID)
     // fmt.Println(fmt.Sprintf("%+v", api), api.GetHttpClient())
     switch c.Name {
     case "币安":
@@ -68,15 +68,15 @@ func NewApi(c *Config) (cli goex.API) {
  *@return       : cli / goex.FutureRestAPI / `goex httpApiclient`
  */
 func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
-    api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
-        ClientID(c.ClientID).HttpTimeout(time.Second * 60).FuturesLever(c.Lever)
-    // api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+    // api := builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).
+    //     ClientID(c.ClientID).HttpTimeout(time.Second * 60).FuturesLever(c.Lever)
+    api := ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
     switch c.Name {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.BuildFuture(goex.BINANCE_SWAP)
     case "OKex":
-        api = ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+        // api = ProxySock().APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
         cli = api.ApiPassphrase(c.Passhare).BuildFuture(goex.OKEX_SWAP)
     default:
         // 火币没有期货api

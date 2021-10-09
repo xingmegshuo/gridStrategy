@@ -486,6 +486,7 @@ func crawAccount() {
 	// fmt.Println(ids)
 	for _, id := range ids {
 		data := map[string]interface{}{
+			"id": model.ParseFloatString(id),
 			"1": map[string][]map[string]interface{}{
 				"spot": GetUserHold(id, 1, 0),
 			},
@@ -496,8 +497,9 @@ func crawAccount() {
 			},
 		}
 		str, _ := json.Marshal(&data)
-		fmt.Println(string(str), "-------- id:", id)
+		fmt.Println("-------- 添加 id:", id)
 		model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
+
 		model.ListCacheAddOne("ZMYUSERS", &redis.Z{
 			Score:  id,
 			Member: string(str),

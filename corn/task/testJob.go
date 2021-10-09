@@ -494,7 +494,9 @@ func crawAccount() {
 			},
 		}
 		str, _ := json.Marshal(&data)
-		model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
+		if data["1"].(map[string]interface{})["spot"] != nil || data["2"].(map[string]interface{})["spot"] != nil || data["2"].(map[string]interface{})["B"] != nil || data["2"].(map[string]interface{})["U"] != nil {
+			model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
+		}
 		model.ListCacheAddOne("ZMYUSERS", &redis.Z{
 			Score:  id,
 			Member: string(str),

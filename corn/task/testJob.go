@@ -479,8 +479,7 @@ func makePriceInfo(price float64, dayAmount string, raf float64, name string, id
 // CrawAccount 缓存用户持仓数据
 func crawAccount() {
 	var (
-		users = []*redis.Z{}
-		ids   []float64
+		ids []float64
 	)
 	model.UserDB.Raw("select id from db_customer").Scan(&ids)
 	for _, id := range ids {
@@ -495,14 +494,11 @@ func crawAccount() {
 			},
 		}
 		str, _ := json.Marshal(&data)
-		users = append(users, &redis.Z{
+		model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
+		model.ListCacheAddOne("ZMYUSERS", &redis.Z{
 			Score:  id,
 			Member: string(str),
 		})
-	}
-	if len(users) == len(ids) {
-		model.Del("ZMYUSERS")
-		model.AddCache("ZMYUSERS", users...)
 	}
 }
 
@@ -531,7 +527,6 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 					}
 					data = append(data, one)
 				}
-
 			}
 		}
 		return

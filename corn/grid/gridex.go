@@ -289,6 +289,9 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
 		}
+		if t.u.Future == 2 || t.u.Future == 4 {
+			t.RealGrids[t.base].Mesure = amount
+		}
 		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
 			t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].AmountBuy.Mul(price)
 		}

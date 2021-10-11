@@ -170,6 +170,11 @@ func (t *ExTrader) Trade(ctx context.Context) {
 							log.Println("策略一次执行完毕:", t.u.ObjectId, "盈利:", t.CalCulateProfit())
 							res := t.CalCulateProfit()
 							p, _ := res.Float64()
+
+							var u model.User
+							model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
+							t.arg = model.ListenU(u, t.arg)
+
 							// 盈利ctx
 							if t.arg.Crile == 2 && !t.automatic {
 								t.u.IsRun = 100

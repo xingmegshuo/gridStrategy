@@ -252,6 +252,8 @@ func ParseStrategy(u User) *Args {
 		arg.OrderType = 2
 	}
 	// log.Printf("arg数据:%+v", arg)
+	arg.Callback = 0
+	arg.Reduce = 0
 	return &arg
 }
 
@@ -274,6 +276,9 @@ func ListenU(u User, arg *Args) *Args {
 		arg.StopBuy = true
 	} else {
 		arg.StopBuy = false
+	}
+	if data["Crile"] != nil {
+		arg.Crile = data["Crile"].(float64)
 	}
 	if data["limit_high"].(float64) == 2 {
 		arg.IsLimit = true

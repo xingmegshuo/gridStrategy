@@ -21,10 +21,10 @@ var (
 
 func UserJobRun() {
 	userData()
-	// for i := 0; i < 1; i++ {
-	// 	go model.NewUser()
-	// 	go RunWG()
-	// }
+	for i := 0; i < 1; i++ {
+		go model.NewUser()
+		go RunWG()
+	}
 }
 
 func userData() {
@@ -58,5 +58,4 @@ func WriteCache(name string, t time.Duration) {
 	// fmt.Println(name, string(byteData), Data, err)
 	model.Del(name)
 	model.SetCache(name, string(byteData), t)
-
 }

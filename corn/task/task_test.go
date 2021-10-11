@@ -26,6 +26,19 @@ func TestCraw(t *testing.T) {
         }
     }()
     for {
+        ;
+    }
+
+    go Begin()
+    go func() {
+        for {
+            time.Sleep(time.Second * 5)
+            fmt.Println("发送关闭")
+            Stop <- 1
+            time.Sleep(time.Second * 5)
+        }
+    }()
+    for {
 
     }
 

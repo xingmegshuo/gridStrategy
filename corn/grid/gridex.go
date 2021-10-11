@@ -263,7 +263,6 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		sellMoney := price.Mul(amount).Abs().Sub(fee)
 		t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
 		t.RealGrids[b].AmountSell = sellMoney    // 修改卖出
-
 		// 币本位记录卖出币种数量
 		if t.u.Future == 2 || t.u.Future == 4 {
 			t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
@@ -289,6 +288,10 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		t.RealGrids[t.base].TotalBuy = price.Mul(amount.Sub(fee))
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
+		}
+		if t.u.Future == 2 || t.u.Future == 4 && t.u.Category != "OKex" {
+			t.RealGrids[t.base].Mesure = t.RealGrids[t.base].AmountBuy
+			t.RealGrids[t.base].AmountBuy = amount.Abs()
 		}
 		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
 			t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].AmountBuy.Mul(price)

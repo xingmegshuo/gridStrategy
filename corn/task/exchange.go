@@ -20,8 +20,6 @@ import (
 
 var log = logs.Log
 
-// todo 删除策略不重新开始，删除策略判断是否清仓
-
 // RunWG 生成用户策略
 func RunWG() {
 	//time.Sleep(time.Second)
@@ -49,7 +47,7 @@ func RunWG() {
 					for i := 1; i < 2; i++ {
 						start = 1
 						u = model.GetUserFromDB(u.ObjectId)
-						log.Println("协程开始-用户:", u.ObjectId, "--交易币种:", u.Name, u.RealGrids, u.Base)
+						log.Printf("协程开始-数据库用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
 						go RunStrategy(u)
 					}
 					// } else if model.UpdateStatus(u.ID) == int64(100) && model.UpdateRun(u.ID) == 2 {
@@ -64,7 +62,7 @@ func RunWG() {
 					// 	model.AddRun(u.ObjectId, u.RunCount)
 					// 	u.IsRun = -1
 					// 	u.Update()
-					// 	// u = model.UpdateUser(u)
+					// u = model.UpdateUser(u)
 					// 	log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
 					// 	runtime.Goexit()
 					// go RunStrategy(u)
@@ -103,6 +101,18 @@ OuterLoop:
 			if model.UpdateStatus(u.ID) == -1 {
 				u.IsRun = 10
 				u.Update()
+				time.Sleep(time.Millisecond * 200)
+				for i := 0; i < 1; i++ {
+					log.Printf("交易开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
+					go grid.RunEx(ctx, u) //goex
+				}
+			} else if model.UpdateStatus(u.ID) == 99 {
+				u.Base = 0
+				u.RealGrids = "***"
+				u.IsRun = 10
+				u.Update()
+				log.Printf("协程重新开始-用户%v进入状态；单数:%v;实际交易信息:%v;交易币种:%v", u.ObjectId, u.Base, u.RealGrids, u.Name)
+				time.Sleep(time.Millisecond * 200)
 				for i := 0; i < 1; i++ {
 					go grid.RunEx(ctx, u) //goex
 				}

@@ -154,12 +154,12 @@ func NewUser() {
 				UpdateBase(u.ObjectId)
 				AddRun(u.ObjectId, u.RunCount)
 			}
-			if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2 && u.RealGrids == "***" && u.Base == 0 {
-				u.IsRun = -1
-				u.Update()
-				// u = model.UpdateUser(u)
-				log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
-			}
+			// if UpdateStatus(u.ID) == int64(99) && UpdateRun(u.ID) == 2 && u.RealGrids == "***" && u.Base == 0 {
+			// u.IsRun = -1
+			// u.Update()
+			// u = model.UpdateUser(u)
+			// log.Printf("用户%v重新开始;单数:%v;状态:%v;is_run:%v;实际买入信息:%v", u.ObjectId, u.Base, u.Status, u.IsRun, u.RealGrids)
+			// }
 		}
 		mutex.Unlock()
 	}
@@ -248,7 +248,9 @@ func GetApiConfig(memberid interface{}, category interface{}) (bool, string, str
 		if a["category_id"] == category && a["member_id"] == memberid {
 			apiKey = a["apikey"].(string)
 			secret = a["secretkey"].(string)
-			pashare = a["pashare"].(string)
+			if a["pashare"] != nil {
+				pashare = a["pashare"].(string)
+			}
 		}
 	}
 	if name != "" && apiKey != "" && secret != "" {
@@ -299,7 +301,7 @@ func LoadSymbols(name string) []map[string]interface{} {
 	}
 }
 
-// SourceStrategy 生成并写入表
+// SourceStrategy 生成策略内容并写入表
 func SourceStrategy(u User, load bool) (*[]Grid, error) {
 	if data, ok := LoadStrategy(u); ok && !load {
 		return data, nil

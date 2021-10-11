@@ -18,7 +18,6 @@ import (
 	"syscall"
 	"zmyjobs/corn/logs"
 	job "zmyjobs/corn/task"
-	"zmyjobs/corn/xhttp"
 )
 
 var exitChan chan os.Signal
@@ -57,8 +56,10 @@ func main() {
 	exitChan = make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt, syscall.SIGTERM)
 	go exitHandle()
-	go xhttp.RunServer()
-
+	// go xhttp.RunServer()
+	// for i := 0; i < 1; i++ {
+	// 	go job.Begin()
+	// }
 	job.Init()
 	job.C.Start()
 	defer job.C.Stop()

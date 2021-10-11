@@ -57,6 +57,7 @@ func init() {
 			Colorful:      false,
 		},
 	)
+
 	// localHost
 	serverDB, _ := sql.Open("mysql", "root:528012@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
 	dsn := "root:528012@tcp(127.0.0.1:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
@@ -71,15 +72,6 @@ func init() {
 		Password: "",
 		DB:       0,
 	})
-
-	// server
-	// serverDB, _ := sql.Open("mysql", "zmy:com1Chybay!@tcp(localhost:3306)/corn?charset=utf8mb4&parseTime=True&loc=Local")
-	// dsn := "ot_ptus209:2xHwO9bksHH@tcp(rm-j6cnwil9l9701sw92.mysql.rds.aliyuncs.com:3306)/ot_zhimayi?charset=utf8mb4&parseTime=True&loc=Local"
-	// rdb := redis.NewClient(&redis.Options{
-	// 	Addr:     "172.31.213.84:6379",
-	// 	Password: "lookupld",
-	// 	DB:       0,
-	// })
 
 	serverDB.SetMaxIdleConns(128) //设置最大连接数
 	serverDB.SetMaxOpenConns(128)

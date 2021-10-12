@@ -507,7 +507,7 @@ func crawAccount() {
 
 // GetUserHold 获取用户持仓信息
 func GetUserHold(id float64, cate float64, t float64) (data []map[string]interface{}) {
-	b, name, key, secret, pashare := model.GetApiConfig(id, cate)
+	b, name, key, pashare, secret := model.GetApiConfig(id, cate)
 	if b && t == 0 {
 		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Pashare: pashare})
 		value, err := c.Ex.GetAccount()

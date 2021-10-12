@@ -261,18 +261,20 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 	if b, ok := t.SellOrder[order.OrderId]; ok {
 		log.Printf("当前单数:%v,卖出单数:%v;%v", t.base, b, t.SellOrder)
-		sellMoney := price.Mul(amount).Abs().Sub(fee)
-		t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
-		t.RealGrids[b].AmountSell = sellMoney    // 修改卖出
-		// 币本位记录卖出币种数量
-		if t.u.Future == 2 || t.u.Future == 4 {
-			t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
-		}
+
 		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
 			if b == 0 {
 				t.RealGrids[b].AmountSell = t.CountHold().Mul(price)
 			} else {
 				t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Mul(price)
+			}
+		} else {
+			sellMoney := price.Mul(amount).Abs().Sub(fee)
+			t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱
+			t.RealGrids[b].AmountSell = sellMoney    // 修改卖出
+			// 币本位记录卖出币种数量
+			if t.u.Future == 2 || t.u.Future == 4 {
+				t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
 			}
 		}
 		t.amount = t.CountHold()

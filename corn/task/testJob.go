@@ -489,9 +489,8 @@ func crawAccount() {
 				"spot": GetUserHold(id, 1, 0),
 			},
 			"2": map[string][]map[string]interface{}{
-				"spot": GetUserHold(id, 2, 0),
-				"B":    GetUserHold(id, 2, 1),
-				"U":    GetUserHold(id, 2, 2),
+				"spot":   GetUserHold(id, 2, 0),
+				"future": append(GetUserHold(id, 2, 1), GetUserHold(id, 2, 2)...),
 			},
 		}
 		str, _ := json.Marshal(&data)

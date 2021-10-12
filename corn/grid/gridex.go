@@ -253,9 +253,10 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 	amount := decimal.NewFromFloat(order.Amount)
 	fee := decimal.NewFromFloat(order.Fee)
 	if t.u.Future == 2 || t.u.Future == 4 {
-		amount = decimal.NewFromFloat(order.Cash)
+		if t.u.Category != "OKex" {
+			amount = decimal.NewFromFloat(order.Cash)
+		}
 	}
-
 	t.hold = t.myMoney()
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 	if b, ok := t.SellOrder[order.OrderId]; ok {
@@ -268,7 +269,11 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
 		}
 		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
-			t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Mul(price)
+			if b == 0 {
+				t.RealGrids[b].AmountSell = t.CountHold().Mul(price)
+			} else {
+				t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Mul(price)
+			}
 		}
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()

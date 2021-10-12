@@ -483,9 +483,10 @@ func (ok *OKExSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, co
 		DealAmount:   resp.Data[0].Size,
 		AvgPrice:     resp.Data[0].PriceAvg,
 		OType:        oType,
-		Fee:          resp.Data[0].Pnl,
+		Fee:          resp.Data[0].Fee,
 		Status:       ok.AdaptTradeStatus(resp.Data[0].Status),
 		OrderTime:    oTime.UnixNano() / int64(time.Millisecond),
+		Cash:         resp.Data[0].Pnl,
 	}, nil
 }
 

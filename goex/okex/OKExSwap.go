@@ -74,6 +74,7 @@ const (
 	PLACE_ORDER           = "/api/v5/trade/order"
 	CANCEL_ORDER          = "/api/swap/v3/cancel_order/%s/%s"
 	GET_ORDER             = "/api/v5/trade/order?ordId=%s&instId=%s"
+	Get_POSITIONS         = "/api/v5/account/positions"
 	GET_POSITION          = "/api/v5/account/positions?instId=%s"
 	GET_DEPTH             = "/api/swap/v3/instruments/%s/depth?size=%d"
 	GET_TICKER            = "/api/swap/v3/instruments/%s/ticker"
@@ -493,50 +494,38 @@ func (ok *OKExSwap) GetFutureOrder(orderId string, currencyPair CurrencyPair, co
 func (ok *OKExSwap) GetFuturePosition(currencyPair CurrencyPair, contractType string) ([]FuturePosition, error) {
 	var resp SwapPosition
 	contractType = ok.adaptContractType(currencyPair)
-	err := ok.DoRequest("GET", fmt.Sprintf(GET_POSITION, currencyPair.String()), "", &resp)
+	var err error
+	if currencyPair == UNKNOWN_PAIR {
+		err = ok.DoRequest("GET", Get_POSITIONS, "", &resp)
+	} else {
+		err = ok.DoRequest("GET", fmt.Sprintf(GET_POSITION, currencyPair.String()), "", &resp)
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	var positions []FuturePosition
-
-	positions = append(positions, FuturePosition{
-		ContractType: contractType,
-		Symbol:       currencyPair})
-
-	var (
-		buyPosition  SwapPositionHolding
-		sellPosition SwapPositionHolding
-	)
-
-	if len(resp.Holding) > 0 {
-		if resp.Holding[0].Side == "long" {
-			buyPosition = resp.Holding[0]
-			if len(resp.Holding) == 2 {
-				sellPosition = resp.Holding[1]
-			}
-		} else {
-			sellPosition = resp.Holding[0]
-			if len(resp.Holding) == 2 {
-				buyPosition = resp.Holding[1]
+	for _, data := range resp.Holding {
+		if ToFloat64(data.Amount) > 0 || ToFloat64(data.Amount) < 0 {
+			if currencyPair == UNKNOWN_PAIR {
+				positions = append(positions, FuturePosition{
+					LeverRate:     ToFloat64(data.Leverage),
+					ContractType:  data.Side,
+					Symbol:        NewCurrencyPair3(data.InstrumentId, "-"),
+					BuyAmount:     ToFloat64(data.Amount),
+					BuyProfitReal: ToFloat64(data.Upl),
+				})
+			} else if data.InstrumentId == contractType {
+				positions = append(positions, FuturePosition{
+					LeverRate:     ToFloat64(data.Leverage),
+					ContractType:  data.Side,
+					Symbol:        currencyPair,
+					BuyAmount:     ToFloat64(data.Amount),
+					BuyProfitReal: ToFloat64(data.Upl),
+				})
 			}
 		}
 
-		positions[0].ForceLiquPrice = buyPosition.LiquidationPrice
-		positions[0].BuyAmount = buyPosition.Position
-		positions[0].BuyAvailable = buyPosition.AvailPosition
-		positions[0].BuyPriceAvg = buyPosition.AvgCost
-		positions[0].BuyProfitReal = buyPosition.RealizedPnl
-		positions[0].BuyPriceCost = buyPosition.SettlementPrice
-
-		positions[0].ForceLiquPrice = sellPosition.LiquidationPrice
-		positions[0].SellAmount = sellPosition.Position
-		positions[0].SellAvailable = sellPosition.AvailPosition
-		positions[0].SellPriceAvg = sellPosition.AvgCost
-		positions[0].SellProfitReal = sellPosition.RealizedPnl
-		positions[0].SellPriceCost = sellPosition.SettlementPrice
-
-		positions[0].LeverRate = ToFloat64(sellPosition.Leverage)
 	}
 	return positions, nil
 }

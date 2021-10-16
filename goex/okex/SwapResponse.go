@@ -13,12 +13,14 @@ type SwapPositionHolding struct {
 	AvailPosition    float64 `json:"avail_position,string"`
 	AvgCost          float64 `json:"avg_cost,string"`
 	SettlementPrice  float64 `json:"settlement_price,string"`
-	InstrumentId     string  `json:"instrument_id"`
-	Leverage         string  `json:"leverage"`
+	InstrumentId     string  `json:"instId"`
+	Leverage         string  `json:"lever"`
 	RealizedPnl      float64 `json:"realized_pnl,string"`
-	Side             string  `json:"side"`
+	Side             string  `json:"posSide"`
 	Timestamp        string  `json:"timestamp"`
 	Margin           string  `json:"margin";default:""`
+	Amount           string  `json:"pos"`
+	Upl              string  `json:"upl"`
 }
 
 type BizWarmTips struct {
@@ -28,8 +30,7 @@ type BizWarmTips struct {
 
 type SwapPosition struct {
 	BizWarmTips
-	MarginMode string                `json:"margin_mode"`
-	Holding    []SwapPositionHolding `json:"holding"`
+	Holding []SwapPositionHolding `json:"data"`
 }
 
 type SwapAccountInfo struct {

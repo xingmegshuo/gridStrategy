@@ -51,7 +51,7 @@ func NewApi(c *Config) (cli goex.API) {
     case "币安":
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.Build(goex.BINANCE) //创建现货api实例
-    case "ok":
+    case "OKex":
         api = api.ApiPassphrase(c.Passhare)
         cli = api.Build(goex.OKEX)
     default:
@@ -76,7 +76,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
         // api.BuildFuture(goex.BINANCE) 期货api
         cli = api.BuildFuture(goex.BINANCE_SWAP)
     case "OKex":
-        api = builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
+        // api = builder.DefaultAPIBuilder.APIKey(c.APIKey).APISecretkey(c.Secreet).ClientID(c.ClientID).FuturesLever(c.Lever)
         cli = api.ApiPassphrase(c.Passhare).BuildFuture(goex.OKEX_SWAP)
     default:
         // 火币没有期货api
@@ -87,7 +87,7 @@ func NewFutrueApi(c *Config) (cli goex.FutureRestAPI) {
 
 // ProxySock socks5代理
 func ProxySock() *builder.APIBuilder {
-    cli := builder.NewCustomAPIBuilder(ProxyHttp("1124"))
+    cli := builder.NewCustomAPIBuilder(ProxyHttp("1123"))
     return cli
 }
 

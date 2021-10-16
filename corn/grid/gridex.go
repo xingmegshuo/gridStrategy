@@ -257,12 +257,12 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			amount = decimal.NewFromFloat(order.Cash)
 		}
 	}
+
 	t.hold = t.myMoney()
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 	if b, ok := t.SellOrder[order.OrderId]; ok {
 		log.Printf("当前单数:%v,卖出单数:%v;%v", t.base, b, t.SellOrder)
-
-		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
+		if t.goex.symbol.Category == "OKex" && t.u.Future == 1 {
 			if b == 0 {
 				t.RealGrids[b].AmountSell = t.CountHold().Mul(price)
 			} else {
@@ -296,12 +296,22 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 		if t.u.Future == 1 || t.u.Future == 3 {
 			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
 		}
-		if t.u.Future == 2 || t.u.Future == 4 && t.u.Category != "OKex" {
+		if t.u.Future == 2 || t.u.Future == 4 {
 			t.RealGrids[t.base].Mesure = t.RealGrids[t.base].AmountBuy
 			t.RealGrids[t.base].AmountBuy = amount.Abs()
 		}
 		if t.goex.symbol.Category == "OKex" && t.u.Future > 0 {
 			t.RealGrids[t.base].TotalBuy = t.RealGrids[t.base].AmountBuy.Mul(price)
+			if t.u.Future == 2 {
+				t.RealGrids[t.base].AmountBuy = amount.Abs().Mul(decimal.NewFromFloat(10)).Div(t.RealGrids[t.base].Price)
+				t.RealGrids[t.base].TotalBuy = amount.Abs().Mul(decimal.NewFromFloat(10))
+			}
+
+		}
+		if t.goex.symbol.Category == "OKex" && t.u.Future == 0 {
+			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
+			t.RealGrids[t.base].AmountBuy = decimal.NewFromFloat(order.Amount - order.Fee)
+			t.RealGrids[t.base].Price = decimal.NewFromFloat(order.Price)
 		}
 		t.amount = t.CountHold()
 		t.pay = t.CountPay()
@@ -430,11 +440,11 @@ func (t *ExTrader) WaitBuy(price decimal.Decimal, amount decimal.Decimal, rate f
 		log.Printf("买入错误: %d, err: %s", t.base, err)
 		return err
 	} else {
-		if o.ClientId != "" && t.goex.symbol.Category != "OKex" {
-			t.ParseOrder(o)
-			t.last = decimal.NewFromFloat(o.Price)
-			return nil
-		}
+		// if o.ClientId != "" && t.goex.symbol.Category != "OKex" {
+		// 	t.ParseOrder(o)
+		// 	t.last = decimal.NewFromFloat(o.Price)
+		// 	return nil
+		// }
 		if t.WaitOrder(o.OrderId, o.ClientId) {
 			return nil
 		} else {

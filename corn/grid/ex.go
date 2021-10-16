@@ -145,7 +145,6 @@ func NewEx(symbol *model.SymbolCategory) (cli *Cliex) {
  *@return       : r/money/coin bool/decimal/decimal    `正确与否/余额/币种数量`
  */
 func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decimal) {
-	// fmt.Println(c.symbol.Future)
 	if c.symbol.Future {
 		var (
 			p []goex.FuturePosition

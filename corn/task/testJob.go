@@ -435,7 +435,7 @@ func CrawOkSpot() {
 				// fmt.Println(symbol, util.ToMySymbol(symbol))
 				var id interface{}
 				if name := util.ToMySymbol(symbol); name != "none" && name[len(name)-4:] == "USDT" {
-					model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 0, name, 5).Scan(&id)
+					model.UserDB.Raw("select id from db_task_coin where coin_type = ? and name = ?  and category_id = ?", 0, name, 3).Scan(&id)
 					// fmt.Println(id, symbol)
 					if id != nil {
 						var (
@@ -492,6 +492,9 @@ func crawAccount() {
 				"spot":   GetUserHold(id, 2, 0),
 				"future": append(GetUserHold(id, 2, 1), GetUserHold(id, 2, 2)...),
 			},
+				"3": map[string][]map[string]interface{}{
+				"future": GetUserHold(id, 3, 1),
+			},
 		}
 		str, _ := json.Marshal(&data)
 		model.ListCacheRm("ZMYUSERS", model.ParseFloatString(id), model.ParseFloatString(id))
@@ -505,69 +508,92 @@ func crawAccount() {
 // GetUserHold 获取用户持仓信息
 func GetUserHold(id float64, cate float64, t float64) (data []map[string]interface{}) {
 	b, name, key, pashare, secret := model.GetApiConfig(id, cate)
-	if b && t == 0 {
-		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Pashare: pashare})
-		value, err := c.Ex.GetAccount()
-		if err == nil {
-			for k, v := range value.SubAccounts {
-				if v.Amount > 0 {
-					one := map[string]interface{}{}
-					one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
-					one["symbol"] = k.Symbol
-					if k.Symbol != "USDT" {
-						var id float64
-						model.UserDB.Raw("select id from db_task_coin where category_id = ? and en_name = ? and coin_type = 0 ", cate, k.Symbol).Scan(&id)
-						if id > 0 {
-							one["money"] = model.GetPrice(model.ParseFloatString(id)).Mul(decimal.NewFromFloat(v.Amount)).Round(8)
-						} else {
-							one["money"] = 1
-						}
+	if name == "OKex" {
+		if b && t != 0 {
+			c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true, Pashare: pashare})
+			value, err := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_USDT_CONTRACT)
+			if err == nil {
+				for _, v := range value {
+					var one = map[string]interface{}{}
+					one["amount"] = v.BuyAmount
+					one["symbol"] = v.Symbol.String()
+					one["unprofit"] = v.BuyProfitReal
+					one["level"] = v.LeverRate
+					if v.ContractType == "LNOG" {
+						one["slide"] = "做多"
 					} else {
-						one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
+						one["slide"] = "做空"
+					}
+					data = append(data, one)
+				}
+				return
+			}
+		}
+	} else {
+		if b && t == 0 {
+			c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Pashare: pashare})
+			value, err := c.Ex.GetAccount()
+			if err == nil {
+				for k, v := range value.SubAccounts {
+					if v.Amount > 0 {
+						one := map[string]interface{}{}
+						one["amount"] = decimal.NewFromFloat(v.Amount).Round(8)
+						one["symbol"] = k.Symbol
+						if k.Symbol != "USDT" {
+							var id float64
+							model.UserDB.Raw("select id from db_task_coin where category_id = ? and en_name = ? and coin_type = 0 ", cate, k.Symbol).Scan(&id)
+							if id > 0 {
+								one["money"] = model.GetPrice(model.ParseFloatString(id)).Mul(decimal.NewFromFloat(v.Amount)).Round(8)
+							} else {
+								one["money"] = 1
+							}
+						} else {
+							one["money"] = decimal.NewFromFloat(v.Amount).Round(8)
+						}
+						data = append(data, one)
+					}
+				}
+			}
+			return
+		} else if t == 1 && b {
+			c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
+			Bdata, Berr := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_CONTRACT)
+			if Berr == nil {
+				for _, v := range Bdata {
+					var one = map[string]interface{}{}
+					one["amount"] = v.BuyAmount
+					one["symbol"] = v.Symbol.String()
+					one["unprofit"] = v.BuyProfitReal
+					one["level"] = v.LeverRate
+					if v.ContractType == "LNOG" {
+						one["slide"] = "做多"
+					} else {
+						one["slide"] = "做空"
 					}
 					data = append(data, one)
 				}
 			}
-		}
-		return
-	} else if t == 1 && b {
-		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
-		Bdata, Berr := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_CONTRACT)
-		if Berr == nil {
-			for _, v := range Bdata {
-				var one = map[string]interface{}{}
-				one["amount"] = v.BuyAmount
-				one["symbol"] = v.Symbol.String()
-				one["unprofit"] = v.BuyProfitReal
-				one["level"] = v.LeverRate
-				if v.ContractType == "LNOG" {
-					one["slide"] = "做多"
-				} else {
-					one["slide"] = "做空"
+			return
+		} else if t == 2 && b {
+			c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
+			value, err := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_USDT_CONTRACT)
+			if err == nil {
+				for _, v := range value {
+					var one = map[string]interface{}{}
+					one["amount"] = v.BuyAmount
+					one["symbol"] = v.Symbol.String()
+					one["unprofit"] = v.BuyProfitReal
+					one["level"] = v.LeverRate
+					if v.ContractType == "LNOG" {
+						one["slide"] = "做多"
+					} else {
+						one["slide"] = "做空"
+					}
+					data = append(data, one)
 				}
-				data = append(data, one)
 			}
+			return
 		}
-		return
-	} else if t == 2 && b {
-		c := grid.NewEx(&model.SymbolCategory{Category: name, Key: key, Secret: secret, PricePrecision: 8, AmountPrecision: 8, Future: true})
-		value, err := c.Future.GetFuturePosition(goex.UNKNOWN_PAIR, goex.SWAP_USDT_CONTRACT)
-		if err == nil {
-			for _, v := range value {
-				var one = map[string]interface{}{}
-				one["amount"] = v.BuyAmount
-				one["symbol"] = v.Symbol.String()
-				one["unprofit"] = v.BuyProfitReal
-				one["level"] = v.LeverRate
-				if v.ContractType == "LNOG" {
-					one["slide"] = "做多"
-				} else {
-					one["slide"] = "做空"
-				}
-				data = append(data, one)
-			}
-		}
-		return
 	}
 	return
 }

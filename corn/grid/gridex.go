@@ -268,6 +268,12 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			} else {
 				t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Mul(price)
 			}
+		} else if t.goex.symbol.Category == "OKex" && t.u.Future == 2 {
+			if b == 0 {
+				t.RealGrids[b].AmountSell = t.CountHold().Add(decimal.NewFromFloat(order.Cash))
+			} else {
+				t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Add(decimal.NewFromFloat(order.Cash))
+			}
 		} else {
 			sellMoney := price.Mul(amount).Abs().Sub(fee)
 			t.SellMoney = t.SellMoney.Add(sellMoney) // 卖出钱

@@ -2,3 +2,5 @@
 *.db
 *.DS_Store
 *.idea
+*.history
+*.vscode

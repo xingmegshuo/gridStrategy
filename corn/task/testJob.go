@@ -489,10 +489,10 @@ func crawAccount() {
 				"spot": GetUserHold(id, 1, 0),
 			},
 			"2": map[string][]map[string]interface{}{
-				"spot":   GetUserHold(id, 2, 0),
+				// "spot":   GetUserHold(id, 2, 0),
 				"future": append(GetUserHold(id, 2, 1), GetUserHold(id, 2, 2)...),
 			},
-				"3": map[string][]map[string]interface{}{
+			"3": map[string][]map[string]interface{}{
 				"future": GetUserHold(id, 3, 1),
 			},
 		}

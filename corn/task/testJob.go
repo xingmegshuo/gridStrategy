@@ -483,6 +483,7 @@ func crawAccount() {
 	)
 	model.UserDB.Raw("select id from db_customer").Scan(&ids)
 	for _, id := range ids {
+		time.Sleep(time.Millisecond * 10)
 		data := map[string]interface{}{
 			"id": model.ParseFloatString(id),
 			"1": map[string][]map[string]interface{}{

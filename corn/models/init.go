@@ -76,7 +76,7 @@ func init() {
 	sqlDB, _ := sql.Open("mysql", dsn)
 	sqlDB.SetMaxIdleConns(24) //设置最大连接数
 	sqlDB.SetMaxOpenConns(24)
-	sqlDB.SetConnMaxLifetime(time.Second * 600) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	sqlDB.SetConnMaxLifetime(time.Second * 30) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	userDB, e := gorm.Open(mysql.New(mysql.Config{Conn: sqlDB}), &gorm.Config{
 		Logger:      newLogger,
 		PrepareStmt: true,

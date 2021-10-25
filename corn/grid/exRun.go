@@ -244,265 +244,271 @@ func (t *ExTrader) setupGridOrders(ctx context.Context) {
 		price := model.GetPrice(model.ParseFloatString(t.arg.CoinId.(float64)))
 
 		var u model.User
-		model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
-		t.arg = model.ListenU(u, t.arg)
-		if t.arg.StopFlow {
-			// 停止任务就可以
-			log.Printf("用户%v停止跟随", t.u.ObjectId)
-			t.automatic = true
-			t.centMoney = false
-			t.over = true
-			break
-		}
+		result := model.DB.Raw("select * from users where object_id = ?", t.u.ObjectId).Scan(&u)
+		if result.Error == nil {
 
-		// 实时获取价格
-		// price, err := t.goex.GetPrice()
-		// if err != nil {
-		// errorCount++
-		// if errorCount > 2 {
-		// t.ErrString = err.Error()
-		// log.Println(err, t.u.ObjectId)
-		// return
-		// } else {
-		// time.Sleep(time.Second * 3)
-		// continue
-		// }
-		// }
-		low, high = ChangeHighLow(price, high, low)
-		// 计算盈利
-		win := float64(0)
-		if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
-			if t.arg.Crile == 4 || t.arg.Crile == 6 {
-				win, _ = (t.pay.Sub(price.Mul(t.amount))).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
-			} else {
-				win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
-			}
-		}
-		reduce, _ := high.Sub(price).Div(t.last).Float64() // 当前回降
-		top, _ := price.Sub(low).Div(t.last).Float64()     // 当前回调
-		die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
-		if t.arg.Crile == 4 || t.arg.Crile == 6 {
-			die, _ = price.Sub(t.last).Div(t.last).Float64() // 当前跌幅
-		}
-		if count == 50 {
-			log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
-		}
-
-		if win < -t.arg.StopEnd*0.01 {
-			log.Printf("用户%v损失达到%v,平仓止损,上次交易价格:%v;当前价格:%v", t.u.ObjectId, win, t.last, price)
-			t.arg.AllSell = true
-		}
-
-		select {
-		case <-ctx.Done():
-			log.Println("close get price ", t.u.ObjectId)
-			runtime.Goexit()
-		// case op := <-model.OperateCh:
-		// 	log.Printf("管道数据:%+v,是否相等%v,协程中的用户%v", op, op.Id == float64(t.u.ObjectId), t.u.ObjectId)
-		// 	if op.Id == float64(t.u.ObjectId) {
-		// 		if op.Op == 1 {
-		// 			t.arg.AllSell = true
-		// 			log.Printf("用户%d接收到清仓操作----", t.u.ObjectId)
-		// 		}
-		// 		if op.Op == 2 {
-		// 			t.arg.OneBuy = true
-		// 			log.Printf("用户%d接收到一键补仓----", t.u.ObjectId)
-		// 		}
-		// 		if op.Op == 3 {
-		// 			t.arg.StopBuy = true
-		// 			log.Printf("用户%d接收到停止买入----", t.u.ObjectId)
-		// 		}
-		// 		if op.Op == 4 {
-		// 			if t.arg.StopBuy {
-		// 				t.arg.StopBuy = false
-		// 				log.Printf("用户%d接收到恢复买入----", t.u.ObjectId)
-		// 			}
-		// 		}
-		// 	}
-		default:
-			if t.arg.AllSell && t.base == 0 {
+			t.arg = model.ListenU(u, t.arg)
+			if t.arg.StopFlow {
+				// 停止任务就可以
+				log.Printf("用户%v停止跟随", t.u.ObjectId)
 				t.automatic = true
-				log.Printf("用户%v发送清仓，但是没有仓位，正常停止", t.u.ObjectId)
+				t.centMoney = false
 				t.over = true
 				break
 			}
-			//  第一单 进场时机无所谓
-			if t.base == 0 && !t.arg.StopBuy {
-				if t.arg.IsLimit {
-					if price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Mul(decimal.NewFromFloat(1.001))) <= 0 &&
-						price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Mul(decimal.NewFromFloat(0.999))) >= 0 {
-						log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动")
-						willbuy = true
-						model.UpdateLimit(t.u.ObjectId)
-					}
-				} else if !t.arg.IsLimit && count > 5 {
-					time.Sleep(time.Second * 2)
-					willbuy = true
+
+			// 实时获取价格
+			// price, err := t.goex.GetPrice()
+			// if err != nil {
+			// errorCount++
+			// if errorCount > 2 {
+			// t.ErrString = err.Error()
+			// log.Println(err, t.u.ObjectId)
+			// return
+			// } else {
+			// time.Sleep(time.Second * 3)
+			// continue
+			// }
+			// }
+			low, high = ChangeHighLow(price, high, low)
+			// 计算盈利
+			win := float64(0)
+			if t.pay.Cmp(decimal.NewFromFloat(0)) == 1 {
+				if t.arg.Crile == 4 || t.arg.Crile == 6 {
+					win, _ = (t.pay.Sub(price.Mul(t.amount))).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
+				} else {
+					win, _ = (price.Mul(t.amount).Sub(t.pay)).Div(t.pay).Float64() // 计算盈利 当前价值-投入价值
 				}
-				if willbuy {
-					t.canBuy = false
-					log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
-					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
-					if err != nil {
-						log.Printf("买入错误: %d, err: %s", t.base, err)
+			}
+			reduce, _ := high.Sub(price).Div(t.last).Float64() // 当前回降
+			top, _ := price.Sub(low).Div(t.last).Float64()     // 当前回调
+			die, _ := t.last.Sub(price).Div(t.last).Float64()  // 当前跌幅
+			if t.arg.Crile == 4 || t.arg.Crile == 6 {
+				die, _ = price.Sub(t.last).Div(t.last).Float64() // 当前跌幅
+			}
+			if count == 50 {
+				log.Printf("当前盈利:%v;当前回调:%v;当前回降:%v;当前跌幅:%v;当前价格:%v", win, top, reduce, die, price)
+			}
+
+			if win < -t.arg.StopEnd*0.01 {
+				log.Printf("用户%v损失达到%v,平仓止损,上次交易价格:%v;当前价格:%v", t.u.ObjectId, win, t.last, price)
+				t.arg.AllSell = true
+			}
+
+			select {
+			case <-ctx.Done():
+				log.Println("close get price ", t.u.ObjectId)
+				runtime.Goexit()
+			// case op := <-model.OperateCh:
+			// 	log.Printf("管道数据:%+v,是否相等%v,协程中的用户%v", op, op.Id == float64(t.u.ObjectId), t.u.ObjectId)
+			// 	if op.Id == float64(t.u.ObjectId) {
+			// 		if op.Op == 1 {
+			// 			t.arg.AllSell = true
+			// 			log.Printf("用户%d接收到清仓操作----", t.u.ObjectId)
+			// 		}
+			// 		if op.Op == 2 {
+			// 			t.arg.OneBuy = true
+			// 			log.Printf("用户%d接收到一键补仓----", t.u.ObjectId)
+			// 		}
+			// 		if op.Op == 3 {
+			// 			t.arg.StopBuy = true
+			// 			log.Printf("用户%d接收到停止买入----", t.u.ObjectId)
+			// 		}
+			// 		if op.Op == 4 {
+			// 			if t.arg.StopBuy {
+			// 				t.arg.StopBuy = false
+			// 				log.Printf("用户%d接收到恢复买入----", t.u.ObjectId)
+			// 			}
+			// 		}
+			// 	}
+
+			default:
+				if t.arg.AllSell && t.base == 0 {
+					t.automatic = true
+					log.Printf("用户%v发送清仓，但是没有仓位，正常停止", t.u.ObjectId)
+					t.over = true
+					break
+				}
+				//  第一单 进场时机无所谓
+				if t.base == 0 && !t.arg.StopBuy {
+					if t.arg.IsLimit {
+						if price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Mul(decimal.NewFromFloat(1.001))) <= 0 &&
+							price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh).Mul(decimal.NewFromFloat(0.999))) >= 0 {
+							log.Println(price.Cmp(decimal.NewFromFloat(t.arg.LimitHigh)), price, t.arg.LimitHigh, "限价启动")
+							willbuy = true
+							model.UpdateLimit(t.u.ObjectId)
+						}
+					} else if !t.arg.IsLimit && count > 5 {
+						time.Sleep(time.Second * 2)
+						willbuy = true
+					}
+					if willbuy {
+						t.canBuy = false
+						log.Printf("首次买入信息:{价格:%v,数量:%v,用户:%v,钱:%v}", price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy)
+						err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), 0)
+						if err != nil {
+							log.Printf("买入错误: %d, err: %s", t.base, err)
+							t.ErrString = err.Error()
+							time.Sleep(time.Second * 5)
+							t.over = true
+						} else {
+							high = price
+							low = price
+							t.last = t.RealGrids[0].Price
+							t.base = t.base + 1
+							log.Printf("用户%v首次买入成功;交易价格%v", t.u.ObjectId, t.last)
+							t.canBuy = true
+							t.Tupdate()
+						}
+					}
+				}
+				// 后续买入按照跌幅+回调来下单
+				if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy && t.canBuy {
+					if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
+						log.Printf("第%d买入信息:{价格:%v,数量:%v,用户:%v,钱:%v,跌幅:%v}", t.base+1, price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy, die)
+						t.canBuy = false
+						err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
+						if err != nil {
+							errorCount++
+							if errorCount > 2 {
+								log.Printf("买入错误: %d, err: %s", t.base, err)
+								t.ErrString = err.Error()
+								time.Sleep(time.Second * 5)
+								t.over = true
+							} else {
+								time.Sleep(time.Second * 10)
+								continue
+							}
+						} else {
+							high = price
+							low = price
+							t.last = t.RealGrids[t.base].Price
+							t.base = t.base + 1
+							log.Printf("用户%v第%v次买入成功;交易价格%v", t.u.ObjectId, t.base, t.last)
+							t.canBuy = true
+							t.Tupdate()
+						}
+					}
+				}
+
+				// 智乘方
+				if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
+					if err := t.setupBi(win, reduce, price); err != nil {
+						log.Printf("%v卖出错误: %d, err: %s", t.u.ObjectId, t.base, err)
 						t.ErrString = err.Error()
 						time.Sleep(time.Second * 5)
 						t.over = true
-					} else {
-						high = price
-						low = price
-						t.last = t.RealGrids[0].Price
-						t.base = t.base + 1
-						log.Printf("用户%v首次买入成功;交易价格%v", t.u.ObjectId, t.last)
-						t.canBuy = true
-						t.Tupdate()
 					}
-				}
-			}
-			// 后续买入按照跌幅+回调来下单
-			if 0 < t.base && t.base < len(t.grids) && !t.arg.StopBuy && t.canBuy {
-				if die*100 >= t.grids[t.base].Decline && top*100 >= t.arg.Reduce {
-					log.Printf("第%d买入信息:{价格:%v,数量:%v,用户:%v,钱:%v,跌幅:%v}", t.base+1, price, t.grids[t.base].AmountBuy, t.u.ObjectId, t.grids[t.base].TotalBuy, die)
-					t.canBuy = false
-					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
-					if err != nil {
-						errorCount++
-						if errorCount > 2 {
-							log.Printf("买入错误: %d, err: %s", t.base, err)
-							t.ErrString = err.Error()
-							time.Sleep(time.Second * 5)
-							t.over = true
-						} else {
-							time.Sleep(time.Second * 10)
-							continue
-						}
-					} else {
-						high = price
-						low = price
-						t.last = t.RealGrids[t.base].Price
-						t.base = t.base + 1
-						log.Printf("用户%v第%v次买入成功;交易价格%v", t.u.ObjectId, t.base, t.last)
-						t.canBuy = true
-						t.Tupdate()
-					}
-				}
-			}
-
-			// 智乘方
-			if t.arg.StrategyType == 1 || t.arg.StrategyType == 3 {
-				if err := t.setupBi(win, reduce, price); err != nil {
-					log.Printf("%v卖出错误: %d, err: %s", t.u.ObjectId, t.base, err)
-					t.ErrString = err.Error()
-					time.Sleep(time.Second * 5)
-					t.over = true
-				}
-				if t.arg.AllSell {
-					t.canBuy = false
-					log.Printf("%v用户智乘方清仓-----实际操作", t.u.ObjectId)
-					t.AllSellMy()
-					err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
-					if err != nil {
-						errorCount++
-						if errorCount > 2 {
-							log.Printf("清仓错误: %d, err: %s", t.base, err)
-							t.ErrString = err.Error()
-							time.Sleep(time.Second * 5)
-							t.over = true
-							t.canBuy = true
-							t.centMoney = false
-						} else {
-							time.Sleep(time.Second * 10)
-							continue
-						}
-					} else {
-						t.centMoney = true
-						t.Tupdate()
-					}
-					time.Sleep(time.Second * 3)
-					t.automatic = true
-					t.over = true
-				}
-			}
-			// 智多元
-			if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
-				if err := t.SetupBeMutiple(price, reduce, win); err != nil {
-					log.Printf("%v卖出错误: %d, err: %s", t.u.ObjectId, t.base, err)
-					t.ErrString = err.Error()
-					time.Sleep(time.Second * 5)
-					t.over = true
-				}
-				if t.HaveOver() {
-					t.over = true
-					t.centMoney = true
-				}
-				if t.arg.AllSell {
-					t.canBuy = false
-					log.Printf("%v用户智多元清仓=---实际操作", t.u.ObjectId)
-					t.AllSellMy()
-					for {
-						for _, g := range t.RealGrids {
-							err := t.WaitSell(price, t.SellCount(g.AmountBuy), win*100, g.Id-1)
-							if err != nil {
-								errorCount++
-								if errorCount > 2 {
-									log.Printf("清仓错误: %d, err: %s", t.base, err)
-									t.ErrString = err.Error()
-									time.Sleep(time.Second * 5)
-									t.over = true
-								} else {
-									time.Sleep(time.Second * 10)
-									continue
-								}
+					if t.arg.AllSell {
+						t.canBuy = false
+						log.Printf("%v用户智乘方清仓-----实际操作", t.u.ObjectId)
+						t.AllSellMy()
+						err := t.WaitSell(price, t.SellCount(t.CountHold()), win*100, 0)
+						if err != nil {
+							errorCount++
+							if errorCount > 2 {
+								log.Printf("清仓错误: %d, err: %s", t.base, err)
+								t.ErrString = err.Error()
+								time.Sleep(time.Second * 5)
+								t.over = true
+								t.canBuy = true
+								t.centMoney = false
 							} else {
-								t.Tupdate()
+								time.Sleep(time.Second * 10)
+								continue
+							}
+						} else {
+							t.centMoney = true
+							t.Tupdate()
+						}
+						time.Sleep(time.Second * 3)
+						t.automatic = true
+						t.over = true
+					}
+				}
+				// 智多元
+				if t.arg.StrategyType == 2 || t.arg.StrategyType == 4 {
+					if err := t.SetupBeMutiple(price, reduce, win); err != nil {
+						log.Printf("%v卖出错误: %d, err: %s", t.u.ObjectId, t.base, err)
+						t.ErrString = err.Error()
+						time.Sleep(time.Second * 5)
+						t.over = true
+					}
+					if t.HaveOver() {
+						t.over = true
+						t.centMoney = true
+					}
+					if t.arg.AllSell {
+						t.canBuy = false
+						log.Printf("%v用户智多元清仓=---实际操作", t.u.ObjectId)
+						t.AllSellMy()
+						for {
+							for _, g := range t.RealGrids {
+								err := t.WaitSell(price, t.SellCount(g.AmountBuy), win*100, g.Id-1)
+								if err != nil {
+									errorCount++
+									if errorCount > 2 {
+										log.Printf("清仓错误: %d, err: %s", t.base, err)
+										t.ErrString = err.Error()
+										time.Sleep(time.Second * 5)
+										t.over = true
+									} else {
+										time.Sleep(time.Second * 10)
+										continue
+									}
+								} else {
+									t.Tupdate()
+								}
+							}
+							if t.CountHold().Cmp(decimal.Decimal{}) < 1 || t.over {
+								break
+							} else {
+								continue
 							}
 						}
-						if t.CountHold().Cmp(decimal.Decimal{}) < 1 || t.over {
-							break
+						time.Sleep(time.Second * 3)
+						t.automatic = true
+						if t.ErrString == "" {
+							t.centMoney = true
+						}
+					}
+				}
+				// 立即买入
+				if t.arg.OneBuy {
+					t.canBuy = false
+					log.Printf("%v用户一键补仓----实际操作", t.u.ObjectId)
+					t.OneBuy()
+					if t.base < len(t.grids) {
+						err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
+						if err != nil {
+							errorCount++
+							if errorCount > 2 {
+								log.Printf("买入错误: %d, err: %s", t.base, err)
+								t.ErrString = err.Error()
+								time.Sleep(time.Second * 5)
+								t.over = true
+							} else {
+								time.Sleep(time.Second * 10)
+								continue
+							}
 						} else {
-							continue
+							high = price
+							low = price
+							t.last = t.RealGrids[t.base].Price
+							t.base = t.base + 1
+							t.canBuy = true
+							t.Tupdate()
 						}
 					}
 					time.Sleep(time.Second * 3)
-					t.automatic = true
-					if t.ErrString == "" {
-						t.centMoney = true
-					}
 				}
 			}
-			// 立即买入
-			if t.arg.OneBuy {
-				t.canBuy = false
-				log.Printf("%v用户一键补仓----实际操作", t.u.ObjectId)
-				t.OneBuy()
-				if t.base < len(t.grids) {
-					err := t.WaitBuy(price, t.grids[t.base].TotalBuy.Div(price).Round(t.goex.symbol.AmountPrecision), die*100)
-					if err != nil {
-						errorCount++
-						if errorCount > 2 {
-							log.Printf("买入错误: %d, err: %s", t.base, err)
-							t.ErrString = err.Error()
-							time.Sleep(time.Second * 5)
-							t.over = true
-						} else {
-							time.Sleep(time.Second * 10)
-							continue
-						}
-					} else {
-						high = price
-						low = price
-						t.last = t.RealGrids[t.base].Price
-						t.base = t.base + 1
-						t.canBuy = true
-						t.Tupdate()
-					}
-				}
-				time.Sleep(time.Second * 3)
+			if t.over {
+				log.Printf("%v用户任务结束,是否可以分红%v", t.u.ObjectId, t.centMoney)
+				break
 			}
-		}
-		if t.over {
-			log.Printf("%v用户任务结束,是否可以分红%v", t.u.ObjectId, t.centMoney)
-			break
+		} else {
+			time.Sleep(time.Second * 5) // 休息五秒
 		}
 	}
 }

@@ -267,18 +267,15 @@ func ParseStrategy(u User) *Args {
 func ListenU(u User, arg *Args) *Args {
 	var data = map[string]interface{}{}
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
-	if data["allSell"].(float64) == 2 {
-		arg.AllSell = true
-	}
-	if data["allSell"].(float64) == 3 {
+	if data["allSell"] != nil && data["allSell"].(float64) == 3 {
 		// arg.AllSell = true
 		arg.StopFlow = true
 	}
-	if data["one_buy"].(float64) == 2 {
+	if data["one_buy"] != nil && data["one_buy"].(float64) == 2 {
 		arg.OneBuy = true
 	}
 
-	if data["stop_buy"].(float64) == 2 {
+	if data["stop_buy"] != nil && data["stop_buy"].(float64) == 2 {
 		arg.StopBuy = true
 	} else {
 		arg.StopBuy = false
@@ -286,7 +283,7 @@ func ListenU(u User, arg *Args) *Args {
 	if data["Crile"] != nil {
 		arg.Crile = data["Crile"].(float64)
 	}
-	if data["limit_high"].(float64) == 2 {
+	if data["limit_high"] != nil && data["limit_high"].(float64) == 2 {
 		arg.IsLimit = true
 	} else {
 		arg.IsLimit = false

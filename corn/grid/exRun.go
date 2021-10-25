@@ -113,13 +113,13 @@ func NewExStrategy(u model.User) (ex *ExTrader) {
 	}
 	if ex.goex.Future != nil {
 		if u.Future == 2 || u.Future == 4 {
-			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) {
+			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_CONTRACT) && ex.goex.symbol.Category != "OKex" {
 				log.Println("修改杠杆倍数出错", symbol.Lever, ex.u.ObjectId)
 				return nil
 			}
 		}
 		if u.Future == 1 || u.Future == 3 {
-			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_USDT_CONTRACT) {
+			if !ex.goex.Future.ChangeLever(ex.goex.Currency, goex.SWAP_USDT_CONTRACT) && ex.goex.symbol.Category != "OKex" {
 				log.Println("修改杠杆倍数出错", symbol.Lever, ex.u.ObjectId)
 				return nil
 			}

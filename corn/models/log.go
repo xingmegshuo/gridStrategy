@@ -125,7 +125,7 @@ func RunOver(id interface{}, b interface{}, orderId interface{}, from interface{
 		data["status"] = 2 // 循环中不重新开启直接结束
 	}
 	if b.(float64) > 0 {
-		log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64))
+		log.Println("修改盈利:", orderId, "盈利金额:", b, "之前盈利金额:", old, "现在盈利金额:", old+b.(float64), isHand)
 		data["total_profit"] = b.(float64) + old
 		CentsUser(b.(float64), id.(float64), from)
 	}

@@ -267,6 +267,9 @@ func ParseStrategy(u User) *Args {
 func ListenU(u User, arg *Args) *Args {
 	var data = map[string]interface{}{}
 	_ = json.Unmarshal([]byte(u.Strategy), &data)
+	if data["allSell"] != nil && data["allSell"].(float64) == 2 {
+		arg.AllSell = true
+	}
 	if data["allSell"] != nil && data["allSell"].(float64) == 3 {
 		// arg.AllSell = true
 		arg.StopFlow = true

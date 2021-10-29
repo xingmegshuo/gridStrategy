@@ -257,7 +257,6 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			amount = decimal.NewFromFloat(order.Cash)
 		}
 	}
-
 	t.hold = t.myMoney()
 	log.Printf("订单成功--- 价格:%v  数量: %v  手续费: %v 成交额: %v 订单号: %v", order.Price, order.Amount, order.Fee, order.Cash, order.OrderId)
 	if b, ok := t.SellOrder[order.OrderId]; ok {
@@ -281,6 +280,8 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			// 币本位记录卖出币种数量
 			if t.u.Future == 2 || t.u.Future == 4 {
 				t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
+			} else if t.u.Future == 1 || t.u.Future == 3 {
+				t.RealGrids[b].AmountSell = price.Mul(t.CountThisCrile()) // 避免因成交单数分开而影响计算盈利
 			}
 		}
 		t.amount = t.CountHold()
@@ -335,6 +336,14 @@ func (t *ExTrader) CountHold() (amount decimal.Decimal) {
 		}
 	}
 	log.Printf("用户%v计算持仓量:%v", t.u.ObjectId, amount)
+	return
+}
+
+// 计算总共买入数量
+func (t *ExTrader) CountThisCrile() (a decimal.Decimal) {
+	for _, g := range t.RealGrids {
+		a = a.Add(g.AmountBuy)
+	}
 	return
 }
 

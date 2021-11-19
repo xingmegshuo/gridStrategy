@@ -601,6 +601,6 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 
 // 请求数据
 func xhttpGet(url string, port string) (*http.Response, error) {
-	resp, err := util.ProxyHttp(port).Get(url)
+	resp, err := http.Get(url)
 	return resp, err
 }

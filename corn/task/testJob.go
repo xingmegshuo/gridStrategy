@@ -115,7 +115,7 @@ func CrawRun() {
 // xhttp 缓存信息
 func xhttp(url string, name string) {
 	if !model.CheckCache(name) {
-		resp, err := util.ProxyHttp("1124").Get(url)
+		resp, err := http.Get(url)
 		if err == nil {
 			defer resp.Body.Close()
 			content, _ := ioutil.ReadAll(resp.Body)

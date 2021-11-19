@@ -9,19 +9,19 @@
 package util
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "os"
+    "strings"
+    "time"
 
-	"zmyjobs/goex"
-	"zmyjobs/goex/builder"
+    "zmyjobs/goex"
+    "zmyjobs/goex/builder"
 
-	"github.com/shopspring/decimal"
-	"golang.org/x/net/proxy"
+    "github.com/shopspring/decimal"
+    "golang.org/x/net/proxy"
 )
 
 // Config 创建client需要的配置Struct
@@ -201,8 +201,6 @@ func ToMySymbol(name string) string {
      @return  :  / / ``
 **/
 func HttpGet(url string, client *http.Client) (d interface{}) {
-    // client := ProxyHttp("1123")
-    // client := ProxyHttp()
     resp, err := client.Get(url)
     if err == nil {
         defer resp.Body.Close()

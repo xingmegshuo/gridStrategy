@@ -11,8 +11,6 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -33,23 +31,29 @@ func NewSymbol(u User) *SymbolCategory {
 	)
 	name := ParseSymbol(u.Name)
 	if u.Category == "火币" {
+		HuobiSymbol := GetSymbols("火币")
 		cateSymol = (*HuobiSymbol)[name]
 	}
 	if u.Category == "币安" {
 		if u.Future == 0 {
+			BianSymbol := GetSymbols("币安")
 			cateSymol = (*BianSymbol)[name]
 		}
 		if u.Future == 1 || u.Future == 3 {
+			BianFutureU := GetSymbols("币安u")
 			cateSymol = (*BianFutureU)[name]
 		}
 		if u.Future == 2 || u.Future == 4 {
+			BianFutureB := GetSymbols("币安b")
 			cateSymol = (*BianFutureB)[name]
 		}
 	}
 	if u.Category == "OKex" {
 		if u.Future == 0 {
+			OkexSymbol := GetSymbols("ok")
 			cateSymol = (*OkexSymbol)[name]
 		} else {
+			OkexFuture := GetSymbols("okSwap")
 			cateSymol = (*OkexFuture)[name]
 		}
 	}
@@ -368,11 +372,9 @@ func GetSymbols(name string) *map[string]CategorySymbols {
 // 从json文件中加载交易对参数
 func LoadJson(name string) (res []map[string]interface{}) {
 	var data = map[string][]map[string]interface{}{}
-	if dir, err := os.Getwd(); err == nil {
-		bytes, _ := ioutil.ReadFile(dir + "/symbolInfo/" + name)
-		err = json.Unmarshal(bytes, &data)
-	}
-	res = data["data"]
+	bytes := []byte(GetCache("ZMYSYMBOLS"))
+	json.Unmarshal(bytes, &data)
+	res = data[name]
 	return
 }
 

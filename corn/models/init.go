@@ -28,12 +28,7 @@ var (
 
 	ctx         = context.Background()
 	log         = logs.Log
-	HuobiSymbol = GetSymbols("火币")
-	BianSymbol  = GetSymbols("币安")
-	BianFutureU = GetSymbols("币安u")
-	BianFutureB = GetSymbols("币安b")
-	OkexSymbol  = GetSymbols("ok")
-	OkexFuture  = GetSymbols("okSwap")
+
 )
 
 var ConfigMap = map[string]string{

@@ -57,7 +57,6 @@ func NewSymbol(u User) *SymbolCategory {
 			cateSymol = (*OkexFuture)[name]
 		}
 	}
-	log.Println("----------数据:", cateSymol)
 
 	symbol := SymbolCategory{
 		Category:        u.Category,
@@ -483,7 +482,6 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				strings.Replace(strings.Replace(data["instId"].(string), "-", "", 1), "-SWAP", "", 1))] = c
 		}
 	}
-	log.Println("这是获取数据", name, v)
 	return &res
 }
 

@@ -619,6 +619,7 @@ func crawSymbolData() {
 		"okexFuture": okexData2(),
 	}
 	bytes, _ := json.Marshal(symbolsData)
+	model.Del("ZMYSYMBOLS")
 	model.SetCache("ZMYSYMBOLS", bytes, time.Hour*72)
 }
 
@@ -691,6 +692,5 @@ func okexData2() interface{} {
 		_ = json.Unmarshal(content, &data)
 		return data["data"]
 	}
-	fmt.Println(err)
 	return nil
 }

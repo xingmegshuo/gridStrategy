@@ -17,7 +17,7 @@ import (
 // SetCache 设置缓存
 func SetCache(name string, data interface{}, t time.Duration) {
 	if !CheckCache(name) {
-		CacheDB.Set(ctx, name, data, t)
+		log.Println(CacheDB.Set(ctx, name, data, t))
 	}
 }
 
@@ -55,14 +55,17 @@ func GetCache(name string) string {
 func Del(name string) {
 	CacheDB.Del(ctx, name)
 }
+
 // ListCacheGet 从缓存中获取
 func ListCacheGet(name string, op *redis.ZRangeBy) *redis.StringSliceCmd {
 	return CacheDB.ZRangeByScore(ctx, name, op)
 }
+
 // ListCacheRm 从缓存中删除
 func ListCacheRm(name string, min string, max string) {
 	CacheDB.ZRemRangeByScore(ctx, name, min, max)
 }
+
 // ListCacheAddOne 向缓存中添加一个
 func ListCacheAddOne(name string, data *redis.Z) {
 	CacheDB.ZAdd(ctx, name, data)

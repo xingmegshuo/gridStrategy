@@ -691,5 +691,6 @@ func okexData2() interface{} {
 		_ = json.Unmarshal(content, &data)
 		return data["data"]
 	}
+	fmt.Println(err)
 	return nil
 }

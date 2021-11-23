@@ -11,6 +11,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -345,6 +346,7 @@ func StringSymobol(data string) (a SymbolCategory) {
 
 // 获取交易对参数
 func GetSymbols(name string) *map[string]CategorySymbols {
+	fmt.Println(name)
 	var data = []map[string]interface{}{}
 	switch name {
 	case "火币":

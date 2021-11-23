@@ -159,6 +159,9 @@ func craw() {
 	CrawBianU()
 	CrawBianB()
 	CrawOkSwap()
+	if count%28800 == 0 {
+		crawSymbolData()
+	}
 }
 
 // wsCraw websocket 行情
@@ -599,8 +602,93 @@ func GetUserHold(id float64, cate float64, t float64) (data []map[string]interfa
 	return
 }
 
-// 请求数据
+// xhttpGet 请求数据
 func xhttpGet(url string, port string) (*http.Response, error) {
 	resp, err := http.Get(url)
 	return resp, err
+}
+
+// crawSymbolData
+func crawSymbolData() {
+	symbolsData := map[string]interface{}{
+		"huobi":      huobiData(),
+		"bianSpot":   bianData1(),
+		"bianU":      bianData2(),
+		"bianB":      bianData3(),
+		"okexSpot":   okexData1(),
+		"okexFuture": okexData2(),
+	}
+	model.SetCache("ZMYSYMBOLS", symbolsData, time.Hour*72)
+}
+
+func huobiData() interface{} {
+	response, err := http.Get("https://api.huobi.pro/v1/common/symbols")
+	if err == nil {
+		defer response.Body.Close()
+		content, _ := ioutil.ReadAll(response.Body)
+		var data = make(map[string]interface{})
+		_ = json.Unmarshal(content, &data)
+		return data["data"]
+	}
+	return nil
+}
+
+func bianData1() interface{} {
+	response, err := http.Get("https://api.binance.com/api/v3/exchangeInfo")
+	if err == nil {
+		defer response.Body.Close()
+		content, _ := ioutil.ReadAll(response.Body)
+		var data = make(map[string]interface{})
+		_ = json.Unmarshal(content, &data)
+		return data["symbols"]
+	}
+	return nil
+}
+
+func bianData2() interface{} {
+	response, err := http.Get("https://fapi.binance.com/fapi/v1/exchangeInfo")
+	if err == nil {
+		defer response.Body.Close()
+		content, _ := ioutil.ReadAll(response.Body)
+		var data = make(map[string]interface{})
+		_ = json.Unmarshal(content, &data)
+		return data["symbols"]
+	}
+	return nil
+}
+
+func bianData3() interface{} {
+	response, err := http.Get("https://dapi.binance.com/dapi/v1/exchangeInfo")
+	if err == nil {
+		defer response.Body.Close()
+		content, _ := ioutil.ReadAll(response.Body)
+		var data = make(map[string]interface{})
+		_ = json.Unmarshal(content, &data)
+		return data["symbols"]
+	}
+	return nil
+}
+
+func okexData1() interface{} {
+	response, err := http.Get("https://www.okex.com/api/v5/public/instruments?instType=SPOT")
+	if err == nil {
+		defer response.Body.Close()
+		content, _ := ioutil.ReadAll(response.Body)
+		var data = make(map[string]interface{})
+		_ = json.Unmarshal(content, &data)
+		return data["data"]
+	}
+	return nil
+}
+
+func okexData2() interface{} {
+	response, err := http.Get("	https://www.okex.com/api/v5/public/instruments?instType=SWAP")
+	if err == nil {
+		defer response.Body.Close()
+		content, _ := ioutil.ReadAll(response.Body)
+		var data = make(map[string]interface{})
+		_ = json.Unmarshal(content, &data)
+		return data["data"]
+	}
+	return nil
 }

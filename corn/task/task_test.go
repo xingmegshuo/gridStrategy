@@ -9,43 +9,14 @@
 package job
 
 import (
-    "fmt"
-    "testing"
-    "time"
+	"testing"
 )
 
 func TestCraw(t *testing.T) {
-
-    go Begin()
-    go func() {
-        for {
-            time.Sleep(time.Second * 5)
-            fmt.Println("发送关闭")
-            Stop <- 1
-            time.Sleep(time.Second * 5)
-        }
-    }()
-    for {
-        ;
-    }
-
-    go Begin()
-    go func() {
-        for {
-            time.Sleep(time.Second * 5)
-            fmt.Println("发送关闭")
-            Stop <- 1
-            time.Sleep(time.Second * 5)
-        }
-    }()
-    for {
-
-    }
 
 }
 
 // 抓取okex 行情信息
 func TestOkex(t *testing.T) {
-    // CrawOkSpot()
-    CrawOkSwap()
+	crawSymbolData()
 }

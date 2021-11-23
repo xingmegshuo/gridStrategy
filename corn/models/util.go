@@ -483,7 +483,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				strings.Replace(strings.Replace(data["instId"].(string), "-", "", 1), "-SWAP", "", 1))] = c
 		}
 	}
-
+	log.Println("这是获取数据", name, v)
 	return &res
 }
 

@@ -349,22 +349,22 @@ func GetSymbols(name string) *map[string]CategorySymbols {
 	switch name {
 	case "火币":
 		// url := ("https://api.huobi.pro/v1/common/symbols")
-		data = LoadJson("huobiSpot.json")
+		data = LoadJson("huobi")
 	case "币安":
 		// url := ("https://api.binance.com/api/v3/exchangeInfo")
-		data = LoadJson("bianSpot.json")
+		data = LoadJson("bianSpot")
 	case "币安u":
 		// url := ("https://api.binance.com/fapi/v1/exchangeInfo")
-		data = LoadJson("bianFutureU.json")
+		data = LoadJson("bianU")
 	case "币安b":
 		// url := ("https://dapi.binance.com/dapi/v1/exchangeInfo")
-		data = LoadJson("bianFutureB.json")
+		data = LoadJson("bianB")
 	case "ok":
 		// url := ("https://www.okex.com/api/v5/public/instruments?instType=SPOT")
-		data = LoadJson("okSpot.json")
+		data = LoadJson("okexSpot")
 	case "okSwap":
 		// url := ("https://www.okex.com/api/v5/public/instruments?instType=SWAP")
-		data = LoadJson("okSwap.json")
+		data = LoadJson("okexFuture")
 	}
 	return ParseMapCategorySymobls(data, name)
 }

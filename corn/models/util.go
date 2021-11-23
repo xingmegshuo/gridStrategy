@@ -361,6 +361,7 @@ func GetSymbols(name string) *map[string]CategorySymbols {
 	case "币安b":
 		// url := ("https://dapi.binance.com/dapi/v1/exchangeInfo")
 		data = LoadJson("bianB")
+		fmt.Print(data)
 	case "ok":
 		// url := ("https://www.okex.com/api/v5/public/instruments?instType=SPOT")
 		data = LoadJson("okexSpot")
@@ -426,7 +427,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 			res[data["symbol"].(string)] = c
 		}
 	}
-	if name == "币安B" || name == "币安U" {
+	if name == "币安b" || name == "币安u" {
 		for _, data := range v {
 			filter := data["filters"].([]interface{})
 			for _, v := range filter {
@@ -442,12 +443,12 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				}
 			}
 			c.PricePrecision = int32(data["pricePrecision"].(float64))
-			if name == "币安B" {
+			if name == "币安b" {
 				c.AmountPrecision = int32(data["equalQtyPrecision"].(float64))
 				c.BaseCurrency = data["quoteAsset"].(string)
 				c.QuoteCurrency = data["baseAsset"].(string)
 			}
-			if name == "币安U" {
+			if name == "币安u" {
 				c.AmountPrecision = int32(data["quantityPrecision"].(float64))
 				c.BaseCurrency = data["baseAsset"].(string)
 				c.QuoteCurrency = data["quoteAsset"].(string)

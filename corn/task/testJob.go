@@ -683,7 +683,7 @@ func okexData1() interface{} {
 }
 
 func okexData2() interface{} {
-	response, err := http.Get("	https://www.okex.com/api/v5/public/instruments?instType=SWAP")
+	response, err := http.Get("https://www.okex.com/api/v5/public/instruments?instType=SWAP")
 	if err == nil {
 		defer response.Body.Close()
 		content, _ := ioutil.ReadAll(response.Body)

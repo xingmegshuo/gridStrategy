@@ -10,6 +10,7 @@ package grid
 
 import (
 	"encoding/json"
+	"fmt"
 	model "zmyjobs/corn/models"
 	util "zmyjobs/corn/uti"
 	"zmyjobs/goex"
@@ -150,6 +151,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 			p []goex.FuturePosition
 		)
 		acc, err := c.Future.GetFutureUserinfo(c.Currency)
+		fmt.Println(err)
 		if err == nil {
 			for _, u := range acc.FutureSubAccounts {
 				if u.Currency.String() == c.symbol.QuoteCurrency {

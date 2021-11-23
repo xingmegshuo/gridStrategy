@@ -391,7 +391,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 		c   CategorySymbols
 		res = map[string]CategorySymbols{}
 	)
-	if name == "火币" {
+	if name == "huobi" {
 		for _, data := range v {
 			c.PricePrecision = int32(data["price-precision"].(float64))
 			c.AmountPrecision = int32(data["amount-precision"].(float64))
@@ -402,7 +402,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 			res[strings.ToUpper(data["symbol"].(string))] = c
 		}
 	}
-	if name == "币安" {
+	if name == "bianSpot" {
 		for _, data := range v {
 			filter := data["filters"].([]interface{})
 			for _, v := range filter {
@@ -424,7 +424,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 			res[data["symbol"].(string)] = c
 		}
 	}
-	if name == "币安b" || name == "币安u" {
+	if name == "bianB" || name == "bianU" {
 		for _, data := range v {
 			filter := data["filters"].([]interface{})
 			for _, v := range filter {
@@ -440,12 +440,12 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 				}
 			}
 			c.PricePrecision = int32(data["pricePrecision"].(float64))
-			if name == "币安b" {
+			if name == "bianB" {
 				c.AmountPrecision = int32(data["equalQtyPrecision"].(float64))
 				c.BaseCurrency = data["quoteAsset"].(string)
 				c.QuoteCurrency = data["baseAsset"].(string)
 			}
-			if name == "币安u" {
+			if name == "bianU" {
 				c.AmountPrecision = int32(data["quantityPrecision"].(float64))
 				c.BaseCurrency = data["baseAsset"].(string)
 				c.QuoteCurrency = data["quoteAsset"].(string)
@@ -457,7 +457,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 		}
 	}
 
-	if name == "ok" {
+	if name == "okexSpot" {
 		for _, data := range v {
 			c.PricePrecision = int32(floatLen(data["tickSz"].(string)))
 			c.AmountPrecision = int32(floatLen(data["lotSz"].(string)))
@@ -469,7 +469,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 		}
 	}
 
-	if name == "okSwap" {
+	if name == "okexFuture" {
 		for _, data := range v {
 			c.PricePrecision = int32(floatLen(data["tickSz"].(string)))
 			c.AmountPrecision = int32(floatLen(data["lotSz"].(string)))

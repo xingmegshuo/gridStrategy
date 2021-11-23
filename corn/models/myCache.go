@@ -17,7 +17,7 @@ import (
 // SetCache 设置缓存
 func SetCache(name string, data interface{}, t time.Duration) {
 	if !CheckCache(name) {
-		log.Println(CacheDB.Set(ctx, name, data, t))
+		CacheDB.Set(ctx, name, data, t)
 	}
 }
 

@@ -618,6 +618,7 @@ func crawSymbolData() {
 		"okexSpot":   okexData1(),
 		"okexFuture": okexData2(),
 	}
+	fmt.Println("写入数据:", symbolsData)
 	model.SetCache("ZMYSYMBOLS", symbolsData, time.Hour*72)
 }
 

@@ -3,10 +3,7 @@ package grid
 import (
 	"fmt"
 	"testing"
-	"time"
 	model "zmyjobs/corn/models"
-
-	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -34,13 +31,13 @@ func TestGetMoney(t *testing.T) {
 	// }
 
 	bian := model.SymbolCategory{
-		Key:             "b0pHDmqinoKMWW4mlAj4mJ6urfwgI3F1OnACcZr3Vocr0RJ1NVHcdYniqAwac6CA",
-		Secret:          "UxtPFv116Y4pC6itHH25guzVfTO0lhiKKA5jyFcsSmsgqFcubPmrVQWBrRZP613f",
-		BaseCurrency:    "SAND",
-		QuoteCurrency:   "USDT",
+		Key: "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
+		Secret: "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4	",
+		BaseCurrency:    "DOT",
+		QuoteCurrency:   "USD",
 		AmountPrecision: 8,
 		PricePrecision:  8,
-		Category:        "ok",
+		Category:        "bian",
 		Label:           "u20",
 	}
 
@@ -168,22 +165,22 @@ func TestFutureAccount(t *testing.T) {
 	// ok 模拟盘 : b3f3f6e2-7243-4602-bdaf-2de3fee7564f   CF67295C5D9450ED625206EB04285D52
 	//    ok 实盘 : eb861d6c-711c-4e16-a656-48839b5b1dd1  90775A06A926AC9AFDAA657C2AF06ED1
 	bian := model.SymbolCategory{
-		Key:    "b3f3f6e2-7243-4602-bdaf-2de3fee7564f",
-		Secret: "CF67295C5D9450ED625206EB04285D52",
-		Symbol: "ETH/USDT",
+		Key:    "NyBBsf9pIgSVOrQZ7gX0V7Owtisufu8Eq6JB3kaZ9FjMBuiiSV794iESWNTpEeAc",
+		Secret: "x55gqPqwmYFuR9VJN4CO8C58oCZYqm9CtPQZvvqzGIhf5gdYIay4MJOazDLNBXp4",
+		Symbol: "DOT/USD",
 		// Host:            "https://fapi.binace.com",
-		BaseCurrency:    "ETH",
-		QuoteCurrency:   "USDT",
+		BaseCurrency:    "DOT",
+		QuoteCurrency:   "USD",
 		AmountPrecision: 2,
 		PricePrecision:  6,
-		Category:        "ok",
+		Category:        "币安",
 		Label:           "u20",
 		Future:          true,
 		Lever:           60,
 	}
 	// fmt.Println(bian)
 	cli := NewEx(&bian)
-
+	fmt.Println(cli.GetAccount())
 	// b := goex.NewCurrencyPair2(bian.Symbol)
 	// fmt.Println("获取账户信息:")
 	// fmt.Println(cli.GetAccount())
@@ -203,15 +200,15 @@ func TestFutureAccount(t *testing.T) {
 	// o, err := cli.Future.MarketFuturesOrder(b, goex.SWAP_CONTRACT, "1", 1)
 	// fmt.Println(o, err)
 
-	order, result := cli.Exchanges(decimal.NewFromFloat(100), decimal.Decimal{}, OpenLL, false)
-	fmt.Println("下单数据", order, result)
+	// order, result := cli.Exchanges(decimal.NewFromFloat(100), decimal.Decimal{}, OpenLL, false)
+	// fmt.Println("下单数据", order, result)
 
-	fmt.Println("查找订单数据:")
-	// orderId := "363283586224631809"
-	orderId := order.OrderId
-	time.Sleep(time.Second * 5)
-	n, r, o := cli.SearchOrder(orderId)
-	fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
+	// fmt.Println("查找订单数据:")
+	// // orderId := "363283586224631809"
+	// orderId := order.OrderId
+	// time.Sleep(time.Second * 5)
+	// n, r, o := cli.SearchOrder(orderId)
+	// fmt.Println(fmt.Sprintf("返回结果%+v", o), n, r)
 
 	// ordierId, clientId, err := cli.Exchanges(decimal.NewFromFloat(0.001), decimal.NewFromFloat(39500), OpenDL, true)
 	// fmt.Println(ordierId, clientId, err)

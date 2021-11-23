@@ -151,7 +151,7 @@ func (c *Cliex) GetAccount() (r bool, money decimal.Decimal, coin decimal.Decima
 			p []goex.FuturePosition
 		)
 		acc, err := c.Future.GetFutureUserinfo(c.Currency)
-		fmt.Println(err)
+		fmt.Println(err, acc)
 		if err == nil {
 			for _, u := range acc.FutureSubAccounts {
 				if u.Currency.String() == c.symbol.QuoteCurrency {

@@ -14,7 +14,7 @@ import (
 )
 
 func TestGetMoney(t *testing.T) {
-	symbols := GetSymbols("币安B")
+	symbols := GetSymbols("币安b")
 	fmt.Println(symbols)
 	// LogStrategy("火币", "doge", 2, 2, 10, 2, false, 10)
 	// var v = map[string]interface{}{}

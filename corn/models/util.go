@@ -57,6 +57,7 @@ func NewSymbol(u User) *SymbolCategory {
 			cateSymol = (*OkexFuture)[name]
 		}
 	}
+	log.Println("----------数据:", cateSymol)
 
 	symbol := SymbolCategory{
 		Category:        u.Category,

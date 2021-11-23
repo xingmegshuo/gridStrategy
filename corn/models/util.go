@@ -453,7 +453,7 @@ func ParseMapCategorySymobls(v []map[string]interface{}, name string) *map[strin
 			// c.MinAmount = decimal.NewFromFloat(0)
 			// c.MinTotal = decimal.NewFromFloat(10)
 
-			res[data["symbol"].(string)] = c
+			res[strings.ToUpper(strings.Replace(data["symbol"].(string), "_PERP", "", 1))] = c
 		}
 	}
 

@@ -9,14 +9,12 @@
 package model
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestGetMoney(t *testing.T) {
-	fmt.Println("testing start .....")
-	// CentsUser(100, 18, int64(20))
-	UpdateBase(133)
+	symbols := GetSymbols("币安B")
+	fmt.Println(symbols)
 	// LogStrategy("火币", "doge", 2, 2, 10, 2, false, 10)
 	// var v = map[string]interface{}{}
 	// c := UserDB.Raw("select id from db_task_category where name like ?", "火币").Scan(&v)

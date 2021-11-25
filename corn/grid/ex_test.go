@@ -244,5 +244,5 @@ func TestOk(t *testing.T) {
 	ex := NewEx(&ok)
 	b, m, coin := ex.GetAccount()
 	fmt.Println("账户信息：", b, m, coin)
-	fmt.Println(ex.Exchanges(decimal.NewFromFloat(1.111111), decimal.NewFromFloat(47.3666), BuyM, false))
+	fmt.Println(ex.Exchanges(decimal.NewFromFloat(10), decimal.NewFromFloat(47.3666), BuyM, false))
 }

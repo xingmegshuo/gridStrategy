@@ -147,7 +147,7 @@ func (ok *OKExSpot) PlaceOrder(ty string, ord *Order) (*Order, error) {
 	jsonStr, _, _ := ok.OKEx.BuildRequestBody(param)
 	err := ok.OKEx.DoRequest("POST", urlPath, jsonStr, &response)
 	if err != nil || response.BizWarmTips.Code != "0" || response.Result[0].ErrorCode != "0" {
-		fmt.Println("交易所返回:", err, response)
+		fmt.Println("交易所返回:", err, response, jsonStr)
 		return nil, errors.New(111, "错误原因无法满足下单精度或其它原因")
 	}
 	ord.Cid = response.Result[0].ClientOid

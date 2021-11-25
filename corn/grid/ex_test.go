@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 	model "zmyjobs/corn/models"
+
+	"github.com/shopspring/decimal"
 	// "github.com/nntaoli-project/goex"
 )
 
@@ -228,16 +230,19 @@ func TestFutureAccount(t *testing.T) {
 
 func TestOk(t *testing.T) {
 	ok := model.SymbolCategory{
-		Key:    "76141669-f4cf-4f45-ad6d-82522539749b", //我的
-		Secret: "02AE5E8DAA50D40ABC0EB4E5882D8EB6",     // 我的
+		Key:     "a571a403-75d6-4194-8c4b-2b407e8a92c2", //我的
+		Secret:  "20D165B6F9757597C3AFC04543729B9F",     // 我的
+		Pashare: "yy123456",
 		// Host:            "api.huobi.de.com",
-		Category:        "ok",
-		BaseCurrency:    "LTC",
+		Symbol:          "ENS/USDT",
+		Category:        "OKex",
+		BaseCurrency:    "ENS",
 		QuoteCurrency:   "USDT",
-		AmountPrecision: 4,
-		PricePrecision:  2,
+		AmountPrecision: 6,
+		PricePrecision:  4,
 	}
 	ex := NewEx(&ok)
 	b, m, coin := ex.GetAccount()
-	fmt.Println(b, m, coin)
+	fmt.Println("账户信息：", b, m, coin)
+	fmt.Println(ex.Exchanges(decimal.NewFromFloat(1.111111), decimal.NewFromFloat(47.3666), BuyM, false))
 }

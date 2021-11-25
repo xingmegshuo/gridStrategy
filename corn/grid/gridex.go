@@ -155,7 +155,7 @@ func (t *ExTrader) buy(price, amount decimal.Decimal, rate float64) (*OneOrder, 
 		if t.goex.symbol.Category == "火币" {
 			amount = t.grids[t.base].TotalBuy
 		}
-		if t.goex.symbol.Category == "Okex" {
+		if t.goex.symbol.Category == "OKex" {
 			amount = t.grids[t.base].TotalBuy
 		}
 		msg = "市价买入"

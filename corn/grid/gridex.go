@@ -319,8 +319,13 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 
 		}
 		if t.goex.symbol.Category == "OKex" && t.u.Future == 0 {
-			t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
-			t.RealGrids[t.base].AmountBuy = decimal.NewFromFloat(order.Amount).Sub(decimal.NewFromFloat(order.Fee).Abs())
+			if t.arg.OrderType == 2 {
+				t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Amount)
+				t.RealGrids[t.base].AmountBuy = decimal.NewFromFloat(order.Amount).Div(decimal.NewFromFloat(order.Price)).Abs().Sub(decimal.NewFromFloat(order.Fee)
+			} else {
+				t.RealGrids[t.base].TotalBuy = decimal.NewFromFloat(order.Cash)
+				t.RealGrids[t.base].AmountBuy = decimal.NewFromFloat(order.Amount).Sub(decimal.NewFromFloat(order.Fee).Abs())
+			}
 			t.RealGrids[t.base].Price = decimal.NewFromFloat(order.Price)
 		}
 		t.amount = t.CountHold()

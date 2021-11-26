@@ -272,7 +272,7 @@ func (t *ExTrader) ParseOrder(order *OneOrder) {
 			}
 		} else if t.goex.symbol.Category == "OKex" && t.u.Future == 2 {
 			if b == 0 {
-				t.RealGrids[b].AmountSell = t.CountHold().Add(decimal.NewFromFloat(order.Cash))
+				t.RealGrids[b].AmountSell = decimal.NewFromFloat(order.Cash)
 			} else {
 				t.RealGrids[b].AmountSell = t.RealGrids[b].AmountBuy.Add(decimal.NewFromFloat(order.Cash))
 			}
@@ -400,6 +400,13 @@ func (t *ExTrader) CalCulateProfit() decimal.Decimal {
 			pay = pay.Add(b.AmountBuy)
 		}
 		log.Printf("用户%v投入币种:%v;清仓获得币种:%v", t.u.ObjectId, pay, my)
+		if t.u.Category == "OKex" {
+			if t.arg.Crile == 4 || t.arg.Crile == 6 {
+				return my.Mul(t.last)
+			} else {
+				return pay.Sub(my).Mul(t.last)
+			}
+		}
 		if t.arg.Crile == 4 || t.arg.Crile == 6 {
 			return my.Sub(pay).Mul(t.last)
 		} else {
